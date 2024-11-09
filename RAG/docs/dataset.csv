@@ -1,0 +1,18 @@
+time,asset_id,name,kpi,sum,avg,min,max
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,working_time,0.0,0.0,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,idle_time,0.0,0.0,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,offline_time,0.0,0.0,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption,0.0661055170374786,0.0023213179492811795,0.0,0.0661055170374786
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,power,,0.0036731194714116925,0.0,0.012800968960106112
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_working,0.062369945128727046,0.006677702970768969,4.526425072480933e-06,0.015817138489764543
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_idle,0.003735571908751558,0.00019519593306431418,0.0,0.001472520435816944
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost,0.0,0.0006447875160088621,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_working,0.0,0.0,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_idle,0.0,0.0,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cycles,3373.0,1.0,0.0,28754.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,good_cycles,3373.0,296.0,0.0,28754.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,bad_cycles,0.0,0.0,0.0,0.0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,average_cycle_time,,0.0,0.0,0.0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,working_time,0.0,0.0,0.0,0.0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,idle_time,0.0,0.0,0.0,0.0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,offline_time,0.0,0.0,0.0,0.0

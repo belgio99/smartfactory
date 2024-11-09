@@ -1,0 +1,7 @@
+langchain
+fastapi
+langchain-chroma
+langchain-community
+langchain-ollama
+langchain-google-genai
+python-dotenv
