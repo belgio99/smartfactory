@@ -1,0 +1,27 @@
+version: "3.4"
+
+services:
+    api-layer:
+        image: api-layer
+        container_name: api-layer
+        build:
+            context: ./App/api_layer
+            dockerfile: Dockerfile
+        ports:
+            - "8000:8000"
+        networks:
+            - my-network
+    frontend:
+        image: frontend
+        container_name: frontend
+        build:
+            context: ./App/frontend
+            dockerfile: Dockerfile
+        ports:
+            - 8080:80
+        networks:
+            - my-network
+
+networks:
+    my-network:
+        driver: bridge
