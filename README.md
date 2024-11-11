@@ -37,9 +37,7 @@ This project provides an API endpoint to answer questions based using Retrieval-
 3. **Install Llama 3.2 (1B Parameters) Locally**:
 	To set up the Llama 3.2 model with 1 billion parameters on your local machine, follow these steps: 
 	- Download and install [Ollama](https://ollama.com/download), a platform that facilitates running language models locally. 
-	- Once installed, you can execute the following command to run the Llama 3.2 (1B) model: ```bash
-    ollama run llama3.2:1b
-          ```
+	- Once installed, you can execute the following command to run the Llama 3.2 (1B) model: ```ollama run llama3.2:1b```
 
 3. **Create `.env` file**:
    Define necessary environment variables in a `.env` file in the root directory. 
