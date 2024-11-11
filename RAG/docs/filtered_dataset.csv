@@ -1,0 +1,253 @@
+time,asset_id,name,kpi,sum,avg,min,max
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,working_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,idle_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,offline_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption,"0,0661055170374786","0,00232131794928118",0,"0,0661055170374786"
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,power,,"0,00367311947141169",0,"0,0128009689601061"
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_working,"0,062369945128727","0,00667770297076897","0,00000452642507248093","0,0158171384897645"
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_idle,"0,00373557190875156","0,000195195933064314",0,"0,00147252043581694"
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost,0,"0,000644787516008862",0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cycles,3373,1,0,28754
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,good_cycles,3373,296,0,28754
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,bad_cycles,0,0,0,0
+2024-03-01T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,average_cycle_time,,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,working_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,idle_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,offline_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption,"0,0166156035455268","0,00218848190896108",0,"0,0166156035455268"
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,power,,"0,00510411322408415","0,0000476722675732622","0,0347542936202785"
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_working,"0,0157486701950845","0,00467952628816776","0,00146166021504609","0,0016071433722544"
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_idle,"0,00086693335044227","0,000205101256582766",0,"0,000237168464169305"
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost,0,"0,00113114107555484",0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cycles,4117,1,0,1363
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,good_cycles,4117,3200,301,1363
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,bad_cycles,0,0,0,0
+2024-03-02T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,average_cycle_time,,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,working_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,idle_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,offline_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,power,,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,consumption_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cost_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,good_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,bad_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-yhccl1zjue2t,Large Capacity Cutting Machine 1,average_cycle_time,,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,working_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,idle_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,offline_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption,"0,00197261689965621","0,0000737069838986023","0,0000259187499793244","0,00197261689965621"
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,power,,"0,000172159889204113",0,"0,000692204794956539"
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption_working,"0,001537000434057","0,000133542234361619","0,0000592440368472951","0,000525513898513442"
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption_idle,"0,000435616465599213","0,000028558483895303","0,0000259187499793244","0,0000717410558170933"
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost,0,"0,000107114766792917",0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cycles,30391,1,0,4132
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,good_cycles,30391,2391,138,4132
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,bad_cycles,0,0,0,0
+2024-03-01T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,average_cycle_time,,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,working_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,idle_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,offline_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption,"0,000419058148274709","0,0000713352405134854","0,0000104208843232471","0,000419058148274709"
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,power,,"0,00021026818856182",0,"0,000583213757370982"
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption_working,"0,000340471623941334","0,000139307447521746","0,0000738046703731901","0,000106484723569645"
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption_idle,"0,0000785865243333753","0,0000229084537398907","0,0000104208843232471","0,0000172494785250665"
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost,0,"0,0000603638631254033",0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cycles,0,0,0,2754
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,good_cycles,0,0,1117,2754
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,bad_cycles,0,0,0,0
+2024-03-02T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,average_cycle_time,,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,working_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,idle_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,offline_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,power,,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,consumption_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cost_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,good_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,bad_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-o8xtn5xa8y87,Riveting Machine,average_cycle_time,,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,working_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,idle_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,offline_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption,"0,0445295352916335","0,00156470150678516",0,"0,0445295352916335"
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,power,,"0,00156364378326562","0,000541928018689181",0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption_working,"0,0318479324773408","0,00129898530006916",0,"0,013832488205766"
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption_idle,"0,0126816028142927","0,00321765301578071","0,000187236276610411","0,0143259701425945"
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost,0,"0,00307788464672945",0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cycles,9126,1,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,good_cycles,9126,669,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,bad_cycles,0,0,0,0
+2024-03-01T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,average_cycle_time,,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,working_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,idle_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,offline_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption,"0,00154291659393489","0,000301915411515723",0,"0,00252979871657554"
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,power,,"0,00106831765689305","0,000450193802574357","0,0275057922174058"
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption_working,"0,000244343222099444","0,0000478248370093894",0,"0,000241340868687836"
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption_idle,"0,00129857337183545",0,0,"0,00252979871657554"
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost,0,"0,00029983865918446",0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cycles,2,1,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,good_cycles,2,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,bad_cycles,0,0,0,0
+2024-03-02T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,average_cycle_time,,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,working_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,idle_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,offline_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,power,,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,consumption_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cost_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,good_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,bad_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-ha448od5d6bd,Medium Capacity Cutting Machine 1,average_cycle_time,,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,working_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,idle_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,offline_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,power,,"0,000134959312383068","0,0000384199471967106","0,000224533745267742"
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cycles,7867,1,0,2665
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,good_cycles,7780,329,0,2665
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,bad_cycles,87,7,0,4
+2024-03-01T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,average_cycle_time,,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,working_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,idle_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,offline_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,power,,"0,000202836962629166","0,0000365167528760165","0,00010036259040739"
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cycles,148,1,0,62
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,good_cycles,136,27,0,62
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,bad_cycles,12,5,0,0
+2024-03-02T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,average_cycle_time,,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,working_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,idle_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,offline_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,power,,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,consumption_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cost_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,good_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,bad_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-xpimckaf3dlf,Laser Cutter,average_cycle_time,,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,working_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,idle_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,offline_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption,"0,100265279934756","0,000536746372937011",0,"0,100265279934756"
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,power,,"0,0020084275473994",0,"0,072398811958191"
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption_working,"0,0717576523096745","0,000417964570355326",0,"0,0332932434504198"
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption_idle,"0,0285076276250817","0,00188562544285066","0,0000361087379691326","0,0324931846843547"
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost,0,"0,000259232375054207",0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cycles,8672,1,0,18860
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,good_cycles,8672,653,0,18860
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,bad_cycles,0,0,0,0
+2024-03-01T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,average_cycle_time,,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,working_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,idle_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,offline_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption,"0,017088293071106","0,000460154921946359",0,"0,017088293071106"
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,power,,"0,00103079283639851",0,"0,0518047088485892"
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption_working,"0,00933143319177993","0,000987079794700408",0,"0,0169032117615718"
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption_idle,"0,00775685987932608","0,000280209274176405","0,0000272085269987019","0,00250347398166123"
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost,0,"0,000306876525722671",0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cycles,8281,1,0,1538
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,good_cycles,8281,422,0,1538
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,bad_cycles,0,0,0,0
+2024-03-02T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,average_cycle_time,,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,working_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,idle_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,offline_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption,"0,00157368466983973","0,0000121463161918962",0,"0,00157368466983973"
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,power,,"0,0000231416278103996",0,"0,000256814521964852"
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,consumption_idle,"0,00157368466983973","0,0000121463161918962","0,0000689381200161205","0,0000796300993025905"
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost,0,"0,00000823045902406862",0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cost_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,good_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,bad_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-6votor3o4i9l,Large Capacity Cutting Machine 2,average_cycle_time,,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,working_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,idle_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,offline_time,0,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption,"0,319928562252593","0,00605750406079038",0,"0,319928562252593"
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,power,,"0,00601144238049869","0,000198424616116328","0,0327386026123867"
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption_working,"0,267484583821326","0,00771269587985992","0,00000448691873178262","0,0211487228441029"
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption_idle,"0,0524439784312674","0,00289199768704006",0,"0,0147609619546639"
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost,0,"0,0031234966337949",0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost_working,0,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost_idle,0,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cycles,28086,1,0,24298
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,good_cycles,28086,0,0,24298
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,bad_cycles,0,0,0,0
+2024-03-01T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,average_cycle_time,,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,working_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,idle_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,offline_time,0,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption,"0,0419797674710633","0,00302039295777979",0,"0,0419797674710633"
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,power,,"0,00303148573247128","0,000102980034412413","0,0116168372409872"
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption_working,"0,0387866243454674","0,00893324759030852",0,"0,0173792789479298"
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption_idle,"0,00319314312559595","0,000334117425626315","0,0000746076807755351","0,00385204972316217"
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost,0,"0,00269678663005936",0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost_working,0,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost_idle,0,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cycles,0,0,0,141
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,good_cycles,0,5694,0,141
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,bad_cycles,0,0,0,0
+2024-03-02T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,average_cycle_time,,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,working_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,idle_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,offline_time,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,power,,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,consumption_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost_working,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cost_idle,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,good_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,bad_cycles,0,0,0,0
+2024-03-03T00:00:00Z,ast-5aggxyk5hb36,Medium Capacity Cutting Machine 2,average_cycle_time,,0,0,0

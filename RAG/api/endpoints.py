@@ -46,7 +46,7 @@ llm_offline = ChatOllama(model="llama3.2:1b")
 
 # Load documents and prepare vector store at application startup
 csv_args = {"delimiter": ","}
-loader = CSVLoader(file_path="docs/dataset.csv", csv_args=csv_args)
+loader = CSVLoader(file_path="docs/filtered_dataset.csv", csv_args=csv_args)
 docs = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
@@ -56,7 +56,7 @@ splits = text_splitter.split_documents(docs)
 vectorstore = Chroma.from_documents(documents=splits, embedding=embeddings)
 
 # Set up retriever with custom search parameters
-retriever = vectorstore.as_retriever(search_kwargs={'k': 15})
+retriever = vectorstore.as_retriever(search_kwargs={'k': 100})
 
 # Define the prompt template
 prompt_template = PromptTemplate(
@@ -64,8 +64,8 @@ prompt_template = PromptTemplate(
     template="""You are provided with data from a machine performance dataset. The dataset has the following columns:
     - 'time': date in ISO format
     - 'asset_id': asset identifier
-    - 'name': machine name
-    - 'kpi': KPI type (e.g., 'working_time', 'idle_time', 'offline_time')
+    - 'name': machine name, univoc for each machine
+    - 'kpi': KPI type in fourteen different KPI (e.g., 'working_time', 'idle_time', 'offline_time')
     - 'sum', 'avg', 'min', 'max': aggregated values for each KPI.
 
     Based on the dataset and the user's question, analyze the relevant information and generate a response.

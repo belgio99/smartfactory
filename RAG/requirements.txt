@@ -5,3 +5,4 @@ langchain-community
 langchain-ollama
 langchain-google-genai
 python-dotenv
+sentence_transformers
