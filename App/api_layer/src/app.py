@@ -1,11 +1,15 @@
 from fastapi.responses import JSONResponse
 import uvicorn
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.dashboard_settings import DashboardSettings
 from notification_service import send_notification
+from database.connection import get_db_connection
 import logging
+from model.user import *
+from typing import Annotated
+
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
@@ -72,6 +76,50 @@ def post_alert(alert: Alert):
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/smartfactory/login")
+def login(body: Login):
+    """
+    Endpoint to login a user.
+    This endpoint receives the user credentials and logins the user if it is present in the database.
+    Args:
+        body (LoginModel): the login body object containing the login details.
+    Returns:
+        Response: A response object with status code 200 if the notification is sent successfully.
+    Raises:
+        HTTPException: If any validation check fails or an unexpected error occurs.
+    """
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        query = "SELECT Id, Username, Type, Email, Password FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
+        cursor.execute(query, (body.user))
+        results = cursor.fetchall()
+        if (not_found):
+            raise HTTPException(status_code=404, detail="User not found")
+        elif (wrong_psw):
+            raise HTTPException(status_code=404, detail="Wrong credentials")
+        resp = UserInfo()
+        return resp
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        raise e
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/smartfactory/logout")
+def logout(user: str):
+    #TODO logout DB
+    return Response(status_code=status.HTTP_200_OK)
+
+@app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
+def register(body: Register):
+    #TODO register DB
+    if (found):
+        raise HTTPException(status_code=400, detail="User already registered")
+    return {"test":"testvalue"}
 
 @app.get("/smartfactory/dashboardSettings/{dashboardId}")
 def load_dashboard_settings(dashboardId: str):

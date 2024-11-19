@@ -3,7 +3,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
-import pydruid.db
+from database.connection import get_db_connection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -54,12 +54,7 @@ def save_alert(alert): #TODO - To verify when we'll have a more stable version o
         None
         """
         try:
-            connection = pydruid.db.connect(
-                host=os.getenv('DRUID_HOST'),
-                port=int(os.getenv('DRUID_PORT')),
-                path='/druid/v2/sql/',
-                scheme='http'
-            )
+            connection = get_db_connection()
             cursor = connection.cursor()
 
             query = """
