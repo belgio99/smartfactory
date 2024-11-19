@@ -85,20 +85,22 @@ def login(body: Login):
     Args:
         body (LoginModel): the login body object containing the login details.
     Returns:
-        Response: A response object with status code 200 if the notification is sent successfully.
+        UserInfo object with the details of the user logged in.
     Raises:
         HTTPException: If any validation check fails or an unexpected error occurs.
     """
     try:
         connection = get_db_connection()
         cursor = connection.cursor()
-        query = "SELECT Id, Username, Type, Email, Password FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
+        query = "SELECT Id, Username, Type, Email, Password FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=\'%s\'"
         cursor.execute(query, (body.user))
         results = cursor.fetchall()
-        if (not_found):
+        logging.info(results)
+        #TODO check results
+        '''if (not_found):
             raise HTTPException(status_code=404, detail="User not found")
         elif (wrong_psw):
-            raise HTTPException(status_code=404, detail="Wrong credentials")
+            raise HTTPException(status_code=404, detail="Wrong credentials")'''
         resp = UserInfo()
         return resp
     except HTTPException as e:

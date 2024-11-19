@@ -1,15 +1,14 @@
 volumes:
-  metadata_data: {}
-  middle_var: {}
-  historical_var: {}
-  broker_var: {}
-  coordinator_var: {}
-  router_var: {}
-  druid_shared: {}
+    metadata_data: {}
+    middle_var: {}
+    historical_var: {}
+    broker_var: {}
+    coordinator_var: {}
+    router_var: {}
+    druid_shared: {}
 
 services:
     api-layer:
-        image: api-layer
         container_name: api-layer
         build:
             context: ./App/api_layer
@@ -26,7 +25,6 @@ services:
         networks:
             - my-network
     frontend:
-        image: frontend
         container_name: frontend
         build:
             context: ./App/frontend
@@ -49,13 +47,13 @@ services:
         image: postgres:latest
         platform: linux/amd64
         ports:
-        - "5432:5432"
+            - "5432:5432"
         volumes:
-        - metadata_data:/var/lib/postgresql/data
+            - metadata_data:/var/lib/postgresql/data
         environment:
-        - POSTGRES_PASSWORD=FoolishPassword
-        - POSTGRES_USER=druid
-        - POSTGRES_DB=druid
+            - POSTGRES_PASSWORD=FoolishPassword
+            - POSTGRES_USER=druid
+            - POSTGRES_DB=druid
 
     # Need 3.5 or later for container nodes
     zookeeper:
@@ -63,99 +61,99 @@ services:
         image: zookeeper:3.5.10
         platform: linux/amd64
         ports:
-        - "2181:2181"
+            - "2181:2181"
         environment:
-        - ZOO_MY_ID=1
+            - ZOO_MY_ID=1
 
     coordinator:
         image: apache/druid:31.0.0
         container_name: coordinator
         platform: linux/amd64
         volumes:
-        - druid_shared:/opt/shared
-        - coordinator_var:/opt/druid/var
-        - ./upload:/upload
+            - druid_shared:/opt/shared
+            - coordinator_var:/opt/druid/var
+            - ./upload:/upload
         depends_on:
-        - zookeeper
-        - postgres
+            - zookeeper
+            - postgres
         ports:
-        - "8081:8081"
+            - "8081:8081"
         command:
-        - coordinator
+            - coordinator
         env_file:
-        - environment
+            - environment
 
     broker:
         image: apache/druid:31.0.0
         container_name: broker
         platform: linux/amd64
         volumes:
-        - broker_var:/opt/druid/var
+            - broker_var:/opt/druid/var
         depends_on:
-        - zookeeper
-        - postgres
-        - coordinator
+            - zookeeper
+            - postgres
+            - coordinator
         ports:
-        - "8082:8082"
+            - "8082:8082"
         command:
-        - broker
+            - broker
         env_file:
-        - environment
+            - environment
 
     historical:
         image: apache/druid:31.0.0
         container_name: historical
         platform: linux/amd64
         volumes:
-        - druid_shared:/opt/shared
-        - historical_var:/opt/druid/var
-        depends_on: 
-        - zookeeper
-        - postgres
-        - coordinator
+            - druid_shared:/opt/shared
+            - historical_var:/opt/druid/var
+        depends_on:
+            - zookeeper
+            - postgres
+            - coordinator
         ports:
-        - "8083:8083"
+            - "8083:8083"
         command:
-        - historical
+            - historical
         env_file:
-        - environment
+            - environment
 
     middlemanager:
         image: apache/druid:31.0.0
         container_name: middlemanager
         platform: linux/amd64
         volumes:
-        - druid_shared:/opt/shared
-        - middle_var:/opt/druid/var
-        - ./upload:/upload
-        depends_on: 
-        - zookeeper
-        - postgres
-        - coordinator
+            - druid_shared:/opt/shared
+            - middle_var:/opt/druid/var
+            - ./upload:/upload
+        depends_on:
+            - zookeeper
+            - postgres
+            - coordinator
         ports:
-        - "8091:8091"
-        - "8100-8105:8100-8105"
+            - "8091:8091"
+            - "8100-8105:8100-8105"
         command:
-        - middleManager
+            - middleManager
         env_file:
-        - environment
+            - environment
 
     router:
         image: apache/druid:31.0.0
         container_name: router
         platform: linux/amd64
         volumes:
-        - router_var:/opt/druid/var
+            - router_var:/opt/druid/var
         depends_on:
-        - zookeeper
-        - postgres
-        - coordinator
+            - zookeeper
+            - postgres
+            - coordinator
         ports:
-        - "8888:8888"
+            - "8888:8888"
         command:
-        - router
+            - router
         env_file:
-        - environment
+            - environment
 networks:
     my-network:
         driver: bridge
