@@ -3,6 +3,7 @@ import uvicorn
 from fastapi import FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
+from model.dashboard_settings import DashboardSettings
 from notification_service import send_notification
 import logging
 
@@ -71,6 +72,38 @@ def post_alert(alert: Alert):
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/smartfactory/dashboardSettings/{dashboardId}")
+def load_dashboard_settings(dashboardId: str):
+    '''
+    Endpoint to load dashboard settings from the Database.
+    This endpoint receives a dashboard ID and returns the corresponding settings fetched from the DB.
+    Args:
+        dashboardId (str): The ID of the dashboard.
+    Returns:
+        dashboard_settings: DashboardSettings object containing the settings.
+    Raises:
+        HTTPException: If the settings are not found or an unexpected error occurs.
+
+    '''
+    pass # Placeholder for the implementation
+
+@app.post("/smartfactory/dashboardSettings/{dashboardId}")
+def save_dashboard_settings(dashboardId: str, dashboard_settings: DashboardSettings):
+    '''
+    Endpoint to save dashboard settings to the Database.
+    This endpoint receives a dashboard ID and the settings to be saved and saves them to the DB.
+    Args:
+        dashboardId (str): The ID of the dashboard.
+        dashboard_settings (DashboardSettings): The settings to be saved.
+    Returns:
+        Response: A response object with status code 200 if the settings are saved successfully.
+    Raises:
+        HTTPException: If the settings are invalid or an unexpected error occurs.
+        
+    '''
+    pass # Placeholder for the implementation
+
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
