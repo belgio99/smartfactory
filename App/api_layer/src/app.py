@@ -17,8 +17,8 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-@app.post("/postAlert", response_model=Response, status_code=200, tags=["Alerts"])
-def post_alert(alert: Alert) -> Response:
+@app.post("/postAlert")
+def post_alert(alert: Alert):
     """
     Endpoint to post an alert.
     This endpoint receives an alert object and processes it by sending notifications
@@ -54,7 +54,7 @@ def post_alert(alert: Alert) -> Response:
         logging.info("Sending notification")
         send_notification(alert)
         logging.info("Notification sent successfully")
-        return Response(status_code=200)
+        return JSONResponse(content={"message": "Notification sent successfully"}, status_code=200)
     
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
