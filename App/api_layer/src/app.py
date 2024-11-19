@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
-from model.dashboard_settings import DashboardSettings
+from model.settings import DashboardSettings
 from notification_service import send_notification
 from database.connection import get_db_connection
 import logging
