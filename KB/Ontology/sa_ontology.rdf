@@ -439,9 +439,15 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_min"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#machine_utilization_rate"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#operative_time"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_min"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_sum"/>
         <sa-ontology:description>A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors</sa-ontology:description>
         <sa-ontology:id>assembly_machine_1</sa-ontology:id>
@@ -453,9 +459,15 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_min"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#machine_utilization_rate"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#operative_time"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_min"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_sum"/>
         <sa-ontology:description>A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors</sa-ontology:description>
         <sa-ontology:id>assemlby_machine_2</sa-ontology:id>
@@ -467,6 +479,8 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
     </owl:NamedIndividual>
     
 
@@ -475,6 +489,8 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_max">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
     </owl:NamedIndividual>
     
 
@@ -483,6 +499,8 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_min">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
     </owl:NamedIndividual>
     
 
@@ -510,8 +528,13 @@
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
+        <sa-ontology:atomic_formula>working_time_sum/(working_time_sum+idle_time_sum)</sa-ontology:atomic_formula>
         <sa-ontology:description>This KPI allows to assess how much a machine was used over a period.</sa-ontology:description>
+        <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
+        <sa-ontology:formula>working_time_sum/operative_time</sa-ontology:formula>
         <sa-ontology:id>machine_utilization_rate</sa-ontology:id>
+        <sa-ontology:unit_measure>%</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
@@ -537,6 +560,15 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_avg">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic_formula>-</sa-ontology:atomic_formula>
+        <sa-ontology:description>This KPI is atomic, it measures the time the machine spends in idle state, considering the average.</sa-ontology:description>
+        <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
+        <sa-ontology:formula>-</sa-ontology:formula>
+        <sa-ontology:id>working_time_avg</sa-ontology:id>
+        <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
@@ -545,6 +577,15 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_max">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic_formula>-</sa-ontology:atomic_formula>
+        <sa-ontology:description>This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.</sa-ontology:description>
+        <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
+        <sa-ontology:formula>-</sa-ontology:formula>
+        <sa-ontology:id>working_time_max</sa-ontology:id>
+        <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
@@ -553,6 +594,15 @@
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_min">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic_formula>-</sa-ontology:atomic_formula>
+        <sa-ontology:description>This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.</sa-ontology:description>
+        <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
+        <sa-ontology:formula>-</sa-ontology:formula>
+        <sa-ontology:id>working_time_avg</sa-ontology:id>
+        <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
