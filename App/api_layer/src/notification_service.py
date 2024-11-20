@@ -3,7 +3,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
-import pydruid.db
+from database.connection import get_db_connection
 
 logging.basicConfig(level=logging.INFO)
 
@@ -44,43 +44,38 @@ def send_email(to_email, title, text):
         raise e
 
 def save_alert(alert): #TODO - To verify when we'll have a more stable version of the database
+    """
+    Inserts the alert into the Alerts table in the Druid database.
+
+    Parameters:
+    alert (Alert): An alert object containing notification details.
+
+    Returns:
+    None
+    """
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+
+        query = """
+        INSERT INTO Alerts (isPush, isEmail, recipients, notificationTitle, notificationText)
+        VALUES (%s, %s, %s, %s, %s)
         """
-        Inserts the alert into the Alerts table in the Druid database.
-
-        Parameters:
-        alert (Alert): An alert object containing notification details.
-
-        Returns:
-        None
-        """
-        try:
-            connection = pydruid.db.connect(
-                host=os.getenv('DRUID_HOST'),
-                port=int(os.getenv('DRUID_PORT')),
-                path='/druid/v2/sql/',
-                scheme='http'
-            )
-            cursor = connection.cursor()
-
-            query = """
-            INSERT INTO Alerts (isPush, isEmail, recipients, notificationTitle, notificationText)
-            VALUES (%s, %s, %s, %s, %s)
-            """
-            cursor.execute(query, (
-                alert.isPush,
-                alert.isEmail,
-                ','.join(alert.recipients),
-                alert.notificationTitle,
-                alert.notificationText
-            ))
-            connection.commit()
-            logging.info("Alert inserted into Druid database successfully")
-        except Exception as e:
-            logging.error("Error inserting alert into Druid database: " + str(e))
-            raise e
-        finally:
-            cursor.close()
-            connection.close()
+        cursor.execute(query, (
+            alert.isPush,
+            alert.isEmail,
+            ','.join(alert.recipients),
+            alert.notificationTitle,
+            alert.notificationText
+        ))
+        connection.commit()
+        logging.info("Alert inserted into Druid database successfully")
+    except Exception as e:
+        logging.error("Error inserting alert into Druid database: " + str(e))
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
 
 
 def send_notification(alert):

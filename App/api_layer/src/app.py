@@ -1,12 +1,17 @@
 from fastapi.responses import JSONResponse
 import uvicorn
-from fastapi import Depends, FastAPI, Response, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
+from model.settings import DashboardSettings
 from notification_service import send_notification
+from database.connection import get_db_connection
 import logging
 
 from api_auth import get_verify_api_key
+from model.user import *
+from typing import Annotated
+
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-@app.post("/postAlert")
+@app.post("/smartfactory/postAlert")
 async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["data"]))):
     """
     Endpoint to post an alert.
@@ -73,6 +78,106 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/smartfactory/login")
+def login(body: Login):
+    """
+    Endpoint to login a user.
+    This endpoint receives the user credentials and logins the user if it is present in the database.
+    Args:
+        body (LoginModel): the login body object containing the login details.
+    Returns:
+        UserInfo object with the details of the user logged in.
+    Raises:
+        HTTPException: If any validation check fails or an unexpected error occurs.
+    """
+    try:
+        connection = get_db_connection()
+        cursor = connection.cursor()
+        query = "SELECT Id, Username, Type, Email, Password FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=\'%s\'"
+        cursor.execute(query, (body.user))
+        results = cursor.fetchall()
+        logging.info(results)
+        #TODO check results
+        '''if (not_found):
+            raise HTTPException(status_code=404, detail="User not found")
+        elif (wrong_psw):
+            raise HTTPException(status_code=400, detail="Wrong credentials")'''
+        resp = UserInfo()
+        return resp
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        raise e
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/smartfactory/logout")
+def logout(userId: str):
+    """
+    Endpoint to logout a user.
+    This endpoint receives the userId and logouts the user if it is present in the database.
+    Args:
+        body (userId): the id of the user to logout.
+    Returns:
+        JSONResponse 200
+    Raises:
+        HTTPException: If the user is not present in the database.
+    """
+    #TODO logout DB
+    if (not_found):
+        raise HTTPException(status_code=404, detail="User not found")
+    return JSONResponse(content={"message": "User logged out successfully"}, status_code=200)
+
+@app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
+def register(body: Register):
+    """
+    Endpoint to register a user.
+    This endpoint receives the user info and inserts a new user if it is not present in the database.
+    Args:
+        body (Register): the user details of the new user.
+    Returns:
+        UserInfo object with the details of the user created.
+    Raises:
+        HTTPException: If the user is already present in the database.
+    """
+    #TODO register DB
+    if (found):
+        raise HTTPException(status_code=400, detail="User already registered")
+    return UserInfo()
+
+@app.get("/smartfactory/dashboardSettings/{dashboardId}")
+def load_dashboard_settings(dashboardId: str):
+    '''
+    Endpoint to load dashboard settings from the Database.
+    This endpoint receives a dashboard ID and returns the corresponding settings fetched from the DB.
+    Args:
+        dashboardId (str): The ID of the dashboard.
+    Returns:
+        dashboard_settings: DashboardSettings object containing the settings.
+    Raises:
+        HTTPException: If the settings are not found or an unexpected error occurs.
+
+    '''
+    pass # Placeholder for the implementation
+
+@app.post("/smartfactory/dashboardSettings/{dashboardId}")
+def save_dashboard_settings(dashboardId: str, dashboard_settings: DashboardSettings):
+    '''
+    Endpoint to save dashboard settings to the Database.
+    This endpoint receives a dashboard ID and the settings to be saved and saves them to the DB.
+    Args:
+        dashboardId (str): The ID of the dashboard.
+        dashboard_settings (DashboardSettings): The settings to be saved.
+    Returns:
+        Response: A response object with status code 200 if the settings are saved successfully.
+    Raises:
+        HTTPException: If the settings are invalid or an unexpected error occurs.
+        
+    '''
+    pass # Placeholder for the implementation
+
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
