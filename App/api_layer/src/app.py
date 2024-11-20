@@ -1,12 +1,15 @@
 from fastapi.responses import JSONResponse
 import uvicorn
-from fastapi import FastAPI, HTTPException, status, Response
+from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.settings import DashboardSettings
 from notification_service import send_notification, retrieve_notifications
 from database.connection import get_db_connection
+from constants import *
 import logging
+
+from api_auth import get_verify_api_key
 from model.user import *
 from typing import Annotated
 
@@ -16,14 +19,14 @@ logging.basicConfig(level=logging.INFO)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # Specify the frontend URL
+    allow_origins=[FRONTEND_HOST],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.post("/smartfactory/postAlert")
-def post_alert(alert: Alert):
+async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["data"]))):
     """
     Endpoint to post an alert.
     This endpoint receives an alert object and processes it by sending notifications
@@ -116,7 +119,7 @@ def login(body: Login):
         '''if (not_found):
             raise HTTPException(status_code=404, detail="User not found")
         elif (wrong_psw):
-            raise HTTPException(status_code=404, detail="Wrong credentials")'''
+            raise HTTPException(status_code=400, detail="Wrong credentials")'''
         resp = UserInfo()
         return resp
     except HTTPException as e:
@@ -128,16 +131,38 @@ def login(body: Login):
 
 
 @app.post("/smartfactory/logout")
-def logout(user: str):
+def logout(userId: str):
+    """
+    Endpoint to logout a user.
+    This endpoint receives the userId and logouts the user if it is present in the database.
+    Args:
+        body (userId): the id of the user to logout.
+    Returns:
+        JSONResponse 200
+    Raises:
+        HTTPException: If the user is not present in the database.
+    """
     #TODO logout DB
-    return Response(status_code=status.HTTP_200_OK)
+    if (not_found):
+        raise HTTPException(status_code=404, detail="User not found")
+    return JSONResponse(content={"message": "User logged out successfully"}, status_code=200)
 
 @app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
 def register(body: Register):
+    """
+    Endpoint to register a user.
+    This endpoint receives the user info and inserts a new user if it is not present in the database.
+    Args:
+        body (Register): the user details of the new user.
+    Returns:
+        UserInfo object with the details of the user created.
+    Raises:
+        HTTPException: If the user is already present in the database.
+    """
     #TODO register DB
     if (found):
         raise HTTPException(status_code=400, detail="User already registered")
-    return {"test":"testvalue"}
+    return UserInfo()
 
 @app.get("/smartfactory/dashboardSettings/{dashboardId}")
 def load_dashboard_settings(dashboardId: str):

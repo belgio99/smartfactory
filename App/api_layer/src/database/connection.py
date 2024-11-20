@@ -1,5 +1,7 @@
 import os
 import pydruid.db
+import requests
+from constants import DRUID_URL
 
 def get_db_connection():
     return pydruid.db.connect(
@@ -8,3 +10,9 @@ def get_db_connection():
                 path='/druid/v2/sql/',
                 scheme='http'
             )
+
+def query_db(query: str):
+    query_obj = {
+        "query": query
+    }
+    return requests.post(DRUID_URL, json=query_obj)
