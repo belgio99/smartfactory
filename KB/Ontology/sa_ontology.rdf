@@ -1,0 +1,466 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://www.semanticweb.org/raffi/ontologies/2024/10/sa_ont/"
+     xml:base="http://www.semanticweb.org/raffi/ontologies/2024/10/sa_ont/"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <owl:Ontology rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#consumesMaterial -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#consumesMaterial">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isConsumedBy"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isConsumedBy -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isConsumedBy">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isProducedBy -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isProducedBy">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#performedBy -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#performedBy">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#performsOperation"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#performsOperation -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#performsOperation">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#atomic -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#atomic">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#atomic_formula -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#atomic_formula">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#capacity -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#capacity">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#description -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#description">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#forecastable -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#forecastable">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#formula -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#formula">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#id -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#id">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#unit_measure -->
+
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#unit_measure">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Assemble -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Assemble">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CuttingMachine"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Consumption -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Consumption">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyKPI"/>
+        <owl:disjointWith rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyCost"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CustomKPItmp -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CustomKPItmp">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Cut -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Cut">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CuttingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CuttingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyCost -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyCost">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyKPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyKPI -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyKPI">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnvironmentalKPI -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnvironmentalKPI">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CuttingMachine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MaintenanceKPI -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MaintenanceKPI">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Production -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Production">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionCost -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionCost">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Quality -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Quality">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Rivet -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Rivet">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#RivetingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#RivetingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Test -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Test">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Weld -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Weld">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // General axioms
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Assemble"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Cut"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Rivet"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Test"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Weld"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CuttingMachine"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#RivetingMachine"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CustomKPItmp"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnergyKPI"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#EnvironmentalKPI"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MaintenanceKPI"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+        </owl:members>
+    </rdf:Description>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
+
