@@ -1,10 +1,12 @@
 from fastapi.responses import JSONResponse
 import uvicorn
-from fastapi import FastAPI, Response, HTTPException
+from fastapi import Depends, FastAPI, Response, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from notification_service import send_notification
 import logging
+
+from api_auth import get_verify_api_key
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +20,7 @@ app.add_middleware(
 )
 
 @app.post("/postAlert")
-def post_alert(alert: Alert):
+async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["data"]))):
     """
     Endpoint to post an alert.
     This endpoint receives an alert object and processes it by sending notifications
