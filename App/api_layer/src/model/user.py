@@ -16,10 +16,9 @@ class Login(BaseModel):
 
 class Register(BaseModel):
     """
-    Represents a user.
+    Represents the register request body.
 
     Attributes:
-        userId (str | None): The id of the user (None in case of registration).
         username (str): The username of the user.
         email (str): The email of the user.
         password (str): The password of the user.
@@ -35,7 +34,7 @@ class UserInfo(BaseModel):
     Represents a user.
 
     Attributes:
-        userId (str | None): The id of the user (None in case of registration).
+        userId (str): The id of the user (None in case of registration).
         username (str): The username of the user.
         email (str): The email of the user.
         type (str): The type of the user.

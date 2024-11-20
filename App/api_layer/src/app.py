@@ -100,7 +100,7 @@ def login(body: Login):
         '''if (not_found):
             raise HTTPException(status_code=404, detail="User not found")
         elif (wrong_psw):
-            raise HTTPException(status_code=404, detail="Wrong credentials")'''
+            raise HTTPException(status_code=400, detail="Wrong credentials")'''
         resp = UserInfo()
         return resp
     except HTTPException as e:
@@ -112,16 +112,38 @@ def login(body: Login):
 
 
 @app.post("/smartfactory/logout")
-def logout(user: str):
+def logout(userId: str):
+    """
+    Endpoint to logout a user.
+    This endpoint receives the userId and logouts the user if it is present in the database.
+    Args:
+        body (userId): the id of the user to logout.
+    Returns:
+        JSONResponse 200
+    Raises:
+        HTTPException: If the user is not present in the database.
+    """
     #TODO logout DB
-    return Response(status_code=status.HTTP_200_OK)
+    if (not_found):
+        raise HTTPException(status_code=404, detail="User not found")
+    return JSONResponse(content={"message": "User logged out successfully"}, status_code=200)
 
 @app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
 def register(body: Register):
+    """
+    Endpoint to register a user.
+    This endpoint receives the user info and inserts a new user if it is not present in the database.
+    Args:
+        body (Register): the user details of the new user.
+    Returns:
+        UserInfo object with the details of the user created.
+    Raises:
+        HTTPException: If the user is already present in the database.
+    """
     #TODO register DB
     if (found):
         raise HTTPException(status_code=400, detail="User already registered")
-    return {"test":"testvalue"}
+    return UserInfo()
 
 @app.get("/smartfactory/dashboardSettings/{dashboardId}")
 def load_dashboard_settings(dashboardId: str):
