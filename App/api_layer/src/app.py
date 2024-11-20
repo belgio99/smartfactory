@@ -6,6 +6,7 @@ from model.alert import Alert
 from model.settings import DashboardSettings
 from notification_service import send_notification
 from database.connection import get_db_connection
+from constants import *
 import logging
 
 from api_auth import get_verify_api_key
@@ -18,10 +19,10 @@ logging.basicConfig(level=logging.INFO)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],  # Specify the frontend URL
+    allow_origins=[FRONTEND_HOST],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.post("/smartfactory/postAlert")
