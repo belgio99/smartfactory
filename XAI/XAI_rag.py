@@ -108,12 +108,11 @@ if __name__ == "__main__":
 
     # Example documents and response
     documents = [
-        "The sky is blue and often has clouds.",
-        "Grass is green and is found in gardens and parks.",
+        "The sky is blue and often has clouds. Grass is green and is found in gardens and parks.",
         "The sun is a star located at the center of our solar system."
     ]
 
-    response = "The sun is at the center of the solar system, and the grass is green in parks."
+    response = "The sun is at the center of the solar system. The grass is green in parks. My name is Jeff"
 
     # Call the function with verbose output
     try:
