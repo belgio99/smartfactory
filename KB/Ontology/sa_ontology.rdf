@@ -568,7 +568,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
         <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
         <sa-ontology:atomic_formula>working_time_sum+idle_time_sum</sa-ontology:atomic_formula>
-        <sa-ontology:description>This KPI measures the time the machine spends in operative state (when it’s both in working state and idle state).</sa-ontology:description>
+        <sa-ontology:description>This KPI measures the time the machine spends in operative state (when it is both in working state and idle state).</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
         <sa-ontology:formula>working_time_sum+idle_time_sum</sa-ontology:formula>
         <sa-ontology:id>operative_time</sa-ontology:id>
@@ -619,7 +619,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
         <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
         <sa-ontology:atomic_formula>-</sa-ontology:atomic_formula>
-        <sa-ontology:description>This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.</sa-ontology:description>
+        <sa-ontology:description>This KPI is atomic, it measures the time the machine spends in idle state, considering the average.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
         <sa-ontology:id>working_time_avg</sa-ontology:id>
