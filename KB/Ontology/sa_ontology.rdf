@@ -5,7 +5,8 @@
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:xml="http://www.w3.org/XML/1998/namespace"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
-     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:sa-ontology="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#">
     <owl:Ontology rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology"/>
     
 
@@ -49,6 +50,16 @@
         <owl:inverseOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isProducedBy_op -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#isProducedBy_op">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <owl:inverseOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI_op"/>
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
     </owl:ObjectProperty>
     
@@ -80,6 +91,15 @@
     <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI_op -->
+
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#producesKPI_op">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
         <rdfs:range rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
     </owl:ObjectProperty>
@@ -131,9 +151,6 @@
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#description">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
@@ -163,9 +180,6 @@
 
     <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#id">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topDataProperty"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Entity"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
-        <rdfs:domain rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
     </owl:DatatypeProperty>
     
@@ -407,6 +421,130 @@
     <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Weld">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
     </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_sum"/>
+        <sa-ontology:description>A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors</sa-ontology:description>
+        <sa-ontology:id>assembly_machine_1</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+        <sa-ontology:description>A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors</sa-ontology:description>
+        <sa-ontology:id>assemlby_machine_2</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_3 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_3">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+        <sa-ontology:description>A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors</sa-ontology:description>
+        <sa-ontology:id>assembly_machine_3</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_max -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_max">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_min -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_min">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_sum -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_sum">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#machine_utilization_rate -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#machine_utilization_rate">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_avg -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_avg">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_max -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_max">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_min -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_min">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_sum -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#working_time_sum">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MachineUsageKPI"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_3"/>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic_formula>-</sa-ontology:atomic_formula>
+        <sa-ontology:description>computes the total working time in a given period.</sa-ontology:description>
+        <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
+        <sa-ontology:formula>-</sa-ontology:formula>
+        <sa-ontology:id>working_time_sum</sa-ontology:id>
+        <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
+    </owl:NamedIndividual>
     
 
 
