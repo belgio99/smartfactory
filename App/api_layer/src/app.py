@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.settings import DashboardSettings
-from notification_service import send_notification
+from notification_service import send_notification, retrieve_notifications
 from database.connection import get_db_connection
 import logging
 from model.user import *
@@ -76,6 +76,22 @@ def post_alert(alert: Alert):
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/smartfactory/notifications/{userId}")
+def get_notifications(userId: str):
+    """
+    Endpoint to retrieve the list of notifications for a user.
+    This endpoint receives a user ID and returns the list of notifications for that user.
+    Args:
+        userId (str): The ID of the user.
+    Returns:
+        List[Notification]: A list of notifications for the user.
+    Raises:
+        HTTPException: If an unexpected error occurs.
+    """
+    
+    list = retrieve_notifications(userId)
+    return JSONResponse(content={"notifications": list}, status_code=200)
 
 @app.post("/smartfactory/login")
 def login(body: Login):

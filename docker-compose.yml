@@ -15,15 +15,17 @@ services:
             dockerfile: Dockerfile
         depends_on:
             - smtp
+            - router
         environment:
             - SMTP_SERVER=host.docker.internal
             - SMTP_PORT=1025
             - SMTP_EMAIL=noreply@smartfactory.com
             - SMTP_PASSWORD=SmartAppPassword123
+            - DRUID_HOST=router
+            - DRUID_PORT=8888
         ports:
             - "8000:8000"
-        networks:
-            - my-network
+
     frontend:
         container_name: frontend
         build:
@@ -72,7 +74,7 @@ services:
         volumes:
             - druid_shared:/opt/shared
             - coordinator_var:/opt/druid/var
-            - ./upload:/upload
+            - ./obj_storage:/obj_storage
         depends_on:
             - zookeeper
             - postgres
@@ -125,7 +127,7 @@ services:
         volumes:
             - druid_shared:/opt/shared
             - middle_var:/opt/druid/var
-            - ./upload:/upload
+            - ./obj_storage:/obj_storage
         depends_on:
             - zookeeper
             - postgres

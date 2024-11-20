@@ -12,6 +12,7 @@ class Alert(BaseModel):
         isEmail (bool): Indicates if the notification should be sent as an email.
         recipients (List[str]): A list of recipients who will receive the notification.
     """
+    timestamp: str
     notificationTitle: str
     notificationText: str
     isPush: bool

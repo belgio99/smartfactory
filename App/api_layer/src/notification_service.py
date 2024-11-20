@@ -4,6 +4,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
 from database.connection import get_db_connection
+import requests
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,6 +43,7 @@ def send_email(to_email, title, text):
         logging.info("Email sent successfully")
     except Exception as e:
         logging.error("Error sending email: " + str(e))
+        server.quit()
         raise e
 
 def save_alert(alert): #TODO - To verify when we'll have a more stable version of the database
@@ -77,7 +80,6 @@ def save_alert(alert): #TODO - To verify when we'll have a more stable version o
         cursor.close()
         connection.close()
 
-
 def send_notification(alert):
     """
     Sends a notification based on the alert type.
@@ -96,8 +98,38 @@ def send_notification(alert):
 
     if alert.isPush:
         logging.info("Sending push notification")
-        save_alert(alert)
+        #save_alert(alert)
     if alert.isEmail:
         for recipient in alert.recipients:
             logging.info("Sending email to %s", recipient)
             send_email(recipient, alert.notificationTitle, alert.notificationText)
+
+def retrieve_notifications(userId): #TODO - To verify when we'll have a more stable version of the database
+    """
+    Retrieves the list of notifications for a user from the Druid database.
+
+    Parameters:
+    userId (str): The ID of the user to retrieve notifications for.
+
+    Returns:
+    List[Notification]: A list of notifications for the user.
+    """
+    
+
+    # Definisci l'URL dell'endpoint
+    url = 'http://router:8888/druid/v2/sql/'
+
+    # Definisci il payload della richiesta
+    payload = {
+        "query": "SELECT * FROM \"alerts\""
+    }
+
+    # Definisci le intestazioni della richiesta
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    # Fai la richiesta POST
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+    return response.json()
