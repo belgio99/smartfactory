@@ -1,5 +1,6 @@
-import kpi_dataframe_filter, kpi_data_extraction
-import padas as pd
+from kpi_dataframe_filter import kpi_dataframe_filter
+from kpi_data_extraction import kpi_dataframe_data_extraction
+import pandas as pd
 
 class kpi_engine:
     def energy_cost_savings(df, machine_id, time):
@@ -43,7 +44,7 @@ class kpi_engine:
         previous_total_power_consumption = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='consumption', machine_id=machine_id, start_time=start_previous_period, end_time=end_previous_period)
         return (current_total_power_consumption - previous_total_power_consumption) / previous_total_power_consumption
 
-    def machine_utiization_rate(df, machine_id, start_time, end_time):
+    def machine_utilization_rate(df, machine_id, start_time, end_time):
         fd = df
         total_working_time = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', df=fd, machine_id=machine_id, start_time=start_time, end_time=end_time)
         total_idle_time = kpi_dataframe_data_extraction.sum_kpi(kpi='idle_time', df=fd, machine_id=machine_id, start_time=start_time, end_time=end_time)
@@ -114,9 +115,10 @@ class kpi_engine:
         return -1
     '''
 
-    def dynamic_kpi(df, machine_id, machine_type, start_time, end_time, formula):
+    def dynamic_kpi(df, machine_id, machine_type, start_time, end_time, kpi_id):
+        # kpi_formula = extract formula through API and kpi_id
         # formula parsing
-        # filtering
+        # filtering (by time period, machine_id, etc)
         # data extraction
         # formula evaluation
         return

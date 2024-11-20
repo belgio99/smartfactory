@@ -1,5 +1,5 @@
-import kpi_dataframe_filter
-import padas as pd
+from kpi_dataframe_filter import kpi_dataframe_filter
+import pandas as pd
 
 class kpi_dataframe_data_extraction:
     def sum_kpi(kpi, df, machine_id, start_time, end_time):
