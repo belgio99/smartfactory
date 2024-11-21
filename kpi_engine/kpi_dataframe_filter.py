@@ -5,7 +5,12 @@ class kpi_dataframe_filter:
         if machine_id != 'all_machines':
             return df[df['asset_id'] == machine_id]
         return df
-
+    
+    def filter_dataframe_by_typology(df,machine_type): 
+        if machine_type != 'all_types':
+            return df[df['name'].str.startswith(machine_type)]
+        return df
+    
     def filter_dataframe_by_kpi(df, kpi):
         return df[df['kpi'] == kpi]
 

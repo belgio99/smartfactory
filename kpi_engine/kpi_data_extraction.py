@@ -47,3 +47,19 @@ class kpi_dataframe_data_extraction:
         print(f"KPI calculated on machine {machine_id} ({fd.iloc[0, 2]}) as minimum {kpi}s from {start_time} to {end_time}. Result is {fd['sum'].min()}.")
         '''
         fd['sum'].min()
+
+
+    def std_kpi(kpi, df, machine_id, start_time, end_time):
+        fd = df
+        fd = kpi_dataframe_filter.filter_dataframe_by_machine(fd, machine_id)
+        fd = kpi_dataframe_filter.filter_dataframe_by_kpi(fd, kpi)
+        fd = kpi_dataframe_filter.filter_dataframe_by_time(fd, start_time, end_time)
+        fd['sum'].std()
+
+
+    def median_kpi(kpi, df, machine_id, start_time, end_time):
+        fd = df
+        fd = kpi_dataframe_filter.filter_dataframe_by_machine(fd, machine_id)
+        fd = kpi_dataframe_filter.filter_dataframe_by_kpi(fd, kpi)
+        fd = kpi_dataframe_filter.filter_dataframe_by_time(fd, start_time, end_time)
+        fd['sum'].median()
