@@ -117,6 +117,8 @@ class kpi_engine:
     '''
 
     def dynamic_kpi(df, machine_id, machine_type, start_time, end_time, kpi_id):
+        kpi_dataframe_filter.filter_dataframe_by_machine(df=df, machine_id=machine_id)
+        kpi_dataframe_filter.filter_dataframe_by_time(df=df, start_time=start_time, end_time=end_time)
         # kpi_formula = extract formula through API and kpi_id
         formula = 'working_time_sum / (idle_time_sum + working_time_sum)'
         expr = sympy.parse_expr(formula)

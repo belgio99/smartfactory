@@ -5,13 +5,7 @@ from typing import Optional
 
 ''''
 Start by using 'uvicorn main:app --reload'
-
-Examples of basic queries:
-GET http://127.0.0.1:8000/kpi/power_consumption_efficiency/calculate?machineId=all_machines (expected value =~ 357.414,5325)
-GET http://127.0.0.1:8000/kpi/availability/calculate?machineId=ast-hnsa8phk2nay (expected value =~ 0,9799)
 '''
-
-pd.set_option('display.max_rows', None)
 
 with open("smart_app_data.pkl", "rb") as file:
     df = pd.read_pickle(file)
@@ -26,11 +20,10 @@ async def read_root():
 @app.get("/kpi/{kpiID}/calculate")
 async def calculate(
     kpiID: str,
-    machineId: str,
-    startTime: str,
-    endTime: str
-    # startTime: Optional[str] = "0",
-    # endTime: Optional[str] = "3"
+    machineId: Optional[str] = "all_machines",
+    machineType: Optional[str] = "any",
+    startTime: Optional[str] = "0",
+    endTime: Optional[str] = "3"
     ):
     print(f"Received kpiID: {kpiID}, machineId: {machineId}, startTime: {startTime}, endTime: {endTime}")
     methods = {
@@ -41,6 +34,9 @@ async def calculate(
     if kpiID not in methods:
         raise HTTPException(status_code=404, detail=f"Method for calculating '{kpiID}' not found")
 
+    if(kpiID == "dynamic_kpi"):
+        result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime, machine_type = machineType, kpi_id = kpiID)
+        return result    
     result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime)
     return {"value": result}
 
@@ -50,4 +46,3 @@ def main_test():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
-    
