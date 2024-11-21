@@ -33,13 +33,10 @@ async def calculate(
     return {"value": result}
 
 def main_test():
-    methods = {
-        name: getattr(kpi_engine, name)
-        for name in dir(kpi_engine)
-        if callable(getattr(kpi_engine, name)) and not name.startswith("__")
-    }
-    print(methods)
-
+    kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_time='2024-08-27T00:00:00Z', end_time='2024-09-20T00:00:00Z', kpi_id='a')
 if __name__ == "__main__":
+    main_test()
+    '''
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)
+    '''

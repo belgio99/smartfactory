@@ -1,6 +1,7 @@
 from kpi_dataframe_filter import kpi_dataframe_filter
 from kpi_data_extraction import kpi_dataframe_data_extraction
 import pandas as pd
+import sympy
 
 class kpi_engine:
     def energy_cost_savings(df, machine_id, time):
@@ -117,6 +118,9 @@ class kpi_engine:
 
     def dynamic_kpi(df, machine_id, machine_type, start_time, end_time, kpi_id):
         # kpi_formula = extract formula through API and kpi_id
+        formula = 'working_time_sum / (idle_time_sum + working_time_sum)'
+        expr = sympy.parse_expr(formula)
+        print(expr.free_symbols)
         # formula parsing
         # filtering (by time period, machine_id, etc)
         # data extraction
