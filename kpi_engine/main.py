@@ -26,17 +26,18 @@ async def calculate(
     endTime: Optional[str] = "3",
     kpiToRetrieve: Optional[str] = "static"
     ):
-    print(f"Received kpiID: {kpiID}, \nmachineId: {machineId}, \nmachineType: {machineType}, \nstartTime: {startTime}, \nendTime: {endTime}, \nkpiToRetrieve: {kpiToRetrieve}\n")
+    print(f"Received kpiID: {kpiID}, \nmachineId: {machineId}, \nmachineType: {machineType}, \nstartTime: {startTime}, \nendTime: {endTime}\n")
     methods = {
     name: getattr(kpi_engine, name)
     for name in dir(kpi_engine)
     if callable(getattr(kpi_engine, name)) and not name.startswith("__")
     }
-    if kpiID not in methods:
-        raise HTTPException(status_code=404, detail=f"Method for calculating '{kpiID}' not found")
 
     if(kpiID == "dynamic_kpi"):
-        result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime, machine_type = machineType, kpi_id = kpiToRetrieve)
+        raise HTTPException(status_code=404, detail=f"'dynamic_kpi' method not directly callable.")
+
+    if kpiID not in methods:
+        result = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_time = startTime, end_time = endTime, machine_type = machineType, kpi_id=kpiID)
     else:
         result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime)
     return {"value": result}
