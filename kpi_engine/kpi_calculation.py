@@ -22,8 +22,8 @@ class kpi_engine:
 
     def energy_cost_idle_time(df, machine_id="all_machines", machine_typology="all_types", time = None, start_previous_period = None, end_previous_period = None, start_period = None, end_period = None):
         fd = df
-        total_energy_cost = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='cost_idle', machine_id='all_machines', typology = typology, start_period=start_period, end_period=end_period)
-        total_working_time = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='working_time', machine_id='all_machines', typology = typology, start_period=start_period, end_period=end_period)
+        total_energy_cost = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='cost_idle', machine_id='all_machines', machine_typology = machine_typology, start_period=start_period, end_period=end_period)
+        total_working_time = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='working_time', machine_id='all_machines', machine_typology = machine_typology, start_period=start_period, end_period=end_period)
         return  total_energy_cost / total_working_time
 
     def energy_cost_per_unit(df, machine_id="all_machines", machine_typology="all_types", time = None, start_previous_period = None, end_previous_period = None, start_period = None, end_period = None):
