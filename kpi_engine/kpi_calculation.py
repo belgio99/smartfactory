@@ -1,6 +1,7 @@
 from kpi_dataframe_filter import kpi_dataframe_filter
 from kpi_data_extraction import kpi_dataframe_data_extraction
 import pandas as pd
+import requests
 from sympy import symbols, parse_expr
 
 class kpi_engine:
@@ -123,6 +124,8 @@ class kpi_engine:
         fd = kpi_dataframe_filter.filter_dataframe_by_time(df=df, start_time=start_time, end_time=end_time)
         
         # kpi_formula = extract formula through API and kpi_id
+        # response = requests.get("{os.getEnv("BASE_URL")}/kb/retrieve/{kpi_id}")
+        # formula = response.get("formula")
         formula = 'working_time_sum / (idle_time_sum + working_time_sum)'
         expr = parse_expr(formula)
 
