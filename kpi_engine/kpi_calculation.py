@@ -1,7 +1,7 @@
 from kpi_dataframe_filter import kpi_dataframe_filter
 from kpi_data_extraction import kpi_dataframe_data_extraction
 import pandas as pd
-import sympy
+from sympy import symbols, parse_expr
 
 class kpi_engine:
     def energy_cost_savings(df, machine_id, time, start_previous_period, end_previous_period, start_period, end_period):
@@ -116,15 +116,24 @@ class kpi_engine:
         return -1
     '''
 
-    def dynamic_kpi(df, machine_id, machine_type, start_period, end_period, kpi_id):
-        kpi_dataframe_filter.filter_dataframe_by_machine(df=df, machine_id=machine_id)
-        kpi_dataframe_filter.filter_dataframe_by_time(df=df, start_period=start_period, end_period=end_period)
+    def dynamic_kpi(df, machine_id, machine_type, start_time, end_time, kpi_id):
+        # dataframe filtering
+        fd = df
+        fd = kpi_dataframe_filter.filter_dataframe_by_machine(df=df, machine_id=machine_id)
+        fd = kpi_dataframe_filter.filter_dataframe_by_time(df=df, start_time=start_time, end_time=end_time)
+
         # kpi_formula = extract formula through API and kpi_id
         formula = 'working_time_sum / (idle_time_sum + working_time_sum)'
-        expr = sympy.parse_expr(formula)
-        print(expr.free_symbols)
-        # formula parsing
-        # filtering (by time period, machine_id, etc)
-        # data extraction
+        expr = parse_expr(formula)
+
+        # data extraction and symbol substitution
+        substitutions = {}
+        for symbol in expr.free_symbols:
+            data_extraction_method = getattr(kpi_dataframe_data_extraction, str(symbol)[-3:]+"_kpi")
+            substitutions[symbol] = data_extraction_method(df=fd, kpi=str(symbol)[:-4], machine_id=machine_id, start_time=start_time, end_time=end_time)
+
+        result = expr.subs(substitutions)
+
         # formula evaluation
-        return
+        eval_result = result.evalf()
+        return float(eval_result)

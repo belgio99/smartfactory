@@ -23,9 +23,10 @@ async def calculate(
     machineId: Optional[str] = "all_machines",
     machineType: Optional[str] = "any",
     startTime: Optional[str] = "0",
-    endTime: Optional[str] = "3"
+    endTime: Optional[str] = "3",
+    kpiToRetrieve: Optional[str] = "static"
     ):
-    print(f"Received kpiID: {kpiID}, machineId: {machineId}, startTime: {startTime}, endTime: {endTime}")
+    print(f"Received kpiID: {kpiID}, \nmachineId: {machineId}, \nmachineType: {machineType}, \nstartTime: {startTime}, \nendTime: {endTime}, \nkpiToRetrieve: {kpiToRetrieve}\n")
     methods = {
     name: getattr(kpi_engine, name)
     for name in dir(kpi_engine)
@@ -35,9 +36,9 @@ async def calculate(
         raise HTTPException(status_code=404, detail=f"Method for calculating '{kpiID}' not found")
 
     if(kpiID == "dynamic_kpi"):
-        result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime, machine_type = machineType, kpi_id = kpiID)
-        return result    
-    result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime)
+        result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime, machine_type = machineType, kpi_id = kpiToRetrieve)
+    else:
+        result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime)
     return {"value": result}
 
 def main_test():
