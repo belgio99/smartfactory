@@ -1,6 +1,3 @@
 smart_app_data.pkl
-kpi_engine/__pycache__/main.cpython-312.pyc
-kpi_engine/__pycache__/kpi_calculation.cpython-312.pyc
-kpi_engine/__pycache__/kpi_data_extraction.cpython-312.pyc
-kpi_engine/__pycache__/kpi_dataframe_filter.cpython-312.pyc
-kpi_engine/__pycache__/main.cpython-312.pyc
+kpi_engine/__pycache__
+kpi_engine/__pycache__/*
