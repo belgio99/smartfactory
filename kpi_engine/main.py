@@ -42,8 +42,10 @@ async def calculate(
     return {"value": result}
 
 def main_test():
-    kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_time='2024-08-27T00:00:00Z', end_time='2024-09-20T00:00:00Z', kpi_id='a')
-a
+    # kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_time='2024-08-27T00:00:00Z', end_time='2024-09-20T00:00:00Z', kpi_id='a')
+    print(kpi_engine.availability(df=df, machine_typology="Riveting Machine", start_period='2023-01-27T00:00:00Z', end_period='2024-10-20T00:00:00Z' ))
+    # print(kpi_engine.machine_utilization_rate())
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host=os.getEnv("KB_HOST"), port=os.getEnv("KB_PORT"), reload=True)
+    # import uvicorn
+    # uvicorn.run(app, host=os.getEnv("KB_HOST"), port=os.getEnv("KB_PORT"), reload=True)
+    main_test()
