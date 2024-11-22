@@ -43,7 +43,7 @@ async def calculate(
 
 def main_test():
     kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_time='2024-08-27T00:00:00Z', end_time='2024-09-20T00:00:00Z', kpi_id='a')
-a
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=os.getEnv("KB_HOST"), port=os.getEnv("KB_PORT"), reload=True)
