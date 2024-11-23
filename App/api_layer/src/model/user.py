@@ -50,3 +50,19 @@ class UserInfo(BaseModel):
     access_token: str
     role: str
     site: str
+
+    def to_dict(self):
+        """
+        Convert the UserInfo object to a dictionary.
+
+        Returns:
+            dict: A dictionary representation of the UserInfo object.
+        """
+        return {
+            "userId": self.userId,
+            "username": self.username,
+            "email": self.email,
+            "access_token": self.access_token,
+            "role": self.role,
+            "site": self.site
+        }

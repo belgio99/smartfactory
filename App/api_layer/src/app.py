@@ -173,8 +173,9 @@ def login(body: Login):
             SECRET_KEY,
             algorithm=ALGORITHM
         )
-        user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3], access_token=access_token)
-        return JSONResponse(content=access_token, status_code=200)
+        logging.info(result)
+        user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3], access_token=access_token, site=result[5])
+        return JSONResponse(content=user.to_dict(), status_code=200) #TODO change to user
         
     except Exception as e:
         logging.error("Exception: %s", str(e))
@@ -229,7 +230,7 @@ def register(body: Register):
         # Check if user already exists
         query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
         response = query_db_with_params(cursor, connection, query, (body.username, body.email))
-        user_exists = response[0]
+        user_exists = response
         logging.info(user_exists)
 
         if user_exists:
@@ -244,7 +245,7 @@ def register(body: Register):
             userid = cursor.fetchone()[0]
             connection.commit()
             close_connection(connection, cursor)
-            return UserInfo(userId=str(userid), username=body.username, email=body.email, role=body.role, site=body.site)
+            return UserInfo(userId=str(userid), username=body.username, email=body.email, role=body.role, site=body.site, access_token='')
 
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
@@ -299,7 +300,7 @@ if __name__ == "__main__":
             Username VARCHAR(50) NOT NULL,
             Email VARCHAR(50) NOT NULL,
             Role VARCHAR(20) NOT NULL,
-            Password VARCHAR(50) NOT NULL,
+            Password VARCHAR(250) NOT NULL,
             SiteName VARCHAR(50) NOT NULL
             )
             """,
