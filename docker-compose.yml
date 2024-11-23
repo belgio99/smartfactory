@@ -6,6 +6,7 @@ volumes:
     coordinator_var: {}
     router_var: {}
     druid_shared: {}
+    db: {}
 
 services:
     api-layer:
@@ -48,8 +49,6 @@ services:
         container_name: postgres
         image: postgres:latest
         platform: linux/amd64
-        ports:
-            - "5432:5432"
         volumes:
             - metadata_data:/var/lib/postgresql/data
         environment:
@@ -156,6 +155,16 @@ services:
             - router
         env_file:
             - environment
+    db:
+        container_name: db
+        env_file:
+            - environment
+        image: postgres:latest
+        platform: linux/amd64
+        ports:
+            - "5432:5432"
+        volumes:
+            - db:/var/lib/postgresql/data
 networks:
     my-network:
         driver: bridge
