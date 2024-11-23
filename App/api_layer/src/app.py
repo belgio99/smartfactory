@@ -4,7 +4,8 @@ from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.settings import DashboardSettings
-from notification_service import send_notification, retrieve_notifications
+from notification_service import send_notification, retrieve_alerts
+from user_settings_service import persist_user_settings, retrieve_user_settings
 from database.connection import get_db_connection
 from constants import *
 import logging
@@ -63,8 +64,8 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
         logging.info("Sending notification")
         send_notification(alert)
         logging.info("Notification sent successfully")
+
         return JSONResponse(content={"message": "Notification sent successfully"}, status_code=200)
-    
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         raise e
@@ -82,12 +83,24 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/smartfactory/alerts/{userId}")
-def get_alerts(userId: str):
-    list = retrieve_notifications(userId)
+def get_alerts(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Retrieve alerts for a given user and return them as a JSON response.
+
+    Args:
+        userId (str): The ID of the user for whom to retrieve alerts.
+
+    Returns:
+        JSONResponse: A JSON response containing the list of alerts for the user.
+    """
+    logging.info("Retrieving alerts for user: %s", userId)
+    list = retrieve_alerts(userId)
+    logging.info("Alerts retrieved successfully for user: %s", userId)
+
     return JSONResponse(content={"alerts": list}, status_code=200)
 
 @app.post("/smartfactory/settings/{userId}")
-def save_user_settings(userId: str, settings: dict):
+def save_user_settings(userId: str, settings: dict, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to save user settings.
     This endpoint receives a user ID and a JSON object with the settings to be saved.
@@ -100,12 +113,27 @@ def save_user_settings(userId: str, settings: dict):
         HTTPException: If an unexpected error occurs.
     """
     try:
-        connection = get_db_connection() #TODO - Fix when we'll have a more stable version of the database
-        cursor = connection.cursor()
-        query = "UPDATE UserSettings SET settings = %s WHERE userId = %s"
-        cursor.execute(query, (json.dumps(settings), userId))
-        connection.commit()
+        persist_user_settings(userId, settings)
         return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/smartfactory/settings/{userId}")
+def get_user_settings(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to get user settings.
+    This endpoint receives a user ID and returns the settings for that user.
+    Args:
+        userId (str): The ID of the user.
+    Returns:
+        dict: A dictionary containing the user settings.
+    Raises:
+        HTTPException: If an unexpected error occurs.
+    """
+    try:
+        settings = retrieve_user_settings(userId)
+        return JSONResponse(content=settings, status_code=200)
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))

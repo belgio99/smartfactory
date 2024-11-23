@@ -63,7 +63,7 @@ if __name__ == "__main__":
             """,
             """
             CREATE TABLE IF NOT EXISTS UserSettings (
-            UserID INT NOT NULL,
+            UserID INT NOT NULL UNIQUE,
             Settings TEXT NOT NULL,
             FOREIGN KEY (UserID) REFERENCES Users(UserID)
             )
