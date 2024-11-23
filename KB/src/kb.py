@@ -1,31 +1,14 @@
 import rdflib
 from rdflib.namespace import RDF, Namespace
+from owlready2 import *
 from fastapi import FastAPI
 import json
 import sympy
 
 
 ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
-SA = Namespace("http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#")
-g = rdflib.Graph()
-g.parse(ONTOLOGY_PATH)
+onto = get_ontology(ONTOLOGY_PATH).load()
 app = FastAPI()
-
-def rdf_to_json(rdf_kpi):
-    kpi_data = {}
-
-    # Iterate over the results and format them as {property: value}
-    for row in rdf_kpi:
-        property_uri = str(row.property)  # Property as a URI string
-        value = str(row.value)  # Value as a string
-        
-        # Extract the property name (e.g., `unit_measure` from the full URI)
-        property_name = property_uri.split('#')[-1]
-        
-        # Add to dictionary
-        kpi_data[property_name] = value
-
-    return kpi_data
 
 def is_equal(formula1, formula2):
     formula1 = sympy.simplify(sympy.sympify(formula1))
@@ -34,49 +17,43 @@ def is_equal(formula1, formula2):
     return formula1 == formula2
 
 def get_kpi(kpi_id):
-    # Query the RDF graph for the single KPI data
-    query = f""" 
-    PREFIX sa: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    kpi_id = 'idle_time_sumd'
 
-    SELECT ?property ?value ?datatype
-    WHERE {{
-        ?kpi sa:id "{kpi_id}" ;
-             ?property ?value .
-        # Ensure we are dealing with literal values
-        FILTER(isLiteral(?value))
-        # Match the datatype URI embedded in the literal value
-        BIND(datatype(?value) AS ?datatype)
-    }}
+    query = f'*{kpi_id}'
+    a = onto.search(iri = query)
+    json_d = {'Status': -1}
+
+    if len(a) == 0:
+        return json_d
+
+    for prop in a[0].get_properties():
+        for value in prop[a[0]]:
+            json_d[prop.name] = value
+    
+    json_d["Status"] = 0
+
+    return json_d
+
+def extract_datatype_properties(instance):
     """
-
-    results = g.query(query)
-
-    return rdf_to_json(results) # Convert RDF results to JSON format
+    Extract datatype properties and their values from an instance.
+    """
+    datatype_data = {}
+    for prop in onto.data_properties():  # Solo datatype properties
+        value = prop[instance]  # Recupera il valore della proprietà per l'istanza
+        if value:  # Controlla che la proprietà abbia un valore
+            datatype_data[prop.name] = value[0]  # Assumiamo un singolo valore per proprietà
+    return datatype_data
 
 def get_all_kpis():
-    # Query to retrieve all unique KPI IDs
-    query = """
-    PREFIX sa-ontology: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
-    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-    SELECT DISTINCT ?kpi_id
-    WHERE {
-        ?kpi rdf:type/rdfs:subClassOf* sa-ontology:KPI ;  # Seleziona solo istanze di sottoclassi di KPI
-            sa-ontology:id ?kpi_id .                    # Recupera l'id per ogni risorsa
-    }
     """
-    
-    results = g.query(query)
-    
-    # Extract all KPI IDs
-    kpi_ids = [str(row.kpi_id) for row in results]
-    
-    # Retrieve and format all KPIs in JSON format
+    Retrieve all KPIs and their information as dict
+    """
+    # Recupera tutte le istanze di KPI
     all_kpis = {}
-    for kpi_id in kpi_ids:
-        all_kpis[kpi_id] = get_kpi(kpi_id)  # Use the existing get_kpi function
+    for kpi in onto.KPI.instances():
+        kpi_id = str(kpi.id[0])
+        all_kpis[kpi_id] = extract_datatype_properties(kpi)
 
     return all_kpis
 
