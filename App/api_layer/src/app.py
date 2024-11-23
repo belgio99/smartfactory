@@ -6,8 +6,9 @@ from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.settings import DashboardSettings
-from notification_service import send_notification, retrieve_notifications
-from database.connection import get_db_connection, query_db
+from notification_service import send_notification, retrieve_alerts
+from user_settings_service import persist_user_settings, retrieve_user_settings
+from database.connection import get_db_connection, query_db_with_params, close_connection
 from constants import *
 import logging
 
@@ -67,8 +68,8 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
         logging.info("Sending notification")
         send_notification(alert)
         logging.info("Notification sent successfully")
+
         return JSONResponse(content={"message": "Notification sent successfully"}, status_code=200)
-    
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         raise e
@@ -86,12 +87,24 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/smartfactory/alerts/{userId}")
-def get_alerts(userId: str):
-    list = retrieve_notifications(userId)
+def get_alerts(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Retrieve alerts for a given user and return them as a JSON response.
+
+    Args:
+        userId (str): The ID of the user for whom to retrieve alerts.
+
+    Returns:
+        JSONResponse: A JSON response containing the list of alerts for the user.
+    """
+    logging.info("Retrieving alerts for user: %s", userId)
+    list = retrieve_alerts(userId)
+    logging.info("Alerts retrieved successfully for user: %s", userId)
+
     return JSONResponse(content={"alerts": list}, status_code=200)
 
 @app.post("/smartfactory/settings/{userId}")
-def save_user_settings(userId: str, settings: dict):
+def save_user_settings(userId: str, settings: dict, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to save user settings.
     This endpoint receives a user ID and a JSON object with the settings to be saved.
@@ -104,11 +117,27 @@ def save_user_settings(userId: str, settings: dict):
         HTTPException: If an unexpected error occurs.
     """
     try:
-        connection, cursor = get_db_connection() #TODO - Fix when we'll have a more stable version of the database
-        query = "UPDATE UserSettings SET settings = %s WHERE userId = %s"
-        cursor.execute(query, (json.dumps(settings), userId))
-        connection.commit()
+        persist_user_settings(userId, settings)
         return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/smartfactory/settings/{userId}")
+def get_user_settings(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to get user settings.
+    This endpoint receives a user ID and returns the settings for that user.
+    Args:
+        userId (str): The ID of the user.
+    Returns:
+        dict: A dictionary containing the user settings.
+    Raises:
+        HTTPException: If an unexpected error occurs.
+    """
+    try:
+        settings = retrieve_user_settings(userId)
+        return JSONResponse(content=settings, status_code=200)
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
@@ -127,11 +156,10 @@ def login(body: Login):
     """
     try:
         connection, cursor = get_db_connection()
-        query = "SELECT * FROM Users WHERE Username = %s"
-        cursor.execute(query, (body.user,))
-        result = cursor.fetchone()
-        cursor.close()
-        connection.close()
+        query = "SELECT * FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
+        response = query_db_with_params(cursor, connection, query, (body.user,))
+        result = response[0]
+        close_connection(connection, cursor)
 
         if not result or not password_context.verify(body.password, result[4]):
             logging.error("Invalid credentials")
@@ -145,11 +173,12 @@ def login(body: Login):
             SECRET_KEY,
             algorithm=ALGORITHM
         )
-        user = UserInfo(userId=result[0], username=result[1], email=result[2], type=result[3], access_token=access_token)
+        user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3], access_token=access_token)
         return JSONResponse(content=access_token, status_code=200)
         
     except Exception as e:
         logging.error("Exception: %s", str(e))
+        close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/smartfactory/logout")
@@ -164,11 +193,24 @@ def logout(userId: str):
     Raises:
         HTTPException: If the user is not present in the database.
     """
-    # Clients should delete the token from the client side
-    #TODO logout DB
-    if (not_found):
-        raise HTTPException(status_code=404, detail="User not found")
-    return JSONResponse(content={"message": "User logged out successfully"}, status_code=200)
+    try:
+        connection, cursor = get_db_connection()
+        query = "SELECT UserID FROM Users WHERE UserID=%s"
+        response = query_db_with_params(cursor, connection, query, (int(userId),))
+        logging.info(response)
+        if (len(response) == 0):
+            raise HTTPException(status_code=404, detail="User not found")
+        #TODO delete auth token client side or db if you decide to add it from db
+        close_connection(connection, cursor)
+        return JSONResponse(content={"message": "User logged out successfully"}, status_code=200)
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
+        raise e
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        close_connection(connection, cursor)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
 def register(body: Register):
@@ -182,13 +224,13 @@ def register(body: Register):
     Raises:
         HTTPException: If the user is already present in the database.
     """
-    #TODO register DB
     try:
         connection, cursor = get_db_connection()
         # Check if user already exists
         query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
-        cursor.execute(query, (body.username, body.email))
-        user_exists = cursor.fetchone()
+        response = query_db_with_params(cursor, connection, query, (body.username, body.email))
+        user_exists = response[0]
+        logging.info(user_exists)
 
         if user_exists:
             logging.error("User already registered")
@@ -197,18 +239,20 @@ def register(body: Register):
             hashed_password = password_context.hash(body.password)
 
             # Insert new user into the database
-            insert_query = "INSERT INTO Users (Username, Email, Role, Password, Sitename) VALUES (%s, %s, %s, %s, %s)"
-            cursor.execute(insert_query, (body.username, body.email, body.role, hashed_password, body.sitename))
+            query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
+            cursor.execute(query_insert, (body.username, body.email, body.role, hashed_password, body.site))
+            userid = cursor.fetchone()[0]
             connection.commit()
-            cursor.close()
-            connection.close()
-            return {"message": "User registered successfully"}
+            close_connection(connection, cursor)
+            return UserInfo(userId=str(userid), username=body.username, email=body.email, role=body.role, site=body.site)
 
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
         raise e
     except Exception as e:
         logging.error("Exception: %s", str(e))
+        close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/smartfactory/dashboardSettings/{dashboardId}")
@@ -243,4 +287,74 @@ def save_dashboard_settings(dashboardId: str, dashboard_settings: DashboardSetti
     pass # Placeholder for the implementation
 
 if __name__ == "__main__":
+    #TODO REMOVE, ONLY FOR TESTING
+    conn, cur = get_db_connection()
+    if cur:
+        print("Cursor obtained successfully")
+        # Don't forget to close the connection and cursor when done
+        create_table_queries = [
+            """
+            CREATE TABLE IF NOT EXISTS Users (
+            UserID SERIAL PRIMARY KEY,
+            Username VARCHAR(50) NOT NULL,
+            Email VARCHAR(50) NOT NULL,
+            Role VARCHAR(20) NOT NULL,
+            Password VARCHAR(50) NOT NULL,
+            SiteName VARCHAR(50) NOT NULL
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS Reports (
+            ReportID SERIAL PRIMARY KEY,
+            Name VARCHAR(100) NOT NULL,
+            Type VARCHAR(100) NOT NULL,
+            OwnerID INT NOT NULL,
+            GeneratedAt TIMESTAMP NOT NULL,
+            FilePath TEXT NOT NULL,
+            SiteName VARCHAR(50) NOT NULL,
+            FOREIGN KEY (OwnerID) REFERENCES Users(UserID)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS Alerts (
+            AlertID VARCHAR(36) PRIMARY KEY,
+            Title VARCHAR(255) NOT NULL,
+            Type VARCHAR(255) NOT NULL,
+            Description VARCHAR(255) NOT NULL,
+            TriggeredAt TIMESTAMP NOT NULL,
+            MachineName VARCHAR(255) NOT NULL,
+            isPush BIT NOT NULL,
+            Recipients VARCHAR(255) NOT NULL,
+            Severity VARCHAR(10) NOT NULL
+            CHECK (Severity IN ('Low', 'Medium', 'High'))
+            )
+            """
+        ]
+
+        for query in create_table_queries:
+            response = cur.execute(query)
+            conn.commit()
+            print(response)
+
+        insert_users_query = """
+        INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES
+        ('john_doe', 'john@example.com', 'admin', 'password123', 'SiteA'),
+        ('jane_smith', 'jane@example.com', 'user', 'password456', 'SiteB'),
+        ('alice_jones', 'alice@example.com', 'user', 'password789', 'SiteC')
+        """
+        cur.execute(insert_users_query)
+        conn.commit()
+        #print("Dummy data inserted into Users table")
+        #get_users_query = """
+        #SELECT username, email FROM Users
+        #"""
+        #cur.execute(get_users_query)
+        #conn.commit()
+        #print("Data retrieved from Users table")
+        #rows = cur.fetchall()
+        #for row in rows:
+        #    print(row)
+        cur.close()
+        conn.close()
+        
     uvicorn.run(app, port=8000, host="0.0.0.0")

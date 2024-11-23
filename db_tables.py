@@ -60,6 +60,13 @@ if __name__ == "__main__":
             Severity VARCHAR(10) NOT NULL
             CHECK (Severity IN ('Low', 'Medium', 'High'))
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS UserSettings (
+            UserID INT NOT NULL UNIQUE,
+            Settings TEXT NOT NULL,
+            FOREIGN KEY (UserID) REFERENCES Users(UserID)
+            )
             """
         ]
 

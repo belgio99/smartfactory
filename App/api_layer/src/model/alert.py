@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from enum import Enum
+import json
 
 class Severity(Enum):
     LOW = "Low"
@@ -32,3 +33,17 @@ class Alert(BaseModel):
     isEmail: bool
     recipients: List[str]
     severity: Severity
+
+    def to_dict(self):
+        return {
+            "alertId": self.alertId,
+            "title": self.title,
+            "type": self.type,
+            "description": self.description,
+            "triggeredAt": self.triggeredAt,
+            "machineName": self.machineName,
+            "isPush": self.isPush,
+            "isEmail": self.isEmail,
+            "recipients": self.recipients,
+            "severity": self.severity.value
+        }

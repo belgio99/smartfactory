@@ -5,30 +5,43 @@ from email.mime.text import MIMEText
 import logging
 from database.connection import query_db, get_db_connection
 import json
+from model.alert import Alert
 
 logging.basicConfig(level=logging.INFO)
 
-def send_email(to_email, title, text):
+email_subject = "{} - Alert: {}"
+
+email_body = """
+Hello,
+an alert was geenrated with the following details:
+
+Alert ID: {}
+Description: {}
+Triggered at: {}
+Machine Name: {}
+Severity: {}
+"""
+
+def send_email(to_email, alert):
     """
-    Sends an email with the specified title and text to the given recipient email address.
+    Sends an email notification with the given alert details.
 
     Args:
         to_email (str): The recipient's email address.
-        title (str): The subject of the email.
-        text (str): The body text of the email.
+        alert (Alert): An alert object containing details about the alert.
 
     Raises:
-        Exception: If there is an error sending the email, an exception is logged.
+        Exception: If there is an error sending the email.
     """
-    
     from_email = os.getenv('SMTP_EMAIL')
     from_password = os.getenv('SMTP_PASSWORD')
 
     msg = MIMEMultipart()
     msg['From'] = from_email
     msg['To'] = to_email
-    msg['Subject'] = title
-    msg.attach(MIMEText(text, 'plain'))
+    msg['Subject'] = email_subject.format(alert.severity.value.upper(), alert.title)
+    body = email_body.format(alert.alertId, alert.description, alert.triggeredAt, alert.machineName, alert.severity.value)
+    msg.attach(MIMEText(body, 'plain'))
 
     try:
         smtp_server = os.getenv('SMTP_SERVER')
@@ -117,16 +130,44 @@ def send_notification(alert):
     if alert.isEmail:
         for recipient in alert.recipients:
             logging.info("Sending email to %s", recipient)
-            send_email(recipient, alert.notificationTitle, alert.notificationText)
+            send_email(recipient, alert)
 
-def retrieve_notifications(userId): #TODO - Fix
-    query = "SELECT * FROM \"alerts\" WHERE \"recipients\" LIKE '%{}%'".format(userId)
+def retrieve_alerts(userId):
+    """
+    Retrieve alerts for a specific user from the database.
+    Args:
+        userId (str): The ID of the user for whom to retrieve alerts.
+    Returns:
+        list: A list of dictionaries, each representing an alert.
+    Raises:
+        Exception: If there is an error retrieving alerts from the database.
+    """
+    query = "SELECT * FROM Alerts WHERE recipients LIKE %s"
+
     try:
         connection, cursor = get_db_connection()
-        response = query_db(cursor, connection, query)
+        cursor.execute(query, ('%' + userId + '%',))
+        response = cursor.fetchall()
         cursor.close()
         connection.close()
-        return response.json()
+        
+        alerts = []
+        for row in response:
+            alert = Alert(
+                alertId=row[0],
+                title=row[1],
+                type=row[2],
+                description=row[3],
+                triggeredAt=str(row[4]),
+                machineName=row[5],
+                isPush=bool(row[6]),
+                isEmail=False,
+                recipients=json.loads(row[7]),
+                severity=row[8]
+            )
+            alerts.append(alert.to_dict())
+
+        return alerts
     except Exception as e:
-        logging.error("Error retrieving alerts for" + userId + ": " + str(e))
+        logging.error("Error retrieving alerts for " + userId + ": " + str(e))
         raise e
