@@ -12,6 +12,7 @@ import logging
 from api_auth import get_verify_api_key
 from model.user import *
 from typing import Annotated
+import json
 
 
 app = FastAPI()
@@ -41,15 +42,15 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
     """
 
     try:
-        logging.info("Received alert with title: %s", alert.notificationTitle)
+        logging.info("Received alert with title: %s", alert.description)
         
-        if not alert.notificationTitle:
+        if not alert.title:
             logging.error("Missing notification title")
             raise HTTPException(status_code=400, detail="Missing notification title")
         
-        if not alert.notificationText:
-            logging.error("Missing notification text")
-            raise HTTPException(status_code=400, detail="Missing notification text")
+        if not alert.description:
+            logging.error("Missing notification description")
+            raise HTTPException(status_code=400, detail="Missing notification description")
         
         if not alert.isPush and not alert.isEmail:
             logging.error("No notification method selected")
@@ -80,21 +81,34 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/smartfactory/notifications/{userId}")
-def get_notifications(userId: str):
+@app.get("/smartfactory/alerts/{userId}")
+def get_alerts(userId: str):
+    list = retrieve_notifications(userId)
+    return JSONResponse(content={"alerts": list}, status_code=200)
+
+@app.post("/smartfactory/settings/{userId}")
+def save_user_settings(userId: str, settings: dict):
     """
-    Endpoint to retrieve the list of notifications for a user.
-    This endpoint receives a user ID and returns the list of notifications for that user.
+    Endpoint to save user settings.
+    This endpoint receives a user ID and a JSON object with the settings to be saved.
     Args:
         userId (str): The ID of the user.
+        settings (dict): The settings to be saved.
     Returns:
-        List[Notification]: A list of notifications for the user.
+        Response: A response object with status code 200 if the settings are saved successfully.
     Raises:
         HTTPException: If an unexpected error occurs.
     """
-    
-    list = retrieve_notifications(userId)
-    return JSONResponse(content={"notifications": list}, status_code=200)
+    try:
+        connection = get_db_connection() #TODO - Fix when we'll have a more stable version of the database
+        cursor = connection.cursor()
+        query = "UPDATE UserSettings SET settings = %s WHERE userId = %s"
+        cursor.execute(query, (json.dumps(settings), userId))
+        connection.commit()
+        return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/smartfactory/login")
 def login(body: Login):
