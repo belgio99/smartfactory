@@ -17,8 +17,6 @@ def is_equal(formula1, formula2):
     return formula1 == formula2
 
 def get_kpi(kpi_id):
-    kpi_id = 'idle_time_sumd'
-
     query = f'*{kpi_id}'
     a = onto.search(iri = query)
     json_d = {'Status': -1}
@@ -61,14 +59,15 @@ def add_kpi(kpi_info):
     pass
 
 # -------------------------------------------- API Endpoints --------------------------------------------
-@app.get("/get_kpi")
+@app.get("/get_kpi") 
 async def get_kpi_endpoint(kpi_id: str):
     """
     Get KPI data by its ID via GET request.
     """
     kpi_data = get_kpi(kpi_id)
-    if not kpi_data:
+    if kpi_data["Status"] == -1:
         return {"error": "KPI not found"}
+
     return kpi_data
 
 @app.get("/retrieve")
