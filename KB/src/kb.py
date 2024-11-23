@@ -55,15 +55,16 @@ def get_kpi(kpi_id):
 
     return rdf_to_json(results) # Convert RDF results to JSON format
 
-def get_all_kpis(): #TODO: fix this function, it also returns the Machines
+def get_all_kpis():
     # Query to retrieve all unique KPI IDs
     query = """
-    PREFIX sa: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
-    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+    PREFIX sa-ontology: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
     SELECT DISTINCT ?kpi_id
     WHERE {
-        ?kpi sa:id ?kpi_id .
+        ?kpi rdf:type/rdfs:subClassOf* sa-ontology:KPI ;  # Seleziona solo istanze di sottoclassi di KPI
+            sa-ontology:id ?kpi_id .                    # Recupera l'id per ogni risorsa
     }
     """
     
