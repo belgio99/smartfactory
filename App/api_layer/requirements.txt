@@ -3,3 +3,5 @@ fastapi[standard]==0.109.0
 uvicorn[standard]==0.27.0
 pydruid[standard]==0.6.9
 psycopg2-binary==2.9.10
+passlib==1.7.4
+python-jose==3.3.0

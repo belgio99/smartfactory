@@ -1,18 +1,22 @@
+from multiprocessing import connection
 from fastapi.responses import JSONResponse
+from pydantic import Json
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.settings import DashboardSettings
 from notification_service import send_notification, retrieve_notifications
-from database.connection import get_db_connection
+from database.connection import get_db_connection, query_db
 from constants import *
 import logging
 
-from api_auth import get_verify_api_key
+from api_auth import ACCESS_TOKEN_EXPIRW_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context, get_current_user
 from model.user import *
 from typing import Annotated
 import json
+from datetime import datetime, timedelta, timezone
+from jose import jwt
 
 
 app = FastAPI()
@@ -100,8 +104,7 @@ def save_user_settings(userId: str, settings: dict):
         HTTPException: If an unexpected error occurs.
     """
     try:
-        connection = get_db_connection() #TODO - Fix when we'll have a more stable version of the database
-        cursor = connection.cursor()
+        connection, cursor = get_db_connection() #TODO - Fix when we'll have a more stable version of the database
         query = "UPDATE UserSettings SET settings = %s WHERE userId = %s"
         cursor.execute(query, (json.dumps(settings), userId))
         connection.commit()
@@ -123,26 +126,31 @@ def login(body: Login):
         HTTPException: If any validation check fails or an unexpected error occurs.
     """
     try:
-        connection = get_db_connection()
-        cursor = connection.cursor()
-        query = "SELECT Id, Username, Type, Email, Password FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=\'%s\'"
-        cursor.execute(query, (body.user))
-        results = cursor.fetchall()
-        logging.info(results)
-        #TODO check results
-        '''if (not_found):
-            raise HTTPException(status_code=404, detail="User not found")
-        elif (wrong_psw):
-            raise HTTPException(status_code=400, detail="Wrong credentials")'''
-        resp = UserInfo()
-        return resp
-    except HTTPException as e:
-        logging.error("HTTPException: %s", e.detail)
-        raise e
+        connection, cursor = get_db_connection()
+        query = "SELECT * FROM Users WHERE Username = %s"
+        cursor.execute(query, (body.user,))
+        result = cursor.fetchone()
+        cursor.close()
+        connection.close()
+
+        if not result or not password_context.verify(body.password, result[4]):
+            logging.error("Invalid credentials")
+            raise HTTPException(status_code=401, detail="Invalid username or password")
+   
+        logging.info("User logged in successfully")
+    
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRW_MINUTES)
+        access_token = jwt.encode(
+            {"sub": result[1], "role": result[3], "exp": datetime.now(timezone.utc) + access_token_expires},
+            SECRET_KEY,
+            algorithm=ALGORITHM
+        )
+        user = UserInfo(userId=result[0], username=result[1], email=result[2], type=result[3], access_token=access_token)
+        return JSONResponse(content=access_token, status_code=200)
+        
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.post("/smartfactory/logout")
 def logout(userId: str):
@@ -156,6 +164,7 @@ def logout(userId: str):
     Raises:
         HTTPException: If the user is not present in the database.
     """
+    # Clients should delete the token from the client side
     #TODO logout DB
     if (not_found):
         raise HTTPException(status_code=404, detail="User not found")
@@ -174,9 +183,33 @@ def register(body: Register):
         HTTPException: If the user is already present in the database.
     """
     #TODO register DB
-    if (found):
-        raise HTTPException(status_code=400, detail="User already registered")
-    return UserInfo()
+    try:
+        connection, cursor = get_db_connection()
+        # Check if user already exists
+        query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
+        cursor.execute(query, (body.username, body.email))
+        user_exists = cursor.fetchone()
+
+        if user_exists:
+            logging.error("User already registered")
+            raise HTTPException(status_code=400, detail="User already registered")
+        else:
+            hashed_password = password_context.hash(body.password)
+
+            # Insert new user into the database
+            insert_query = "INSERT INTO Users (Username, Email, Role, Password, Sitename) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(insert_query, (body.username, body.email, body.role, hashed_password, body.sitename))
+            connection.commit()
+            cursor.close()
+            connection.close()
+            return {"message": "User registered successfully"}
+
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        raise e
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/smartfactory/dashboardSettings/{dashboardId}")
 def load_dashboard_settings(dashboardId: str):
@@ -208,7 +241,6 @@ def save_dashboard_settings(dashboardId: str, dashboard_settings: DashboardSetti
         
     '''
     pass # Placeholder for the implementation
-
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")

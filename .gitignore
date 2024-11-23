@@ -1,2 +1,4 @@
 .venv/
 .SA_venv/
+.vscode/settings.json
+.DS_Store

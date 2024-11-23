@@ -31,7 +31,7 @@ if __name__ == "__main__":
             Username VARCHAR(50) NOT NULL,
             Email VARCHAR(50) NOT NULL,
             Role VARCHAR(20) NOT NULL,
-            Password VARCHAR(50) NOT NULL,
+            Password VARCHAR(250) NOT NULL,
             SiteName VARCHAR(50) NOT NULL
             )
             """,
@@ -69,25 +69,25 @@ if __name__ == "__main__":
             print(response)
 
 
-        #insert_users_query = """
-        #INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES
-        #('john_doe', 'john@example.com', 'admin', 'password123', 'SiteA'),
-        #('jane_smith', 'jane@example.com', 'user', 'password456', 'SiteB'),
-        #('alice_jones', 'alice@example.com', 'user', 'password789', 'SiteC')
-        #"""
-        #cur.execute(insert_users_query)
-        #conn.commit()
-        #print("Dummy data inserted into Users table")
+        insert_users_query = """
+        INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES
+        ('john_doe', 'john@example.com', 'admin', 'password123', 'SiteA'),
+        ('jane_smith', 'jane@example.com', 'user', 'password456', 'SiteB'),
+        ('alice_jones', 'alice@example.com', 'user', 'password789', 'SiteC')
+        """
+        cur.execute(insert_users_query)
+        conn.commit()
+        print("Dummy data inserted into Users table")
 
-        #get_users_query = """
-        #SELECT username, email FROM Users
-        #"""
-        #cur.execute(get_users_query)
-        #conn.commit()
-        #print("Data retrieved from Users table")
-        #rows = cur.fetchall()
-        #for row in rows:
-        #    print(row)
+        get_users_query = """
+        SELECT username, email FROM Users
+        """
+        cur.execute(get_users_query)
+        conn.commit()
+        print("Data retrieved from Users table")
+        rows = cur.fetchall()
+        for row in rows:
+           print(row)
 
 
         cur.close()
