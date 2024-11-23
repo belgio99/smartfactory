@@ -2,3 +2,4 @@
 fastapi[standard]==0.109.0
 uvicorn[standard]==0.27.0
 pydruid[standard]==0.6.9
+psycopg2-binary==2.9.10

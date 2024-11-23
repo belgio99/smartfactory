@@ -1,3 +1,4 @@
+#DEPRECATED for now
 import os
 druid_host = os.getenv('DRUID_HOST')
 druid_post = os.getenv('DRUID_PORT')

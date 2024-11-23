@@ -22,8 +22,11 @@ services:
             - SMTP_PORT=1025
             - SMTP_EMAIL=noreply@smartfactory.com
             - SMTP_PASSWORD=SmartAppPassword123
-            - DRUID_HOST=router
-            - DRUID_PORT=8888
+            - POSTGRES_HOST=db
+            - POSTGRES_PORT=5432
+            - POSTGRES_USER=postgres
+            - POSTGRES_PASSWORD=FoolishPassword
+            - POSTGRES_DB=postgres
         ports:
             - "8000:8000"
 
