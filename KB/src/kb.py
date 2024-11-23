@@ -1,5 +1,3 @@
-import rdflib
-from rdflib.namespace import RDF, Namespace
 from owlready2 import *
 from fastapi import FastAPI
 import json
@@ -55,8 +53,15 @@ def get_all_kpis():
 
     return all_kpis
 
-def add_kpi(kpi_info):
-    pass
+def is_valid(kpi_info):
+    formula = kpi_info['atomic_formula']
+
+    for kpi in onto.KPI.instances():
+        if is_equal(kpi.formula[0], formula):
+            return False
+    
+    #TODO: add reasoner checks
+    return True
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 @app.get("/get_kpi") 
@@ -79,8 +84,3 @@ async def get_kpi_endpoint():
     if not kpi_data:
         return {"error": "KPI not found"}
     return kpi_data
-
-if __name__ == "__main__":
-    result = get_all_kpis()
-    
-    print(json.dumps(result, indent=4))
