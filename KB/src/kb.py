@@ -57,6 +57,9 @@ def get_all_kpis():
 
     return all_kpis
 
+def add_kpi(kpi_info):
+    pass
+
 # -------------------------------------------- API Endpoints --------------------------------------------
 @app.get("/get_kpi")
 async def get_kpi_endpoint(kpi_id: str):
