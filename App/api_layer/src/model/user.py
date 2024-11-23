@@ -27,7 +27,8 @@ class Register(BaseModel):
     username: str
     email: str
     password: str
-    type: str
+    role: str
+    site: str
 
 class UserInfo(BaseModel):
     """
@@ -37,9 +38,11 @@ class UserInfo(BaseModel):
         userId (str): The id of the user (None in case of registration).
         username (str): The username of the user.
         email (str): The email of the user.
-        type (str): The type of the user.
+        role (str): The role of the user.
+        site (str): The site of the user.
     """
     userId: str
     username: str
     email: str
-    type: str
+    role: str
+    site: str
