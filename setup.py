@@ -2,12 +2,9 @@ import os
 import pandas as pd
 import requests
 import json
+from dotenv import load_dotenv
 
-# Druid API endpoint (modify the port if necessary)
-DRUID_ENDPOINT = 'http://localhost:8081/druid/indexer/v1/task'
-
-# Directory containing the fake object storage
-TO_LOAD_DIR = 'obj_storage'
+load_dotenv() # Load environment variables from the .env file
 
 # Helper function to convert different formats to CSV if needed
 def convert_to_csv(file_path):
@@ -59,7 +56,7 @@ def submit_to_druid(file_path):
                 "type": "index",
                 "inputSource": {
                     "type": "local",
-                    "baseDir": "/" + TO_LOAD_DIR,
+                    "baseDir": "/" + os.getenv('TO_LOAD_DIR'),
                     "filter": os.path.basename(file_path)
                 },
                 "inputFormat": {
@@ -73,7 +70,7 @@ def submit_to_druid(file_path):
         }
     }
 
-    response = requests.post(DRUID_ENDPOINT, json=ingestion_spec)
+    response = requests.post(os.getenv('DRUID_INSERT_ENDPOINT'), json=ingestion_spec)
 
     if response.status_code == 200:
         print(f"Task submitted successfully for file: {file_path}")
