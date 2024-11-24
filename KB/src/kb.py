@@ -1,6 +1,7 @@
 from owlready2 import *
 from fastapi import FastAPI
 import sympy
+import json
 
 
 ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
@@ -9,15 +10,16 @@ app = FastAPI()
 
 def get_kpi(kpi_id):
     query = f'*{kpi_id}'
-    a = onto.search(iri = query)
+    results = onto.search(iri = query)
     json_d = {'Status': -1}
 
-    if len(a) == 0:
+    if len(results) == 0:
         return json_d
 
-    for prop in a[0].get_properties():
-        for value in prop[a[0]]:
-            json_d[prop.name] = value
+    for prop in results[0].get_properties():
+        for value in prop[results[0]]:
+            if isinstance(prop, DataPropertyClass):
+                json_d[prop.name] = value
     
     json_d["Status"] = 0
 
@@ -65,18 +67,13 @@ def is_valid(kpi_info):
 
         return formula1 == formula2
     
-    formula = kpi_info['atomic_formula']
+    formula = kpi_info['atomic_formula'][0]
 
     for kpi in onto.KPI.instances():
         if kpi.formula[0] != '-' and formula != '-':
             if is_equal(kpi.atomic_formula[0], formula):
                 return False
-        
-    with onto:
-        try:
-            sync_reasoner()
-        except:
-            return False
+            
     return True
 
 def rdf_to_txt(onto, output_file):
@@ -132,23 +129,26 @@ def rdf_to_txt(onto, output_file):
                     else:  # Valore letterale (stringa, numero, ecc.)
                         file.write(f"  {prop.name}: {value}\n")
 
-if __name__ == "__main__":
-    kpi_dict = {
-        'id': ['kpi_1'],
-        'name': ['KPI 1'],
-        'description': ['KPI 1 description'],
-        'atomic_formula': 'working_time_sum/(working_time_sum+idle_time_sum)',
-        'formula': ['(x1 + x2) / 2'],
-        'unit': ['unit'],
-        'threshold': [10],
-        'target': [20],
-        'direction': ['up'],
-        'source': ['source'],
-        'frequency': ['daily'],
-        'responsible': ['responsible']
-    }
+def add_kpi(kpi_info):
+    if not is_valid(kpi_info):
+        return False
+    
+    custom_class = onto.CustomKPItmp
+    new_kpi = custom_class(kpi_info['id'][0], id=kpi_info['id'], description=kpi_info['description'], 
+                           atomic_formula=kpi_info['atomic_formula'], formula=kpi_info['formula'], 
+                           unit=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'])
+    
+    #FIXME: add the object properties
+    with onto:
+        try:
+            sync_reasoner()
+        except Exception as error:
+            return False
+    return True
 
-    print(is_valid(kpi_dict))   
+
+if __name__ == "__main__":
+    print(json.dumps(get_kpi('working_time_max'), indent=4))
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 @app.get("/get_kpi") 
