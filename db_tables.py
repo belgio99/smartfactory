@@ -37,7 +37,7 @@ if __name__ == "__main__":
             Role VARCHAR(20) NOT NULL,
             Password VARCHAR(50) NOT NULL,
             SiteName VARCHAR(50) NOT NULL,
-            UserSettings TEXT
+            UserSettings TEXT,
             UserDashboards TEXT
             )
             """,
