@@ -158,6 +158,7 @@ services:
             - router
         env_file:
             - environment
+
     db:
         container_name: db
         env_file:

@@ -1,14 +1,18 @@
+import os
+from dotenv import load_dotenv
 import psycopg2
+
+load_dotenv() # Load environment variables from the .env file
 
 def get_postgres_cursor():
     try:
         # Connect to your postgres DB
         connection = psycopg2.connect(
-            dbname="postgres",
-            user="postgres",
-            password="FoolishPassword",
-            host="localhost",
-            port="5432"
+            dbname=os.getenv('POSTGRES_DB'),
+            user=os.getenv('POSTGRES_USER'),
+            password=os.getenv('POSTGRES_PASSWORD'),
+            host=os.getenv('POSTGRES_HOST'),
+            port=os.getenv('POSTGRES_PORT')
         )
         
         # Create a cursor object
@@ -32,7 +36,9 @@ if __name__ == "__main__":
             Email VARCHAR(50) NOT NULL,
             Role VARCHAR(20) NOT NULL,
             Password VARCHAR(250) NOT NULL,
-            SiteName VARCHAR(50) NOT NULL
+            SiteName VARCHAR(50) NOT NULL,
+            UserSettings TEXT,
+            UserDashboards TEXT
             )
             """,
             """
@@ -61,13 +67,6 @@ if __name__ == "__main__":
             CHECK (Severity IN ('Low', 'Medium', 'High'))
             )
             """,
-            """
-            CREATE TABLE IF NOT EXISTS UserSettings (
-            UserID INT NOT NULL UNIQUE,
-            Settings TEXT NOT NULL,
-            FOREIGN KEY (UserID) REFERENCES Users(UserID)
-            )
-            """
         ]
 
         for query in create_table_queries:
