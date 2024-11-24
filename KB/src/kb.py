@@ -7,12 +7,6 @@ ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load()
 app = FastAPI()
 
-def is_equal(formula1, formula2):
-    formula1 = sympy.simplify(sympy.sympify(formula1))
-    formula2 = sympy.simplify(sympy.sympify(formula2))
-
-    return formula1 == formula2
-
 def get_kpi(kpi_id):
     query = f'*{kpi_id}'
     a = onto.search(iri = query)
@@ -65,13 +59,24 @@ def get_all_machines():
     return all_machines
 
 def is_valid(kpi_info):
+    def is_equal(formula1, formula2):
+        formula1 = sympy.simplify(sympy.sympify(formula1))
+        formula2 = sympy.simplify(sympy.sympify(formula2))
+
+        return formula1 == formula2
+    
     formula = kpi_info['atomic_formula']
 
     for kpi in onto.KPI.instances():
-        if is_equal(kpi.formula[0], formula):
+        if kpi.formula[0] != '-' and formula != '-':
+            if is_equal(kpi.atomic_formula[0], formula):
+                return False
+        
+    with onto:
+        try:
+            sync_reasoner()
+        except:
             return False
-    
-    #TODO: add reasoner checks
     return True
 
 def rdf_to_txt(onto, output_file):
@@ -128,7 +133,22 @@ def rdf_to_txt(onto, output_file):
                         file.write(f"  {prop.name}: {value}\n")
 
 if __name__ == "__main__":
-    rdf_to_txt(onto, "ontology_dump.txt")
+    kpi_dict = {
+        'id': ['kpi_1'],
+        'name': ['KPI 1'],
+        'description': ['KPI 1 description'],
+        'atomic_formula': 'working_time_sum/(working_time_sum+idle_time_sum)',
+        'formula': ['(x1 + x2) / 2'],
+        'unit': ['unit'],
+        'threshold': [10],
+        'target': [20],
+        'direction': ['up'],
+        'source': ['source'],
+        'frequency': ['daily'],
+        'responsible': ['responsible']
+    }
+
+    print(is_valid(kpi_dict))   
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 @app.get("/get_kpi") 
