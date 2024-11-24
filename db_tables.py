@@ -1,14 +1,18 @@
+import os
+from dotenv import load_dotenv
 import psycopg2
+
+#load_dotenv() # Load environment variables from the .env file
 
 def get_postgres_cursor():
     try:
         # Connect to your postgres DB
         connection = psycopg2.connect(
-            dbname="postgres",
-            user="postgres",
-            password="FoolishPassword",
-            host="localhost",
-            port="5432"
+            dbname='postgres',
+            user='postgres',
+            password='FoolishPassword',
+            host='localhost',
+            port='5432'
         )
         
         # Create a cursor object
@@ -31,8 +35,10 @@ if __name__ == "__main__":
             Username VARCHAR(50) NOT NULL,
             Email VARCHAR(50) NOT NULL,
             Role VARCHAR(20) NOT NULL,
-            Password VARCHAR(250) NOT NULL,
-            SiteName VARCHAR(50) NOT NULL
+            Password VARCHAR(50) NOT NULL,
+            SiteName VARCHAR(50) NOT NULL,
+            UserSettings TEXT,
+            UserDashboards TEXT
             )
             """,
             """
@@ -62,10 +68,9 @@ if __name__ == "__main__":
             )
             """,
             """
-            CREATE TABLE IF NOT EXISTS UserSettings (
-            UserID INT NOT NULL UNIQUE,
-            Settings TEXT NOT NULL,
-            FOREIGN KEY (UserID) REFERENCES Users(UserID)
+            CREATE TABLE IF NOT EXISTS Microservices (
+            ServiceID VARCHAR(20) PRIMARY KEY,
+            Key VARCHAR(50) NOT NULL
             )
             """
         ]
@@ -75,6 +80,21 @@ if __name__ == "__main__":
             conn.commit()
             print(response)
 
+
+        # Insert dummy data into the Microservices table
+
+        dummy_microservices_keys_query = """
+        INSERT INTO Microservices (ServiceID, Key) VALUES
+        ('api-layer', '06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7'),
+        ('ai-agent', 'a3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
+        ('kpi-engine', 'b3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
+        ('knowledge-base', 'c3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
+        ('data', '12d326d6-8895-49b9-8e1b-a760462ac13f'),
+        ('gui', '111c50cc-6b03-4c01-9d2f-aac6b661b716');
+        """
+        cur.execute(dummy_microservices_keys_query)
+        conn.commit()
+        print("Dummy data inserted into Microservices table")
 
         # insert_users_query = """
         # INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES

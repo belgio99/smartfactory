@@ -19,8 +19,25 @@ api_key_header = APIKeyHeader(name="X-API-Key")
 
 def retrieve_keys(microservice_id: str):
     # Retrieve the API key for the specified microservice from the database
-    # TODO: database keys retrieval
-    return json.load(open("./src/dummy_keys.json"))["microservice"][microservice_id]
+    connection, cursor = get_db_connection()
+    if connection is None or cursor is None:
+        logging.error("Database connection failed")
+        return None
+    try:
+        query = "SELECT KEY FROM Microservices WHERE ServiceID = %s"
+        cursor.execute(query, (microservice_id,))
+        row = cursor.fetchone()
+        if row:
+            result = row[0]
+        else:
+            result = None
+    except Exception as e:
+        logging.error("Database query failed: %s", str(e))
+        result = None
+    finally:
+        cursor.close()
+        connection.close()
+    return result
     
 def get_verify_api_key(microservice_ids: list):
     async def verify_api_key(api_key: str = Depends(api_key_header)):
