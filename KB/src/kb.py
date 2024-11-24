@@ -1,6 +1,5 @@
 from owlready2 import *
 from fastapi import FastAPI
-import json
 import sympy
 
 
@@ -53,6 +52,18 @@ def get_all_kpis():
 
     return all_kpis
 
+def get_all_machines():
+    """
+    Retrieve all machines and their information as dict
+    """
+    # Recupera tutte le istanze di KPI
+    all_machines = {}
+    for machine in onto.Machine.instances():
+        machine_id = str(machine.id[0])
+        all_machines[machine_id] = extract_datatype_properties(machine)
+
+    return all_machines
+
 def is_valid(kpi_info):
     formula = kpi_info['atomic_formula']
 
@@ -62,6 +73,62 @@ def is_valid(kpi_info):
     
     #TODO: add reasoner checks
     return True
+
+def rdf_to_txt(onto, output_file):
+    def write_class_hierarchy(file, cls, indent=0):
+        """
+        Funzione ricorsiva per scrivere la gerarchia delle classi, comprese le sottoclassi.
+        """
+        file.write("  " * indent + f"Class: {cls.name}\n")
+        
+        # Scrivere le sottoclassi
+        for subclass in cls.subclasses():
+            write_class_hierarchy(file, subclass, indent + 1)
+    
+    with open(output_file, "w", encoding="utf-8") as file:
+        # Scrivi tutte le classi
+        file.write("Classes:\n")
+        for cls in onto.classes():
+            if cls != Thing:
+                write_class_hierarchy(file, cls)
+
+        # Scrivi tutte le proprietà (ObjectProperty, DataProperty, AnnotationProperty)
+        file.write("\nProperties:\n")
+        for prop in onto.properties():
+            file.write(f"Property: {prop.name}\n")
+            
+            if isinstance(prop, ObjectPropertyClass):
+                # Per le ObjectProperty, scriviamo dominio e range
+                domain = prop.domain
+                range_ = prop.range
+                file.write(f"  Type: ObjectProperty\n")
+                file.write(f"  Domain: {domain[0].name}\n")
+                file.write(f"  Range: {range_[0].name}\n")
+            elif isinstance(prop, DataPropertyClass):
+                # Per le DataProperty, scriviamo anche il tipo del valore
+                data_type = prop.range
+                file.write(f"  Type: DataProperty\n")
+                file.write(f"  Data Type: {data_type[0].__name__}\n")
+            elif isinstance(prop, AnnotationPropertyClass):
+                file.write("  Type: AnnotationProperty\n")
+
+        # Scrivi tutti gli individui e le loro proprietà
+        file.write("\nIndividuals:\n")
+        for individual in onto.individuals():
+            file.write(f"Individual: {individual.name}\n")
+            
+            # Itera sulle proprietà dell'individuo
+            for prop in individual.get_properties():
+                values = prop[individual]
+                for value in values:
+                    # Controlla se il valore è un oggetto o un valore letterale
+                    if isinstance(value, Thing):  # Se il valore è un oggetto RDF
+                        file.write(f"  {prop.name}: {value.name}\n")
+                    else:  # Valore letterale (stringa, numero, ecc.)
+                        file.write(f"  {prop.name}: {value}\n")
+
+if __name__ == "__main__":
+    rdf_to_txt(onto, "ontology_dump.txt")
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 @app.get("/get_kpi") 
