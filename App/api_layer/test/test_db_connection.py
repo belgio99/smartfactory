@@ -1,6 +1,11 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from db_utils import get_db_connection, query_db, query_db_with_params, close_connection
+import os
+import sys
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/database')))
+
+from connection import get_db_connection, query_db, query_db_with_params, close_connection
 
 class TestDatabaseUtils(unittest.TestCase):
 

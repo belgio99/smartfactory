@@ -17,25 +17,29 @@ def persist_user_settings(userId, settings):
     Raises:
         Exception: If there is an error while saving the user settings to the database.
     """
-    past_settings = retrieve_user_settings(userId)
-    if past_settings:
-        query = "UPDATE UserSettings SET Settings = %s WHERE UserID = %s"
-        values = (json.dumps(settings), userId)
-    else:
-        query = "INSERT INTO UserSettings (UserID, Settings) VALUES (%s, %s)"
-        values = (userId, json.dumps(settings))
+    logging.info("Checking if user is present in the database")
+    if verify_user_presence(userId) == False:
+        logging.error("User is not present in the database")
+        return False
+    logging.info("User is present in the database")
+    
+    query = "UPDATE Users SET UserSettings = %s WHERE UserID = %s"
+    values = (json.dumps(settings), userId)
 
     logging.info("Saving user settings to database")
     try:
         connection, cursor = get_db_connection()
         cursor.execute(query, values)
         connection.commit()
-        cursor.close()
-        connection.close()
         logging.info("User settings saved successfully")
+
+        return True
     except Exception as e:
         logging.error("Error saving user settings to database: " + str(e))
         raise e
+    finally:
+        cursor.close()
+        connection.close()
     
 def retrieve_user_settings(userId):
     """
@@ -46,7 +50,7 @@ def retrieve_user_settings(userId):
     Returns:
         dict: A dictionary containing the user settings.
     """
-    query = "SELECT Settings FROM UserSettings WHERE UserID = %s"
+    query = "SELECT UserSettings FROM Users WHERE UserID = %s"
     values = (userId,)
 
     logging.info("Retrieving user settings from database")
@@ -54,13 +58,44 @@ def retrieve_user_settings(userId):
         connection, cursor = get_db_connection()
         cursor.execute(query, values)
         settings = cursor.fetchone()
-        cursor.close()
-        connection.close()
 
-        if settings:
+        if settings and settings[0] is not None:
             return json.loads(settings[0])
         else:
             return {}
     except Exception as e:
         logging.error("Error retrieving user settings from database: " + str(e))
         raise e
+    finally:
+        cursor.close()
+        connection.close()
+    
+def verify_user_presence(userId):
+    """
+    Verifies if a user is present in the database.
+
+    Args:
+        userId (int): The ID of the user to verify.
+
+    Returns:
+        bool: True if the user is present, False otherwise.
+
+    Raises:
+        Exception: If there is an issue with the database connection or query execution.
+    """
+    query = "SELECT COUNT(*) FROM Users WHERE UserID = %s"
+    values = (userId,)
+
+    try:
+        connection, cursor = get_db_connection()
+        cursor.execute(query, values)
+        result = cursor.fetchone()[0]
+        connection.commit()
+    except Exception as e:
+        logging.error("Error while checking the presence of the user: " + str(e))
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
+
+    return result > 0

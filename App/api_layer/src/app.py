@@ -1,8 +1,7 @@
-from multiprocessing import connection
 from fastapi.responses import JSONResponse
 from pydantic import Json
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, status, Response
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.settings import DashboardSettings
@@ -12,10 +11,8 @@ from database.connection import get_db_connection, query_db_with_params, close_c
 from constants import *
 import logging
 
-from api_auth import ACCESS_TOKEN_EXPIRW_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context, get_current_user
+from api_auth import ACCESS_TOKEN_EXPIRW_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
-from typing import Annotated
-import json
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 
@@ -117,7 +114,9 @@ def save_user_settings(userId: str, settings: dict, api_key: str = Depends(get_v
         HTTPException: If an unexpected error occurs.
     """
     try:
-        persist_user_settings(userId, settings)
+        if persist_user_settings(userId, settings) == False:
+            raise HTTPException(status_code=404, detail="User not found")
+        
         return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
     except Exception as e:
         logging.error("Exception: %s", str(e))
@@ -288,74 +287,4 @@ def save_dashboard_settings(dashboardId: str, dashboard_settings: DashboardSetti
     pass # Placeholder for the implementation
 
 if __name__ == "__main__":
-    #TODO REMOVE, ONLY FOR TESTING
-    conn, cur = get_db_connection()
-    if cur:
-        print("Cursor obtained successfully")
-        # Don't forget to close the connection and cursor when done
-        create_table_queries = [
-            """
-            CREATE TABLE IF NOT EXISTS Users (
-            UserID SERIAL PRIMARY KEY,
-            Username VARCHAR(50) NOT NULL,
-            Email VARCHAR(50) NOT NULL,
-            Role VARCHAR(20) NOT NULL,
-            Password VARCHAR(250) NOT NULL,
-            SiteName VARCHAR(50) NOT NULL
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS Reports (
-            ReportID SERIAL PRIMARY KEY,
-            Name VARCHAR(100) NOT NULL,
-            Type VARCHAR(100) NOT NULL,
-            OwnerID INT NOT NULL,
-            GeneratedAt TIMESTAMP NOT NULL,
-            FilePath TEXT NOT NULL,
-            SiteName VARCHAR(50) NOT NULL,
-            FOREIGN KEY (OwnerID) REFERENCES Users(UserID)
-            )
-            """,
-            """
-            CREATE TABLE IF NOT EXISTS Alerts (
-            AlertID VARCHAR(36) PRIMARY KEY,
-            Title VARCHAR(255) NOT NULL,
-            Type VARCHAR(255) NOT NULL,
-            Description VARCHAR(255) NOT NULL,
-            TriggeredAt TIMESTAMP NOT NULL,
-            MachineName VARCHAR(255) NOT NULL,
-            isPush BIT NOT NULL,
-            Recipients VARCHAR(255) NOT NULL,
-            Severity VARCHAR(10) NOT NULL
-            CHECK (Severity IN ('Low', 'Medium', 'High'))
-            )
-            """
-        ]
-
-        for query in create_table_queries:
-            response = cur.execute(query)
-            conn.commit()
-            print(response)
-
-        insert_users_query = """
-        INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES
-        ('john_doe', 'john@example.com', 'admin', 'password123', 'SiteA'),
-        ('jane_smith', 'jane@example.com', 'user', 'password456', 'SiteB'),
-        ('alice_jones', 'alice@example.com', 'user', 'password789', 'SiteC')
-        """
-        cur.execute(insert_users_query)
-        conn.commit()
-        #print("Dummy data inserted into Users table")
-        #get_users_query = """
-        #SELECT username, email FROM Users
-        #"""
-        #cur.execute(get_users_query)
-        #conn.commit()
-        #print("Data retrieved from Users table")
-        #rows = cur.fetchall()
-        #for row in rows:
-        #    print(row)
-        cur.close()
-        conn.close()
-        
     uvicorn.run(app, port=8000, host="0.0.0.0")

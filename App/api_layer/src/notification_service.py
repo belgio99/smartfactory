@@ -51,12 +51,12 @@ def send_email(to_email, alert):
         server.login(from_email, from_password)
         logging.info("Sending email")
         server.send_message(msg)
-        server.quit()
         logging.info("Email sent successfully")
     except Exception as e:
         logging.error("Error sending email: " + str(e))
-        server.quit()
         raise e
+    finally:
+        server.quit()
 
 def save_alert(alert):
     """
@@ -98,12 +98,13 @@ def save_alert(alert):
     try:
         connection, cursor = get_db_connection()
         query_db(cursor, connection, query)
-        cursor.close()
-        connection.close()
         logging.info("Alert inserted successfully")
     except Exception as e:
         logging.error("Error inserting alert into database: " + str(e))
         raise e    
+    finally:
+        cursor.close()
+        connection.close()
 
 def send_notification(alert):
     """
@@ -148,8 +149,6 @@ def retrieve_alerts(userId):
         connection, cursor = get_db_connection()
         cursor.execute(query, ('%' + userId + '%',))
         response = cursor.fetchall()
-        cursor.close()
-        connection.close()
         
         alerts = []
         for row in response:
@@ -171,3 +170,6 @@ def retrieve_alerts(userId):
     except Exception as e:
         logging.error("Error retrieving alerts for " + userId + ": " + str(e))
         raise e
+    finally:
+        cursor.close()
+        connection.close()
