@@ -5,6 +5,7 @@ import json
 
 
 ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
+TMP_ONTOLOGY_PATH = "../Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load()
 app = FastAPI()
 
@@ -136,19 +137,31 @@ def add_kpi(kpi_info):
     custom_class = onto.CustomKPItmp
     new_kpi = custom_class(kpi_info['id'][0], id=kpi_info['id'], description=kpi_info['description'], 
                            atomic_formula=kpi_info['atomic_formula'], formula=kpi_info['formula'], 
-                           unit=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'])
+                           unit_measure=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'])
     
     #FIXME: add the object properties
     with onto:
         try:
             sync_reasoner()
+            onto.save(file = TMP_ONTOLOGY_PATH, format = "rdfxml")
         except Exception as error:
             return False
+    
     return True
 
 
 if __name__ == "__main__":
-    print(json.dumps(get_kpi('working_time_max'), indent=4))
+    kpi_info = {
+        'id': ['KPI_1'],
+        'description': ['Test KPI'],
+        'atomic_formula': ['(A + B) + C'],
+        'formula': ['(A + B) + C'],
+        'unit_measure': ['flfl'],
+        'forecastable': [True],
+        'atomic': [False]
+    }
+
+    add_kpi(kpi_info)
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 @app.get("/get_kpi") 
