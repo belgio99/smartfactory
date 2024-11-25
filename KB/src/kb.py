@@ -31,17 +31,17 @@ def extract_datatype_properties(instance):
     Extract datatype properties and their values from an instance.
     """
     datatype_data = {}
-    for prop in onto.data_properties():  # Solo datatype properties
-        value = prop[instance]  # Recupera il valore della proprietà per l'istanza
-        if value:  # Controlla che la proprietà abbia un valore
-            datatype_data[prop.name] = value[0]  # Assumiamo un singolo valore per proprietà
+    for prop in onto.data_properties():  # only datatype properties
+        value = prop[instance] 
+        if value: 
+            datatype_data[prop.name] = value[0]  # assume single value
     return datatype_data
 
 def get_all_kpis():
     """
     Retrieve all KPIs and their information as dict
     """
-    # Recupera tutte le istanze di KPI
+ 
     all_kpis = {}
     for kpi in onto.KPI.instances():
         kpi_id = str(kpi.id[0])
@@ -53,7 +53,7 @@ def get_all_machines():
     """
     Retrieve all machines and their information as dict
     """
-    # Recupera tutte le istanze di KPI
+
     all_machines = {}
     for machine in onto.Machine.instances():
         machine_id = str(machine.id[0])
@@ -84,50 +84,43 @@ def rdf_to_txt(onto, output_file):
         """
         file.write("  " * indent + f"Class: {cls.name}\n")
         
-        # Scrivere le sottoclassi
         for subclass in cls.subclasses():
             write_class_hierarchy(file, subclass, indent + 1)
     
     with open(output_file, "w", encoding="utf-8") as file:
-        # Scrivi tutte le classi
         file.write("Classes:\n")
         for cls in onto.classes():
             if cls != Thing:
                 write_class_hierarchy(file, cls)
 
-        # Scrivi tutte le proprietà (ObjectProperty, DataProperty, AnnotationProperty)
         file.write("\nProperties:\n")
         for prop in onto.properties():
             file.write(f"Property: {prop.name}\n")
             
             if isinstance(prop, ObjectPropertyClass):
-                # Per le ObjectProperty, scriviamo dominio e range
                 domain = prop.domain
                 range_ = prop.range
                 file.write(f"  Type: ObjectProperty\n")
                 file.write(f"  Domain: {domain[0].name}\n")
                 file.write(f"  Range: {range_[0].name}\n")
             elif isinstance(prop, DataPropertyClass):
-                # Per le DataProperty, scriviamo anche il tipo del valore
                 data_type = prop.range
                 file.write(f"  Type: DataProperty\n")
                 file.write(f"  Data Type: {data_type[0].__name__}\n")
             elif isinstance(prop, AnnotationPropertyClass):
                 file.write("  Type: AnnotationProperty\n")
 
-        # Scrivi tutti gli individui e le loro proprietà
         file.write("\nIndividuals:\n")
         for individual in onto.individuals():
             file.write(f"Individual: {individual.name}\n")
             
-            # Itera sulle proprietà dell'individuo
             for prop in individual.get_properties():
                 values = prop[individual]
                 for value in values:
-                    # Controlla se il valore è un oggetto o un valore letterale
-                    if isinstance(value, Thing):  # Se il valore è un oggetto RDF
+                   
+                    if isinstance(value, Thing): 
                         file.write(f"  {prop.name}: {value.name}\n")
-                    else:  # Valore letterale (stringa, numero, ecc.)
+                    else: 
                         file.write(f"  {prop.name}: {value}\n")
 
 def add_kpi(kpi_info):
