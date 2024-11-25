@@ -37,13 +37,21 @@ def explain_model_with_lime(
         training_data = training_data.detach().cpu().numpy()
 
     # Flatten the training data to 2D array (num_samples, num_features) for LIME
-    training_data_flat = training_data.reshape(training_data.shape[0], -1)
+    # For multidimensional input, flatten both the time steps and the features
+    num_samples, seq_length, input_size = training_data.shape
+    training_data_flat = training_data.reshape(num_samples, seq_length * input_size)
+
+    # Create feature names for multidimensional inputs
+    feature_names = []
+    for t in range(seq_length):
+        for f in range(input_size):
+            feature_names.append(f'Time_{t}_Feature_{f}')
 
     # Create the LIME explainer with the flattened training data
     explainer = LimeTabularExplainer(
         training_data_flat,
         mode='regression',
-        feature_names=[f'Time_{i}' for i in range(training_data_flat.shape[1])],
+        feature_names=feature_names,
         verbose=verbose
     )
 
@@ -60,8 +68,6 @@ def explain_model_with_lime(
         """
         # Reshape data back to (batch_size, seq_length, input_size)
         batch_size = data.shape[0]
-        seq_length = input_data.shape[0]
-        input_size = input_data.shape[1]
         inputs = data.reshape(batch_size, seq_length, input_size)
         # Convert numpy array to torch tensor
         inputs = torch.from_numpy(inputs).float().to(next(model.parameters()).device)
@@ -142,7 +148,7 @@ def main():
             return out.squeeze()
 
     # Hyperparameters
-    input_size = 1
+    input_size = 3  # Changed input_size to 3 for multidimensional input
     hidden_size = 16
     num_layers = 1
     output_size = 1
@@ -155,20 +161,25 @@ def main():
     # Generate dummy training data
     num_samples = 100
     seq_length = 50
+
+    # Generate multidimensional data
     X_train = []
     y_train = []
     for _ in range(num_samples):
-        # Random frequency and phase for sine wave
-        freq = np.random.uniform(0.1, 0.5)
-        phase = np.random.uniform(0, 2 * np.pi)
-        # Add some noise
-        noise = np.random.normal(0, 0.1, seq_length)
-        # Generate sine wave data with noise
-        x = np.sin(np.linspace(0, 2 * np.pi * freq * seq_length, seq_length) + phase) + noise
+        # Generate random frequencies and phases for each feature
+        freqs = np.random.uniform(0.1, 0.5, input_size)
+        phases = np.random.uniform(0, 2 * np.pi, input_size)
+        # Generate time steps
+        t = np.linspace(0, 2 * np.pi * seq_length, seq_length)
+        # Generate data for each feature
+        x = np.array([np.sin(freq * t + phase) for freq, phase in zip(freqs, phases)]).T
+        # Add noise
+        x += np.random.normal(0, 0.1, x.shape)
         X_train.append(x)
-        y_train.append(x[-1])  # Use the last value as the target
+        # Use the last value of the first feature as the target
+        y_train.append(x[-1, 0])
     # Convert lists to numpy arrays
-    X_train = np.array(X_train).reshape(num_samples, seq_length, input_size)
+    X_train = np.array(X_train)  # Shape: (num_samples, seq_length, input_size)
     y_train = np.array(y_train)
 
     # Convert to tensors and move to device
@@ -188,11 +199,12 @@ def main():
             print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
 
     # Generate a test instance
-    freq = np.random.uniform(0.1, 0.5)
-    phase = np.random.uniform(0, 2 * np.pi)
-    noise = np.random.normal(0, 0.1, seq_length)
-    x_test = np.sin(np.linspace(0, 2 * np.pi * freq * seq_length, seq_length) + phase) + noise
-    x_test = x_test.reshape(seq_length, input_size)
+    freqs = np.random.uniform(0.1, 0.5, input_size)
+    phases = np.random.uniform(0, 2 * np.pi, input_size)
+    t = np.linspace(0, 2 * np.pi * seq_length, seq_length)
+    x_test = np.array([np.sin(freq * t + phase) for freq, phase in zip(freqs, phases)]).T
+    x_test += np.random.normal(0, 0.1, x_test.shape)
+    # x_test shape: (seq_length, input_size)
 
     # Explain the model prediction on the test instance
     exp = explain_model_with_lime(model, X_train, x_test, verbose=True)
