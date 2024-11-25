@@ -1,0 +1,50 @@
+USER QUERY: "{_USER_QUERY_}"
+
+INSTRUCTION: 
+"Complete the report template below using the information provided in the "CONTEXT DATA" section. Replace all placeholders enclosed in square brackets ([]) with the corresponding data and remove the brackets. Specifically:
+
+- [_DATE - DATE PERIOD_] should represent the overall period covered by the machine data.
+- [_DESCRIPTION_] should be a concise description of the report's purpose, such as "quality report" if it includes metrics like good_cycles and bad_cycles.
+- [MACHINE_NAME] is the name of the machine being analyzed.
+- "Computable  KPIs" is a list of Key Performance Indicators (KPIs) and their associated values. For each KPI you're given ini input the mean the max and the min value on the overall period
+- "Forecasted KPI Predictions" is a list of forecastable KPIs and their associated values.
+- [OVERAL_SUMMARY_ON_ALL_MACHINES] is a brief textual summary that compares the KPI values for this machine across the specified period with other machines.
+Ensure the report is clear, concise, and aligned with the data provided in the context. "
+
+[_DATE - DATE PERIOD_] REPORT
+
+Description: [_DESCRIPTION_]
+
+Machine_1: [MACHINE_1_NAME]
+
+Computable KPI: 
+- kpi_1 mean | max | min: mean_kpi_1 | max_kpi_1 | min_kpi_1
+- kpi_2 mean | max | min: mean_kpi_2 | max_kpi_2 | min_kpi_2
+Other kpis ...
+
+Forecasted KPI Predictions:
+- kpi_1: value_kpi_1
+- kpi_2: value_kpi_2
+Other kpis ...
+
+Machine_2: [MACHINE_2_NAME]
+
+Computable KPI: 
+- kpi_1 mean | max | min: mean_kpi_1 | max_kpi_1 | min_kpi_1
+- kpi_2 mean | max | min: mean_kpi_2 | max_kpi_2 | min_kpi_2
+Other kpis ...
+
+Forecasted KPI Predictions:
+- kpi_1: value_kpi_1
+- kpi_2: value_kpi_2
+Other kpis ...
+
+Other machines... 
+
+
+Final Summary: [OVERAL_SUMMARY_ON_ALL_MACHINES]
+
+
+CONTEXT: 
+{_CONTEXT_}
+
