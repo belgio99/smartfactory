@@ -157,13 +157,13 @@ def login(body: Login):
         connection, cursor = get_db_connection()
         query = "SELECT * FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
         response = query_db_with_params(cursor, connection, query, (body.user,))
-        result = response[0]
-        close_connection(connection, cursor)
 
-        if not result or not password_context.verify(body.password, result[4]):
+        if not response or not password_context.verify(body.password, response[0][4]):
             logging.error("Invalid credentials")
             raise HTTPException(status_code=401, detail="Invalid username or password")
    
+        result = response[0]
+        close_connection(connection, cursor)
         logging.info("User logged in successfully")
     
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRW_MINUTES)
@@ -175,7 +175,11 @@ def login(body: Login):
         logging.info(result)
         user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3], access_token=access_token, site=result[5])
         return JSONResponse(content=user.to_dict(), status_code=200) #TODO change to user
-        
+    
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
+        raise e
     except Exception as e:
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
