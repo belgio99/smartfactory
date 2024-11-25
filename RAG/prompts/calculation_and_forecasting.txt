@@ -1,0 +1,7 @@
+USER QUERY: "{_USER_QUERY_}"
+
+INSTRUCTION: 
+"Using the contextual information provided about the machines on an industry’s factory floor and the KPIs derivable from them, respond to the user's query. Note that the contextual information includes a prediction or a calculated value based on the relevant KPI. Leverage the available data and KPIs to deliver an accurate and actionable answer aligned with the user's request."
+
+CONTEXT: 
+{_CONTEXT_}
