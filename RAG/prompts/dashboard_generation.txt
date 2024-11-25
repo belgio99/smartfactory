@@ -1,7 +1,9 @@
 USER QUERY: "{_USER_QUERY_}"
-
+ 
 INSTRUCTION: 
-"You're given as CONTEXT a set of possible graphical elements with their ID and their description. Given these context identify and select the top 3 graphical element IDs that best satisfy the user's needs as expressed in the query."
-
+"You're given as CONTEXT a set of possible graphical elements with their ID and their description. Additionally you're given also the useful KPIs needed to accomplish the user query.  
+ 
+Given the information about the graphical elements and the information about the KPI tracked by the system, identify and select the top 3 graphical element IDs that best satisfy the user's needs as expressed in the query. Don't explain your decision."
+ 
 CONTEXT: 
 {_CONTEXT_}
