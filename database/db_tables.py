@@ -55,46 +55,33 @@ if __name__ == "__main__":
             """,
             """
             CREATE TABLE IF NOT EXISTS Alerts (
-            AlertID VARCHAR(36) PRIMARY KEY,
-            Title VARCHAR(255) NOT NULL,
-            Type VARCHAR(255) NOT NULL,
+            AlertID SERIAL PRIMARY KEY,
+            Title VARCHAR(50) NOT NULL,
+            Type VARCHAR(50) NOT NULL,
             Description VARCHAR(255) NOT NULL,
             TriggeredAt TIMESTAMP NOT NULL,
-            MachineName VARCHAR(255) NOT NULL,
-            isPush BIT NOT NULL,
-            Recipients VARCHAR(255) NOT NULL,
+            MachineName VARCHAR(50) NOT NULL,
+            isPush BIT DEFAULT 0,
             Severity VARCHAR(10) NOT NULL
             CHECK (Severity IN ('Low', 'Medium', 'High'))
             )
             """,
+            """
+            CREATE TABLE IF NOT EXISTS AlertRecipients (
+            ID SERIAL PRIMARY KEY,
+            AlertID INT NOT NULL,
+            UserID INT NOT NULL,
+            UNIQUE(AlertID, UserID),
+            FOREIGN KEY (AlertID) REFERENCES Alerts(AlertID) ON DELETE CASCADE,
+            FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
+            )
+            """
         ]
 
         for query in create_table_queries:
-            response = cur.execute(query)
+            cur.execute(query)
             conn.commit()
-            print(response)
-
-
-        # insert_users_query = """
-        # INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES
-        # ('john_doe', 'john@example.com', 'admin', 'password123', 'SiteA'),
-        # ('jane_smith', 'jane@example.com', 'user', 'password456', 'SiteB'),
-        # ('alice_jones', 'alice@example.com', 'user', 'password789', 'SiteC')
-        # """
-        # cur.execute(insert_users_query)
-        # conn.commit()
-        # print("Dummy data inserted into Users table")
-
-        # get_users_query = """
-        # SELECT username, email FROM Users
-        # """
-        # cur.execute(get_users_query)
-        # conn.commit()
-        # print("Data retrieved from Users table")
-        # rows = cur.fetchall()
-        # for row in rows:
-        #    print(row)
-
+            print("Table created successfully")
 
         cur.close()
         conn.close()
