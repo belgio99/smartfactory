@@ -94,12 +94,6 @@ Describe me material cost per unit: kb_q
 
 Can you tell me a description of availability ?: kb_q
 
-what is the best dashboard to take a look at bad_cycles: dashboard
-
-Create a dashboard to monitor the energetic consumption: dashboard
-
-I need a dashboard to study how long machines are working: dashboard
-
 Can you calculate Energy Cost Savings for Assembly Machine 1 for last week?: kpi_calc
 
 Calculate Energy Cost Working Time for Testing Machine 3 for last month: kpi_calc
@@ -125,3 +119,9 @@ Calculate MTBM for Riveting Machine 1: kpi_calc
 Calculate material cost per unit for Low Capacity Cutting Machine 1 for 20/8/2024?: kpi_calc
 
 I want a dashboard to compare different machine working time, in order to find the ones which works the most: dashboard 
+
+what is the best dashboard to take a look at bad_cycles: dashboard
+
+Create a dashboard to monitor the energetic consumption: dashboard
+
+I need a dashboard to study how long machines are working: dashboard
