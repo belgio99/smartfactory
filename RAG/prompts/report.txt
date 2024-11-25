@@ -3,17 +3,17 @@ USER QUERY: "{_USER_QUERY_}"
 INSTRUCTION: 
 "Complete the report template below using the information provided in the "CONTEXT DATA" section. Replace all placeholders enclosed in square brackets ([]) with the corresponding data and remove the brackets. Specifically:
 
-- [_DATE - DATE PERIOD_] should represent the overall period covered by the machine data.
-- [_DESCRIPTION_] should be a concise description of the report's purpose, such as "quality report" if it includes metrics like good_cycles and bad_cycles.
+- [DATE - DATE PERIOD] should represent the overall period covered by the machine data.
+- [DESCRIPTION] should be a concise description of the report's purpose, such as "quality report" if it includes metrics like good_cycles and bad_cycles.
 - [MACHINE_NAME] is the name of the machine being analyzed.
 - "Computable  KPIs" is a list of Key Performance Indicators (KPIs) and their associated values. For each KPI you're given ini input the mean the max and the min value on the overall period
 - "Forecasted KPI Predictions" is a list of forecastable KPIs and their associated values.
 - [OVERAL_SUMMARY_ON_ALL_MACHINES] is a brief textual summary that compares the KPI values for this machine across the specified period with other machines.
 Ensure the report is clear, concise, and aligned with the data provided in the context. "
 
-[_DATE - DATE PERIOD_] REPORT
+[DATE - DATE PERIOD] REPORT
 
-Description: [_DESCRIPTION_]
+Description: [DESCRIPTION]
 
 Machine_1: [MACHINE_1_NAME]
 

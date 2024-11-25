@@ -1,0 +1,478 @@
+--KPI_CALCULATION--
+QUESTION
+Compute me power for Laser cutter on 12/10/2024
+END_QUESTION
+
+CONTEXT
+{
+Machine name: Laser Cutter
+KPI name: power
+Value: 0,055
+Date: 12/10/2024
+Forecast: False
+}
+END_CONTEXT
+
+
+--KPI_CALCULATION--
+QUESTION
+Compute me idle time both for Riveting Machine and Laser cutter on 12/10/2024
+END_QUESTION
+
+CONTEXT
+{
+Machine name: Riveting Machine
+KPI name: idle_time
+Value: 1,12
+Date: 12/10/2024
+Forecast: False
+}
+
+{
+Machine name: Laser Cutter
+KPI name: idle_time
+Value: 0,123
+Date: 12/10/2024
+Forecast: False
+}
+END_CONTEXT
+
+
+--KPI_FORECASTING--
+QUESTION
+Predict idle time both for Riveting Machine and Laser cutter for today based on last month values
+END_QUESTION
+
+CONTEXT
+{
+Machine name: Riveting Machine
+KPI name: idle_time
+Value: 1,12
+Forecast: True
+}
+
+{
+Machine name: Laser Cutter
+KPI name: idle_time
+Value: 0,123
+Date: 12/10/2024
+Forecast: True
+}
+END_CONTEXT
+
+
+--KPI_FORECASTING--
+QUESTION
+Predict next week cycles of Large Capacity Cutting Machine 1 based on current trend
+END_QUESTION
+
+CONTEXT
+Today date: 25/11/2024
+{
+Machine name: Large Capacity Cutting Machine
+KPI name: cycles
+Value: 1500
+Date: 21/12/2024
+Forecast: True
+}
+{
+Machine name: Large Capacity Cutting Machine
+KPI name: cycles
+Value: 5300
+Date: 02/12/2024
+Forecast: True
+}
+END_CONTEXT
+
+
+--REPORT_GENERATION--
+QUESTION
+Return me the report about last month
+END_QUESTION
+
+CONTEXT
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 20/10/2024,
+  Mean: 2.333
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 20/10/2024,
+  Max: 5.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 20/10/2024,
+  Min: 0.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 18/10/2024,
+  Mean: 180.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 18/10/2024,
+  Max: 200.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 18/10/2024,
+  Min: 133.0
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: idle_time,
+  Date: 17/10/2024,
+  Mean: 3.5
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: idle_time,
+  Date: 17/10/2024,
+  Max: 6.0
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: idle_time,
+  Date: 17/10/2024,
+  Min: 1.0
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: working_time,
+  Date: 22/10/2024,
+  Mean: 150
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: working_time,
+  Date: 22/10/2024,
+  Max: 190
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: working_time,
+  Date: 22/10/2024,
+  Min: 120
+}
+
+{
+  Machine name: Riveting Machine,
+  Predicted: True
+  KPI name: working_time,
+  Date: 26/11/2024,
+  avg: 112
+}
+
+{
+  Machine name: Welding Machine,
+  KPI name: working_time,
+  Predicted: True
+  Date: 26/11/2024,
+  avg: 65
+}
+END_CONTEXT
+
+
+--REPORT_GENERATION--
+QUESTION
+Return me the report of Riveting Machine idle_time info in the last week
+END_QUESTION
+
+CONTEXT
+Today date: 25/11/2024
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 19/11/2024,
+  Mean: 2.333
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 10/11/2024,
+  Mean: 0.541
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 10/11/2024,
+  Max: 1.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 19/11/2024,
+  Max: 5.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 19/11/2024,
+  Min: 0.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: idle_time,
+  Date: 10/11/2024,
+  Min: 0.2
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 21/11/2024,
+  Mean: 180.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 12/11/2024,
+  Mean: 68.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 21/11/2024,
+  Max: 200.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 11/11/2024,
+  Max: 453.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 21/11/2024,
+  Min: 133.0
+}
+
+{
+  Machine name: Riveting Machine,
+  KPI name: working_time,
+  Date: 13/11/2024,
+  Min: 43.0
+}
+END_CONTEXT
+
+
+--NEW_KPI_GENERATION--
+QUESTION
+Generate a new KPI that shows the idle time ratio
+END_QUESTION
+
+CONTEXT
+* **KPI ID: idle_time_avg**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the average.
+    * Unit of Measure: s
+
+* **KPI ID: idle_time_max**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.
+    * Unit of Measure: s
+
+* **KPI ID: idle_time_min**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.
+    * Unit of Measure: s
+
+* **KPI ID: idle_time_sum**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the sum.
+    * Unit of Measure: s
+
+* **KPI ID: machine_utilization_rate**
+    * Formula: working_time_sum/operative_time
+    * Description: This KPI allows to assess how much a machine was used over a period.
+    * Unit of Measure: %
+
+* **KPI ID: operative_time**
+    * Formula: working_time_sum+idle_time_sum
+    * Description: This KPI measures the time the machine spends in operative state (when it is both in working state and idle state).
+    * Unit of Measure: s
+
+* **KPI ID: working_time_avg**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the average.
+    * Unit of Measure: s
+
+* **KPI ID: working_time_max**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.
+    * Unit of Measure: s
+
+* **KPI ID: working_time_min**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.
+    * Unit of Measure: s
+
+* **KPI ID: working_time_sum**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in working state, considering the sum.
+    * Unit of Measure: s
+END_CONTEXT
+
+
+--NEW_KPI_GENERATION--
+QUESTION
+Generate a new KPI that describe the operative time in minutes
+END_QUESTION
+
+CONTEXT
+* **KPI ID: idle_time_avg**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the average.
+    * Unit of Measure: s
+
+* **KPI ID: idle_time_max**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.
+    * Unit of Measure: s
+
+* **KPI ID: idle_time_min**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.
+    * Unit of Measure: s
+
+* **KPI ID: idle_time_sum**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the sum.
+    * Unit of Measure: s
+
+* **KPI ID: machine_utilization_rate**
+    * Formula: working_time_sum/operative_time
+    * Description: This KPI allows to assess how much a machine was used over a period.
+    * Unit of Measure: %
+
+* **KPI ID: operative_time**
+    * Formula: working_time_sum+idle_time_sum
+    * Description: This KPI measures the time the machine spends in operative state (when it is both in working state and idle state).
+    * Unit of Measure: s
+
+* **KPI ID: working_time_avg**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the average.
+    * Unit of Measure: s
+
+* **KPI ID: working_time_max**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.
+    * Unit of Measure: s
+
+* **KPI ID: working_time_min**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.
+    * Unit of Measure: s
+
+* **KPI ID: working_time_sum**
+    * Formula: -
+    * Description: This KPI is atomic, it measures the time the machine spends in working state, considering the sum.
+    * Unit of Measure: s
+END_CONTEXT
+
+--DASHBOARD_GENERATION--
+QUESTION
+Which is most suitable dashboard to visualize energy consumption?
+END_QUESTION
+
+CONTEXT
+Bar Chart  
+  - ID: `bar_chart` 
+  - Description: Represents data using rectangular bars with heights proportional to the values they represent. It is optimized for comparing discrete values or categories, such as counts, costs, or quantities divided by category.  
+
+- Line Chart  
+  - ID: `line_chart`  
+  - Description: Displays data as a series of points connected by lines. It is ideal for showing trends over time or relationships between continuous variables, such as energy consumption, temperature variations, or performance over time.  
+
+- Pie Chart  
+  - ID: `pie_chart`  
+  - Description: Represents data as slices of a circle, where each slice corresponds to a percentage of the total. It is optimized for visualizing proportions or relative distributions, such as the percentage of consumption by machine or cost distribution.  
+
+- Scatter Plot  
+  - ID: `scatter_plot`  
+  - Description: Displays data as a collection of points on a Cartesian plane. It is optimized for analyzing the relationship between two continuous variables, such as working time and energy consumption, or for identifying outliers and trends.  
+
+Here are three additional types of graphs with their descriptions:
+
+- Histogram  
+  - ID: `histogram`  
+  - Description: Represents the distribution of a dataset by dividing the range of data into intervals (bins) and displaying the frequency of data points within each bin. It is ideal for understanding the shape, spread, and central tendency of continuous data, such as machine cycle times or temperature readings.  
+
+- Area Chart  
+  - ID: `area_chart`  
+  - Description: Similar to a line chart but with the area below the line filled in to emphasize the magnitude of values over time. It is optimized for showing cumulative trends or comparisons between multiple data series, such as total production output or energy usage.  
+
+- Stacked Bar Chart  
+  - ID: `stacked_bar_chart`  
+  - Description: Extends the bar chart by stacking bars for different subcategories on top of each other to show both the total and the contribution of each subcategory. It is ideal for comparing parts of a whole across multiple categories, such as machine downtime reasons or production volumes by shift.  
+END_CONTEXT
+
+
+--DASHBOARD_GENERATION--
+QUESTION
+Generate a dashboard to visualize workfloor productivity
+END_QUESTION
+
+CONTEXT
+Bar Chart  
+  - ID: `bar_chart` 
+  - Description: Represents data using rectangular bars with heights proportional to the values they represent. It is optimized for comparing discrete values or categories, such as counts, costs, or quantities divided by category.  
+
+- Line Chart  
+  - ID: `line_chart`  
+  - Description: Displays data as a series of points connected by lines. It is ideal for showing trends over time or relationships between continuous variables, such as energy consumption, temperature variations, or performance over time.  
+
+- Pie Chart  
+  - ID: `pie_chart`  
+  - Description: Represents data as slices of a circle, where each slice corresponds to a percentage of the total. It is optimized for visualizing proportions or relative distributions, such as the percentage of consumption by machine or cost distribution.  
+
+- Scatter Plot  
+  - ID: `scatter_plot`  
+  - Description: Displays data as a collection of points on a Cartesian plane. It is optimized for analyzing the relationship between two continuous variables, such as working time and energy consumption, or for identifying outliers and trends.  
+
+Here are three additional types of graphs with their descriptions:
+
+- Histogram  
+  - ID: `histogram`  
+  - Description: Represents the distribution of a dataset by dividing the range of data into intervals (bins) and displaying the frequency of data points within each bin. It is ideal for understanding the shape, spread, and central tendency of continuous data, such as machine cycle times or temperature readings.  
+
+- Area Chart  
+  - ID: `area_chart`  
+  - Description: Similar to a line chart but with the area below the line filled in to emphasize the magnitude of values over time. It is optimized for showing cumulative trends or comparisons between multiple data series, such as total production output or energy usage.  
+
+- Stacked Bar Chart  
+  - ID: `stacked_bar_chart`  
+  - Description: Extends the bar chart by stacking bars for different subcategories on top of each other to show both the total and the contribution of each subcategory. It is ideal for comparing parts of a whole across multiple categories, such as machine downtime reasons or production volumes by shift.  
+END_CONTEXT

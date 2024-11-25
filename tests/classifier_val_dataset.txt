@@ -122,6 +122,22 @@ I want a dashboard to compare different machine working time, in order to find t
 
 what is the best dashboard to take a look at bad_cycles: dashboard
 
-Create a dashboard to monitor the energetic consumption: dashboard
+Create a dashboard to monitor the energy consumption: dashboard
+
+Create a dashboard to monitor the productivity: dashboard
+
+Generate a dashboard to check the costs: dashboard
 
 I need a dashboard to study how long machines are working: dashboard
+
+Provide me a dashboard to understand the offline time of the machines: dashboard
+
+Find a dashboard suitable to give an overview of cycles: dashboard
+
+Generate a new random dashboard: dashboard
+
+I need to monitor the productivity of the workfloor: dashboard
+
+I need to monitor the energy consumption of my enterprise: dashboard
+
+Generate a console to control the costs: dashboard
