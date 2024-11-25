@@ -64,7 +64,7 @@ services:
     command:
       - coordinator
     env_file:
-      - environment
+      - database/environment
 
   broker:
     image: apache/druid:31.0.0
@@ -81,7 +81,7 @@ services:
     command:
       - broker
     env_file:
-      - environment
+      - database/environment
 
   historical:
     image: apache/druid:31.0.0
@@ -99,7 +99,7 @@ services:
     command:
       - historical
     env_file:
-      - environment
+      - database/environment
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -119,7 +119,7 @@ services:
     command:
       - middleManager
     env_file:
-      - environment
+      - database/environment
 
   router:
     image: apache/druid:31.0.0
@@ -136,12 +136,12 @@ services:
     command:
       - router
     env_file:
-      - environment
+      - database/environment
 
   db:
     container_name: db
     env_file:
-      - environment
+      - database/environment
     image: postgres:latest
     platform: linux/amd64
     ports:
