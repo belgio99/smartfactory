@@ -25,6 +25,7 @@ volumes:
   router_var: {}
   druid_shared: {}
   db: {}
+  minio_data: {}
 
 services:
   postgres:
@@ -33,10 +34,8 @@ services:
     platform: linux/amd64
     volumes:
       - metadata_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_PASSWORD=FoolishPassword
-      - POSTGRES_USER=druid
-      - POSTGRES_DB=druid
+    env_file:
+      - database/.env
 
   # Need 3.5 or later for container nodes
   zookeeper:
@@ -148,3 +147,15 @@ services:
       - "5432:5432"
     volumes:
       - db:/var/lib/postgresql/data
+
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:latest
+    volumes:
+      - minio_data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    env_file:
+      - database/.env
+    command: minio server /data
