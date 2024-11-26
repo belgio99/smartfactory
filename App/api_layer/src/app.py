@@ -4,9 +4,8 @@ import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
-from model.settings import DashboardSettings
 from notification_service import send_notification, retrieve_alerts
-from user_settings_service import persist_user_settings, retrieve_user_settings
+from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from constants import *
 import logging
@@ -255,36 +254,51 @@ def register(body: Register):
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/smartfactory/dashboardSettings/{dashboardId}")
-def load_dashboard_settings(dashboardId: str):
+# TODO: rename
+
+@app.get("/smartfactory/dashboardSettings/{userId}")
+def retrieve_dashboard_settings(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     '''
-    Endpoint to load dashboard settings from the Database.
-    This endpoint receives a dashboard ID and returns the corresponding settings fetched from the DB.
+    Endpoint to load dashboard disposition from the Database.
+    This endpoint receives a user ID and returns the JSON string containing the (tree-like) disposition of the user's dashboards.
     Args:
-        dashboardId (str): The ID of the dashboard.
+        userId (str): The ID of the user of whom to retrieve data.
     Returns:
-        dashboard_settings: DashboardSettings object containing the settings.
+        dashboard_settings: JSON string containing the dashboard disposition.
     Raises:
         HTTPException: If the settings are not found or an unexpected error occurs.
 
     '''
-    pass # Placeholder for the implementation
+    try:
+        settings = load_dashboard_settings(userId)
+        return JSONResponse(content=settings, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+   
 
-@app.post("/smartfactory/dashboardSettings/{dashboardId}")
-def save_dashboard_settings(dashboardId: str, dashboard_settings: DashboardSettings):
+@app.post("/smartfactory/dashboardSettings/{userId}")
+def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str = Depends(get_verify_api_key(["gui"]))):
     '''
-    Endpoint to save dashboard settings to the Database.
-    This endpoint receives a dashboard ID and the settings to be saved and saves them to the DB.
+    Endpoint to save the dashboard disposition to the Database.
+    This endpoint receives a user ID and a JSON string with the dashboard disposition to be saved.
     Args:
-        dashboardId (str): The ID of the dashboard.
-        dashboard_settings (DashboardSettings): The settings to be saved.
+        userId (str): The ID of the user.
+        dashboard_settings (dict): The dashboard disposition to be saved.
     Returns:
-        Response: A response object with status code 200 if the settings are saved successfully.
+        Response: A response object with status code 200 if the dashboard disposition is saved successfully.
     Raises:
-        HTTPException: If the settings are invalid or an unexpected error occurs.
+        HTTPException: If an unexpected error occurs.
         
     '''
-    pass # Placeholder for the implementation
-
+    try:
+        if persist_dashboard_settings(userId, dashboard_settings) == False:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")

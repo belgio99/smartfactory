@@ -99,3 +99,72 @@ def verify_user_presence(userId):
         connection.close()
 
     return result > 0
+
+def load_dashboard_settings(userId):
+    """
+    Retrieve user dashboard settings from the database.
+
+    Args:
+        userId (str): The ID of the user for whom to retrieve settings.
+    Returns:
+        dict: A dictionary containing the user dashboard settings.
+    """
+    query = "SELECT UserDashboards FROM Users WHERE UserID = %s"
+    values = (userId,)
+
+    logging.info("Retrieving user dashboard settings from database")
+    try:
+        connection, cursor = get_db_connection()
+        cursor.execute(query, values)
+        settings = cursor.fetchone()
+
+        if settings and settings[0] is not None:
+            return json.loads(settings[0])
+        else:
+            return {}
+    except Exception as e:
+        logging.error("Error retrieving user dashboard settings from database: " + str(e))
+        raise e
+    finally:
+        cursor.close()
+        connection.close()
+
+def persist_dashboard_settings(userId, settings):
+    """
+    Persist user dashboard settings to the database.
+
+    This function retrieves the past dashboard settings for a given user. If past settings exist,
+    it updates the settings in the database. If no past settings exist, it inserts new settings
+    into the database.
+
+    Args:
+        userId (int): The ID of the user whose dashboard settings are to be persisted.
+        settings (dict): A dictionary containing the user dashboard settings to be saved.
+
+    Raises:
+        Exception: If there is an error while saving the user dashboard settings to the database.
+    """
+    logging.info("Checking if user is present in the database")
+    if verify_user_presence(userId) == False:
+        logging.error("User is not present in the database")
+        return False
+
+    logging.info("User is present in the database")    
+    query = "UPDATE Users SET UserDashboards = %s WHERE UserID = %s"
+    values = (json.dumps(settings), userId)
+    logging.info("Saving user dashboard settings to database")
+    
+    try:
+        connection, cursor = get_db_connection()
+        cursor.execute(query, values)
+        connection.commit()
+        logging.info("User dashboard settings saved successfully")
+        return True
+    
+    except Exception as e:
+        logging.error("Error saving user dashboard settings to database: " + str(e))
+        raise e
+    
+    finally:
+        cursor.close()
+        connection.close()
