@@ -31,9 +31,13 @@ services:
   postgres:
     container_name: postgres
     image: postgres:latest
+    ports:
+      - "5433:5432"  # Change 5433 to any available port
     platform: linux/amd64
     volumes:
       - metadata_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
     env_file:
       - database/.env
 
@@ -46,6 +50,7 @@ services:
       - "2181:2181"
     environment:
       - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=zookeeper:2888:3888  # Set only a single server
 
   coordinator:
     image: apache/druid:31.0.0
@@ -54,7 +59,7 @@ services:
     volumes:
       - druid_shared:/opt/shared
       - coordinator_var:/opt/druid/var
-      - ./obj_storage:/obj_storage
+      - ./database:/obj_storage
     depends_on:
       - zookeeper
       - postgres
@@ -107,7 +112,7 @@ services:
     volumes:
       - druid_shared:/opt/shared
       - middle_var:/opt/druid/var
-      - ./obj_storage:/obj_storage
+      - ./database:/obj_storage
     depends_on:
       - zookeeper
       - postgres
@@ -144,7 +149,9 @@ services:
     image: postgres:latest
     platform: linux/amd64
     ports:
-      - "5432:5432"
+      - "5440:5432"
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - db:/var/lib/postgresql/data
 

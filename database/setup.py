@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import requests
-import json
 from dotenv import load_dotenv
+from crypto_lib import encrypt_csv
 
 load_dotenv() # Load environment variables from the .env file
 
@@ -20,7 +20,6 @@ def convert_to_csv(file_path):
     else:
         raise ValueError(f"Unsupported file format: {file_extension}")
     
-
 def submit_to_druid(file_path):
     """
     Prepares and submits the ingestion task to Druid for the given CSV file.
@@ -85,6 +84,8 @@ def main():
     """
     csv_files = []
 
+    TO_LOAD_DIR = os.getenv("TO_LOAD_DIR")
+
     # First convert files to CSV if necessary
     for file_name in os.listdir(TO_LOAD_DIR):
         file_path = os.path.join(TO_LOAD_DIR, file_name)
@@ -104,9 +105,20 @@ def main():
 
     # Then submit only the CSV files to Druid
     for csv_file_path in csv_files:
-        if not file_name.endswith('.csv'):
+        if not csv_file_path.endswith('.csv'):
             continue
         try:
+            # The following functions encrypt the csv file before submitting it to druid.
+            # Remove comments if you want to encrypt files.
+            #encrypt file
+            #df = encrypt_csv(csv_file_path)
+
+            # Save the encrypted file
+            #encrypted_file_path = csv_file_path.replace(".csv", "_encrypted.csv")
+            #df.to_csv(encrypted_file_path, index=False)
+            #print(f"Encrypted file saved at: {encrypted_file_path}")
+            #submit_to_druid(encrypted_file_path)
+            
             submit_to_druid(csv_file_path)
         except Exception as e:
             print(f"An error occurred during submission of {csv_file_path}: {e}")
