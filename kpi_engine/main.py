@@ -9,6 +9,7 @@ examples:
 http://127.0.0.1:8000/kpi/quality/calculate 
 http://127.0.0.1:8000/kpi/quality/calculate?machineType=Laser%20Cutter
 http://127.0.0.1:8000/kpi/quality/calculate?machineType=Laser%20Cutter&endPeriod=2024-10-10
+http://127.0.0.1:8000/kpi/yield_to_availability/calculate?machineType=Laser%20Cutter&endPeriod=2024-10-10 (this is a mockup of the dynamic kpi calculation)
 '''
 
 with open("smart_app_data.pkl", "rb") as file:

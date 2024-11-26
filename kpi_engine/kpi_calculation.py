@@ -123,7 +123,7 @@ class kpi_engine:
         # kpi_formula = extract formula through API and kpi_id
         # response = requests.get("{os.getEnv("BASE_URL")}/kb/retrieve/{kpi_id}")
         # formula = response.get("formula")
-        formula = 'working_time_avg / (1)'
+        formula = '((cycles_sum - bad_cycles_sum) / cycles_sum) * (working_time_sum / (working_time_sum + idle_time_sum))'
         expr = parse_expr(formula)
 
         # data extraction and symbol substitution
