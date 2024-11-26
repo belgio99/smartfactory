@@ -114,7 +114,7 @@ Can you calculate Machine Usage Trend for Assembly Machine 2 for yesterday?: kpi
 
 Calculate availability for Testing Machine 1 for last month: kpi_calc
 
-Calculate MTBM for Riveting Machine 1: kpi_calc
+Calculate Mean Time Between Failures for Riveting Machine 1: kpi_calc
 
 Calculate material cost per unit for Low Capacity Cutting Machine 1 for 20/8/2024?: kpi_calc
 

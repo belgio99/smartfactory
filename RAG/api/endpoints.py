@@ -10,6 +10,14 @@ from schemas.models import Question, Answer
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
+from langchain.prompts import FewShotPromptTemplate, PromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv
+import os
+import sys
+
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 # Load environment variables
 load_dotenv()
@@ -28,14 +36,111 @@ llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 router = APIRouter()
 
 prompt_manager = PromptManager('prompts/')
-
 # Helper function to format documents for the prompt
 def format_docs(docs):
     return "\n\n".join(doc.page_content for doc in docs)
 
-def dummy_classifier(input):
-    labels = ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc']
-    return [labels[5], '']
+# TODO: maybe it should be moved in another file?
+def toDate(data):
+    TODAY = datetime.now()
+    # first data available is from 2024-03-01
+    FIRST_DAY = "2024-03-01"
+
+    if "->" in data:
+        date=data
+    # NULL -> all dataset use case
+    elif data == "NULL":
+        date=f"{FIRST_DAY}->{(TODAY - relativedelta(days=1)).strftime('%Y-%m-%d')}"
+    else:
+        temp =data.split("=")
+        _type = temp[0]
+        _value = int(temp[1])
+        delta = 0
+        if _type == "days":
+            delta= relativedelta(days=_value) 
+        elif _type =="weeks":
+            delta= relativedelta(weeks=_value)
+        elif _type =="months":
+            delta= relativedelta(months=_value)
+        elif _type =="years":
+            delta= relativedelta(years=_value)
+        #'today' use case
+        if delta == relativedelta():
+            date=f"{(TODAY - delta).strftime('%Y-%m-%d')}->{(TODAY - delta).strftime('%Y-%m-%d')}"
+        else:
+            date=f"{(TODAY - delta).strftime('%Y-%m-%d')}->{(TODAY - relativedelta(days=1)).strftime('%Y-%m-%d')}"
+    return date
+
+# function which classify input prompt in one among six labels 
+# if label == "predictions" or label == "kpi_calc", it will also return the url to communicate
+def prompt_classifier(input):
+
+    # classification using gemini 1.5 flash with few shot learning
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+
+    # few shots examples
+    esempi = [
+        {"text": "Predict for the next month the cost_working_avg for Large Capacity Cutting Machine 2 based on last three months data", "label": "predictions"},
+        {"text": "Generate a new kpi named machine_total_consumption which use some consumption kpis to be calculated", "label": "new_kpi"},
+        {"text": "Compute the Maintenance Cost for the Riveting Machine 1 for yesterday", "label": "kpi_calc"},
+        {"text": "Can describe cost_working_avg?", "label": "kb_q"},
+        {"text": "Make a report about bad_cycles_min for Laser Welding Machine 1 with respect to last week", "label": "report"},
+        {"text": "Create a dashboard to compare perfomances for different type of machines", "label": "dashboard"},
+    ]
+
+    # Few shot prompt creation
+    esempio_template = PromptTemplate(
+        input_variables=["text", "label"],
+        template="Text: {text}\nLabel: {label}\n"
+    )
+
+    few_shot_prompt = FewShotPromptTemplate(
+        examples=esempi,
+        example_prompt=esempio_template,
+        suffix="Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
+        input_variables=["text_input"]
+    )
+    prompt = few_shot_prompt.format(text_input=input)
+    label =llm.invoke(prompt).content.strip("\n")
+
+    # Query generation
+    url=""
+    if label == "predictions" or label == "kpi_calc":
+        esempi = [
+            {"testo": "Predict for tomorrow the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on last week data", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, weeks=1, days=1" },
+            {"testo": "Predict the future Power Consumption Efficiency for Riveting Machine 2 over the next 5 days","data": f"Power Consumption Efficiency, Riveting Machine 2, NULL, days=5"},
+            {"testo": "Can you calculate Machine Utilization Rate for Assembly Machine 1 for yesterday?", "data": f"Machine Utilization Rate,  Assembly Machine 1, days=1, NULL"},
+            {"testo": "Calculate Machine Usage Trend for Laser Welding Machine 1 for today", "data": f"Machine Usage Trend, Laser Welding Machine 1, days=0, NULL"},
+            {"testo": "Calculate for the last 2 weeks Cost Per Unit for Laser Welding Machine 2", "data": f"Cost Per Unit, Laser Welding Machine 2, weeks=2, NULL"},
+            {"testo": "Can you predict for the future 3 weeks the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on 24/10/2024 data?", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, 2024-10-24->2024-10-24, weeks=3"}
+            
+        ]
+        # Few shot prompt creation
+        esempio_template = PromptTemplate(
+            input_variables=["testo", "data"],
+            template="Text: {testo}\nData: {data}\n"
+        )
+        few_shot_prompt = FewShotPromptTemplate(
+            examples=esempi,
+            example_prompt=esempio_template,
+            suffix= "Fill the Data field for the following prompt \nText: {text_input}\nData:\nThe filled field needs to contain four values as the examples above",
+            input_variables=["text_input"]
+        )
+        prompt = few_shot_prompt.format(text_input= input)
+        data = llm.invoke(prompt)
+        data=data.content.strip("\n").split(": ")[1].split(", ")
+        kpi_id = data[0].lower().replace(" ","_")
+        machine_id = data[1].replace(" ","")
+        # first couple of dates parsing
+        date=toDate(data[2]).split("->")
+        url=f"http://127.0.0.1:8000/{label}/{kpi_id}/calculate?machineType={machine_id}&startTime={date[0]}&endTime={date[1]}"
+        if label == "predictions":
+            # second couple of dates parsing
+            # a data labelled as 'predictor' should not be 'NULL', this (before in the pipeline) should be checked to be true 
+            dateP = toDate(data[3]).split("->")
+            url+=f"&startTimeP={dateP[0]}&endTimeP={dateP[1]}"
+
+    return [label,url]
 
 async def ask_kpi_engine(url):
     kpi_engine_url = "https://kpi.engine.com/api"  
@@ -216,7 +321,7 @@ async def handle_kb_q(question, llm, graph):
 @router.post("/ask", response_model=Answer)
 async def ask_question(question: Question):
     # Classify the question
-    label, url = dummy_classifier(question)
+    label, url = prompt_classifier(question)
 
     # Mapping of handlers
     handlers = {
@@ -244,3 +349,4 @@ async def ask_question(question: Question):
 
     # For 'kb_q', return the context directly
     return Answer(text=context)
+
