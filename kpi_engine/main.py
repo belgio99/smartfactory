@@ -24,7 +24,8 @@ async def calculate(
     machineType: Optional[str] = "any",
     startTime: Optional[str] = "0",
     endTime: Optional[str] = "3",
-    kpiToRetrieve: Optional[str] = "static"
+    startPreviousPeriod: Optional[str] = "0",
+    endPreviousPeriod: Optional[str] = "3"
     ):
     print(f"Received kpiID: {kpiID}, \nmachineId: {machineId}, \nmachineType: {machineType}, \nstartTime: {startTime}, \nendTime: {endTime}\n")
     methods = {
@@ -39,7 +40,7 @@ async def calculate(
     if kpiID not in methods:
         result = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_time = startTime, end_time = endTime, machine_type = machineType, kpi_id=kpiID)
     else:
-        result = methods[kpiID](df = df, machine_id = machineId, start_time = startTime, end_time = endTime)
+        result = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startTime, end_period = endTime, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
     return {"value": result}
 
 def main_test():
