@@ -26,8 +26,8 @@ async def calculate(
     kpiID: str,
     machineId: Optional[str] = "all_machines",
     machineType: Optional[str] = "any",
-    startPeriod: Optional[str] = "0",
-    endPeriod: Optional[str] = "3",
+    startPeriod: Optional[str] = df['time'].min()[:10],
+    endPeriod: Optional[str] = df['time'].max()[:10],
     startPreviousPeriod: Optional[str] = "0",
     endPreviousPeriod: Optional[str] = "3"
     ):
@@ -42,10 +42,17 @@ async def calculate(
         raise HTTPException(status_code=404, detail=f"'dynamic_kpi' method not directly callable.")
 
     if kpiID not in methods:
-        result = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
+        result, formula = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
     else:
         result = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
-    return {"value": result}
+    return {    "kpiID": kpiID,
+                "formula": formula,
+                "machineId": machineId,
+                "machineType": machineType,
+                "startPeriod": startPeriod,
+                "endPeriod": endPeriod,
+                "value": result
+                }
 
 def main_test():
     kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_period='2024-08-27T00:00:00Z', end_period='2024-09-20T00:00:00Z', kpi_id='a')
