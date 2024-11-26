@@ -30,15 +30,6 @@ services:
         ports:
             - "8000:8000"
 
-    frontend:
-        container_name: frontend
-        build:
-            context: ./App/frontend
-            dockerfile: Dockerfile
-        ports:
-            - 8080:80
-        networks:
-            - my-network
     smtp:
         image: mailhog/mailhog
         ports:
@@ -169,6 +160,3 @@ services:
             - "5432:5432"
         volumes:
             - db:/var/lib/postgresql/data
-networks:
-    my-network:
-        driver: bridge

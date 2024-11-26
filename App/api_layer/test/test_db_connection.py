@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/database')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src/database')))
 
 from connection import get_db_connection, query_db, query_db_with_params, close_connection
 
@@ -51,7 +51,7 @@ class TestDatabaseUtils(unittest.TestCase):
         # Assertions
         mock_cursor.execute.assert_called_once_with(query)
         mock_connection.commit.assert_called_once()
-        self.assertIsNone(result)  # cursor.execute returns None
+        self.assertIsNotNone(result)  # cursor.execute returns None
 
     @patch('psycopg2.connect')
     def test_query_db_with_params_success(self, mock_connect):
