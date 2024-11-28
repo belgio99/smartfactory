@@ -12,7 +12,7 @@ services:
     api-layer:
         container_name: api-layer
         build:
-            context: ./App/api_layer
+            context: ./api
             dockerfile: Dockerfile
         depends_on:
             - smtp
