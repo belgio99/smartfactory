@@ -14,16 +14,15 @@ jobs:
   set-job-name:
     runs-on: ubuntu-latest
     outputs:
-      job-title: ${{ steps.set-title.outputs.job-title }}
+      job-title: ${{ env.job_title }} # Use the environment variable set below
     steps:
     - name: Extract branch name and commit ID
       id: set-title
       run: |
         branch_name=${GITHUB_REF##*/}
         commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)
-        echo "job_title=${branch_name}: Build the Docker image (commit id: ${commit_id})" >> $GITHUB_ENV
-      env:
-        GITHUB_ENV: $GITHUB_ENV
+        job_title="${branch_name}: Build the Docker image (commit id: ${commit_id})"
+        echo "job_title=${job_title}" >> $GITHUB_ENV
 
   build-and-push:
     runs-on: ubuntu-latest
