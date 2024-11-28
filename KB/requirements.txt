@@ -1,8 +1,5 @@
 fastapi
 sympy
-<<<<<<< HEAD
+owlready2
 fastapi[standard]==0.109.0
 uvicorn[standard]==0.27.0
-=======
-owlready2
->>>>>>> c301f0c2b07aea91711b2b2e97bb38e478ea6601

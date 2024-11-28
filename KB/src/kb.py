@@ -1,19 +1,10 @@
-<<<<<<< HEAD
-import rdflib
-from rdflib.namespace import RDF, Namespace
-import json
-=======
 from owlready2 import *
-from fastapi import FastAPI
->>>>>>> c301f0c2b07aea91711b2b2e97bb38e478ea6601
 import sympy
-import json
 
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 
-<<<<<<< HEAD
 app = FastAPI()
 
 app.add_middleware(
@@ -25,16 +16,9 @@ app.add_middleware(
 )
 
 
-ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
-SA = Namespace("http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#")
-g = rdflib.Graph()
-g.parse(ONTOLOGY_PATH)
-=======
 ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
 TMP_ONTOLOGY_PATH = "../Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load()
-app = FastAPI()
->>>>>>> c301f0c2b07aea91711b2b2e97bb38e478ea6601
 
 def get_kpi(kpi_id):
     query = f'*{kpi_id}'
@@ -97,9 +81,6 @@ def is_valid(kpi_info):
     
     formula = kpi_info['atomic_formula'][0]
 
-<<<<<<< HEAD
-@app.get("/kb/{kpi_id}/get_kpi")
-=======
     for kpi in onto.KPI.instances():
         if kpi.formula[0] != '-' and formula != '-':
             if is_equal(kpi.atomic_formula[0], formula):
@@ -162,7 +143,6 @@ def add_kpi(kpi_info):
                            atomic_formula=kpi_info['atomic_formula'], formula=kpi_info['formula'], 
                            unit_measure=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'])
     
-    #FIXME: add the object properties
     with onto:
         try:
             sync_reasoner()
@@ -186,9 +166,12 @@ if __name__ == "__main__":
 
     add_kpi(kpi_info)
 
+    #uvicorn.run(app, port=8000, host="0.0.0.0")
+
+
 # -------------------------------------------- API Endpoints --------------------------------------------
-@app.get("/get_kpi") 
->>>>>>> c301f0c2b07aea91711b2b2e97bb38e478ea6601
+
+@app.get("/kb/{kpi_id}/get_kpi") 
 async def get_kpi_endpoint(kpi_id: str):
     """
     Get KPI data by its ID via GET request.
@@ -199,17 +182,8 @@ async def get_kpi_endpoint(kpi_id: str):
 
     return kpi_data
 
-<<<<<<< HEAD
-@app.get("/kb")
-def read_root():
-    return {"Hello": "World"}
 
-if __name__ == "__main__":
-    result = get_kpi("operative_time")
-
-    #uvicorn.run(app, port=8000, host="0.0.0.0")
-=======
-@app.get("/retrieve")
+@app.get("/kb/retrieve")
 async def get_kpi_endpoint():
     """
     Get KPI data by its ID via GET request.
@@ -218,4 +192,8 @@ async def get_kpi_endpoint():
     if not kpi_data:
         return {"error": "KPI not found"}
     return kpi_data
->>>>>>> c301f0c2b07aea91711b2b2e97bb38e478ea6601
+
+
+@app.get("/kb")
+def read_root():
+    return {"Hello": "World"}
