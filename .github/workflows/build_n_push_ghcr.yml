@@ -21,12 +21,14 @@ jobs:
       run: |
         branch_name=${GITHUB_REF##*/}
         commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)
-        echo "::set-output name=job-title::${branch_name}: Build the Docker image (commit id: ${commit_id})"
+        echo "job_title=${branch_name}: Build the Docker image (commit id: ${commit_id})" >> $GITHUB_ENV
+      env:
+        GITHUB_ENV: $GITHUB_ENV
 
   build-and-push:
     runs-on: ubuntu-latest
-    name: ${{ needs.set-job-name.outputs.job-title }}
     needs: set-job-name
+    name: ${{ needs.set-job-name.outputs.job-title }}
 
     steps:
     - name: Checkout code
@@ -54,13 +56,20 @@ jobs:
 
     - name: Build Docker image
       run: |
-        IMAGE_NAME=${{ github.repository }}-${{ env.branch_name }}
-        docker build -t ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${{ env.commit_id }} \
-                     -t ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:latest \
+        # Extract repository name from full repo path
+        REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.branch_name }}
+        
+        # Build Docker image with two tags: commit ID and latest
+        docker build -t ghcr.io/${IMAGE_NAME}:${{ env.commit_id }} \
+                     -t ghcr.io/${IMAGE_NAME}:latest \
                      ./${{ env.branch_name }}
 
     - name: Push Docker image
       run: |
-        IMAGE_NAME=${{ github.repository }}-${{ env.branch_name }}
-        docker push ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${{ env.commit_id }}
-        docker push ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:latest
+        REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.branch_name }}
+
+        # Push both tags
+        docker push ghcr.io/${IMAGE_NAME}:${{ env.commit_id }}
+        docker push ghcr.io/${IMAGE_NAME}:latest
