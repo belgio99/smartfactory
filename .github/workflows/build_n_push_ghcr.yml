@@ -4,14 +4,29 @@ on:
   push:
     branches:
       - 'KB' # Topic 1
+      - 'data-processing' # Topic 3
       - 'api' # Topic 4
       - 'RAG' # Topic 5
       - 'gui-panel' # Topic 6
       - 'kpi-engine' # Topic 8
 
 jobs:
+  set-job-name:
+    runs-on: ubuntu-latest
+    outputs:
+      job-title: ${{ steps.set-title.outputs.job-title }}
+    steps:
+    - name: Extract branch name and commit ID
+      id: set-title
+      run: |
+        branch_name=${GITHUB_REF##*/}
+        commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)
+        echo "::set-output name=job-title::${branch_name}: Build the Docker image (commit id: ${commit_id})"
+
   build-and-push:
     runs-on: ubuntu-latest
+    name: ${{ needs.set-job-name.outputs.job-title }}
+    needs: set-job-name
 
     steps:
     - name: Checkout code
