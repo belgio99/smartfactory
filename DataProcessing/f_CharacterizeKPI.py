@@ -1,3 +1,14 @@
+import pandas as pd
+import numpy as np
+
+from statsmodels.tsa.stattools import adfuller
+from sklearn.preprocessing import StandardScaler
+import itertools
+from tqdm import tqdm_notebook
+
+
+import json
+import os
 ####################################
 #####==========================#####
 ### I. Data Exploration Pipeline ###
@@ -114,3 +125,107 @@ def optimize_ARIMA(endog, order_list, d):
   optimize_ARIMA_results = pd.DataFrame(results, columns=['(p,q)', 'AIC'])
   optimize_ARIMA_results = optimize_ARIMA_results.sort_values(by='AIC', ascending=True).reset_index(drop=True)
   return optimize_ARIMA_results
+
+#########################
+### 1. data profiling ###
+#########################
+
+def characterize_KPI(machine, kpi):
+  # DATA LOADING
+  final_path = f'{models_path}{machine}_{kpi}.json'
+  if not os.path.isfile(final_path):
+    create_model_data(machine, kpi, final_path)
+
+  a_dict = {}
+  with open(final_path, "r") as file:
+    a_dict = json.load(file)
+
+  kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
+
+  # EXTRACT DATA TRENDS
+  # conversion of the two arrays in a dataframe
+  timestamps = pd.to_datetime(kpi_data_Time)
+  timeseries = pd.DataFrame({'Timestamp':timestamps, 'Value': kpi_data_Avg})
+  timeseries.set_index('Timestamp', inplace=True)
+  trends = data_extract_trends(timeseries['Value']) # find range, distribution, or any pattern that may be used
+                                                    # to treat missing values or outliers.
+                                                    # maybe also find correlations and mutual information
+  a_dict['trends'] = trends
+
+  # MISSING VALUE HANDLING
+  data = data_clean_missing_values(timeseries)  # mean/median OR Interpolation OR Forward/backward fill
+                                                          #1- if we have no other data, just decide how to fill the hole
+                                                          #2- [NOT IMPLEMENTED YET] if we have other ts look for
+                                                          #   correlation of holes with other trends and report them
+
+  # OUTLIER DETECTION
+  # Outliers are not detected here, as we only focus on finding them on upcoming new data points
+
+
+  # STATIONARITY CHECK
+  orig_statistic, orig_p_value = perform_adfuller(data['Value'])
+
+  stationarity_results = {
+      'Differencing': 0,
+      'Statistic': round(orig_statistic, 3),
+      'P-value': f'{orig_p_value:.2E}',
+      'Stationary': 1 if orig_p_value < 0.05 else 0
+  }
+  print()
+  if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
+    diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value']})
+    diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
+    print(diff1_series)
+    data['Value'] = data_normalize_params(diff1_series['Value'])
+
+    stationarity_results = {
+      'Differencing': 1,
+      'Statistic': round(diff1_statistic, 3),
+      'P-value': f'{diff1_p_value:.2E}',
+      'Stationary': 1 if diff1_p_value < 0.05 else 0
+    }
+    if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
+        diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value']})
+        diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
+        data['Value'] = data_normalize_params(diff2_series['Value'])
+
+        stationarity_results = {
+          'Differencing': 2,
+          'Statistic': round(diff2_statistic, 3),
+          'P-value': f'{diff2_p_value:.2E}',
+          'Stationary': 1 if diff2_p_value < 0.05 else 0
+        }
+  else:
+    data['Value'] = data_normalize_params(data['Value'])
+
+  a_dict['stationarity'] = stationarity_results
+  # ###########################
+  # ### 3. Model definition ###
+  # ###########################
+
+  # Set up the p and q ranges
+  # p = range(0, 10,1)  # You can adjust the range as needed
+  # q = range(0, 20,1)  # You can adjust the range as needed
+  p = range(2, 4,1)  # You can adjust the range as needed
+  q = range(2, 4,1)  # You can adjust the range as needed
+  order_list = list(itertools.product(p, q))
+
+  # Differencing parameter
+  d = 1  # Assumed based on standard practice. Adjust if necessary.
+
+  # Create an empty list to store optimization results
+  best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
+  pq_tuple = best_arima.iloc[0].iloc[0]
+  p = pq_tuple[0]
+  q = pq_tuple[1]
+  print(p,q)
+  a_dict['model'] = {
+      'name': 'ARIMA',
+      'p': p,
+      'q': q
+  }
+
+  # ############################
+  # ### 4. Meta-Data storage ###
+  # ############################
+  save_model_data(machine, kpi, a_dict)
