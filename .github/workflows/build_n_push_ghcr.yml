@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'KB' # Topic 1
+      - 'data-processing' # Topic 3
       - 'api' # Topic 4
       - 'RAG' # Topic 5
       - 'gui-panel' # Topic 6
