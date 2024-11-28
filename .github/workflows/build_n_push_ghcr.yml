@@ -1,0 +1,66 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - 'KB' # Topic 1
+      - 'data-processing' # Topic 3
+      - 'api' # Topic 4
+      - 'RAG' # Topic 5
+      - 'gui-panel' # Topic 6
+      - 'kpi-engine' # Topic 8
+
+jobs:
+  set-job-name:
+    runs-on: ubuntu-latest
+    outputs:
+      job-title: ${{ steps.set-title.outputs.job-title }}
+    steps:
+    - name: Extract branch name and commit ID
+      id: set-title
+      run: |
+        branch_name=${GITHUB_REF##*/}
+        commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)
+        echo "::set-output name=job-title::${branch_name}: Build the Docker image (commit id: ${commit_id})"
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    name: ${{ needs.set-job-name.outputs.job-title }}
+    needs: set-job-name
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set branch name and commit ID
+      id: vars
+      run: |
+        echo "branch_name=${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
+
+    - name: Verify branch folder exists
+      run: |
+        if [ ! -d "${{ env.branch_name }}" ]; then
+          echo "Error: Folder '${{ env.branch_name }}' not found."
+          exit 1
+        fi
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GHCR_TOKEN }}
+
+    - name: Build Docker image
+      run: |
+        IMAGE_NAME=${{ github.repository }}-${{ env.branch_name }}
+        docker build -t ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${{ env.commit_id }} \
+                     -t ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:latest \
+                     ./${{ env.branch_name }}
+
+    - name: Push Docker image
+      run: |
+        IMAGE_NAME=${{ github.repository }}-${{ env.branch_name }}
+        docker push ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${{ env.commit_id }}
+        docker push ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:latest
