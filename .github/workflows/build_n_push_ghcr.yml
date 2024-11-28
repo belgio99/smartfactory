@@ -9,24 +9,26 @@ on:
       - 'RAG' # Topic 5
       - 'gui-panel' # Topic 6
       - 'kpi-engine' # Topic 8
+  workflow_dispatch:
 
 jobs:
   set-job-name:
     runs-on: ubuntu-latest
     outputs:
-      job-title: ${{ steps.set-title.outputs.job-title }}
+      job-title: ${{ env.job_title }} # Use the environment variable set below
     steps:
     - name: Extract branch name and commit ID
       id: set-title
       run: |
         branch_name=${GITHUB_REF##*/}
         commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)
-        echo "::set-output name=job-title::${branch_name}: Build the Docker image (commit id: ${commit_id})"
+        job_title="${branch_name}: Build the Docker image (commit id: ${commit_id})"
+        echo "job_title=${job_title}" >> $GITHUB_ENV
 
   build-and-push:
     runs-on: ubuntu-latest
-    name: ${{ needs.set-job-name.outputs.job-title }}
     needs: set-job-name
+    name: ${{ needs.set-job-name.outputs.job-title }}
 
     steps:
     - name: Checkout code
@@ -54,13 +56,19 @@ jobs:
 
     - name: Build Docker image
       run: |
-        IMAGE_NAME=${{ github.repository }}-${{ env.branch_name }}
-        docker build -t ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${{ env.commit_id }} \
-                     -t ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:latest \
+        # Extract repository name (e.g., "smartfactory" from "belgio99/smartfactory")
+        REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+        # Construct the image name dynamically
+        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.branch_name }}
+        # Build the Docker image with both the commit ID and latest tags
+        docker build -t ghcr.io/${IMAGE_NAME}:${{ env.commit_id }} \
+                     -t ghcr.io/${IMAGE_NAME}:latest \
                      ./${{ env.branch_name }}
 
     - name: Push Docker image
       run: |
-        IMAGE_NAME=${{ github.repository }}-${{ env.branch_name }}
-        docker push ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:${{ env.commit_id }}
-        docker push ghcr.io/${{ github.repository_owner }}/${IMAGE_NAME}:latest
+        # Push the image using the dynamically constructed name
+        IMAGE_NAME=${{ github.repository_owner }}/$(echo "${{ github.repository }}" | cut -d'/' -f2)/${{ env.branch_name }}
+        # Push both tags
+        docker push ghcr.io/${IMAGE_NAME}:${{ env.commit_id }}
+        docker push ghcr.io/${IMAGE_NAME}:latest
