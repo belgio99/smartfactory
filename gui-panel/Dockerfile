@@ -17,19 +17,16 @@ COPY . .
 # Step 5: Build the React app (TypeScript compilation included)
 RUN npm run build
 
-# Step 6: Use a smaller web server (like Nginx) to serve the built app
-FROM nginx:alpine
-
-# Step 7: Copy the built React app to Nginx's web directory
-COPY --from=builder /app/build /usr/share/nginx/html
-
-# Step 8: Expose the port that Nginx is serving the app on
-EXPOSE 8000
-
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
 # For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
 RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
 USER appuser
 
-# Step 9: Use Nginx to serve the app
-CMD ["nginx", "-g", "daemon off;"]
+# Step 6: Set up the app to run with Node.js (production mode)
+# This will allow you to run the production build with `npm start`
+CMD ["npm", "start"]
+
+# Step 7: Expose the port that Nginx is serving the app on
+EXPOSE 8000
+
+
