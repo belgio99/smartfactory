@@ -1,15 +1,27 @@
 import rdflib
 from rdflib.namespace import RDF, Namespace
-from fastapi import FastAPI
 import json
 import sympy
 
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
 
-ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
 SA = Namespace("http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#")
 g = rdflib.Graph()
 g.parse(ONTOLOGY_PATH)
-app = FastAPI()
 
 def rdf_to_json(rdf_kpi):
     kpi_data = {}
@@ -55,7 +67,7 @@ def is_equal(formula1, formula2):
 
     return formula1 == formula2
 
-@app.get("/get_kpi")
+@app.get("/kb/{kpi_id}/get_kpi")
 async def get_kpi_endpoint(kpi_id: str):
     """
     Get KPI data by its ID via GET request.
@@ -65,5 +77,11 @@ async def get_kpi_endpoint(kpi_id: str):
         return {"error": "KPI not found"}
     return kpi_data
 
+@app.get("/kb")
+def read_root():
+    return {"Hello": "World"}
+
 if __name__ == "__main__":
     result = get_kpi("operative_time")
+
+    #uvicorn.run(app, port=8000, host="0.0.0.0")
