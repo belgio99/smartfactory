@@ -9,6 +9,7 @@ on:
       - 'RAG' # Topic 5
       - 'gui-panel' # Topic 6
       - 'kpi-engine' # Topic 8
+  workflow_dispatch:
 
 jobs:
   set-job-name:
