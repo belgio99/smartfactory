@@ -1,0 +1,18 @@
+{
+  "id": "1",
+  "name": "Dashboard 1",
+  "views": [
+    {
+      "kpi": "10",
+      "graph_type": "line"
+    },
+    {
+      "kpi": "14",
+      "graph_type": "barv"
+    },
+    {
+      "kpi": "17",
+      "graph_type": "pie"
+    }
+  ]
+}

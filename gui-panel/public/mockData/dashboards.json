@@ -1,0 +1,22 @@
+[
+  {
+    "id": "Lines",
+    "name": "Production Lines Dashboards",
+    "children": [
+      {
+        "id": "1",
+        "name": "Production Line #1"
+      }
+    ]
+  },
+  {
+    "id": "placeholder_f",
+    "name": "Saved Dashboard Folder Name",
+    "children": [
+      {
+        "id": "placeholder_d",
+        "name": "Saved Dashboard Name"
+      }
+    ]
+  }
+]
