@@ -1,0 +1,253 @@
+Classes:
+Class: Operation
+  Class: Assemble
+  Class: Cut
+  Class: Rivet
+  Class: Test
+  Class: Weld
+Class: Material
+Class: KPI
+  Class: EnergyKPI
+    Class: Consumption
+    Class: EnergyCost
+  Class: CustomKPItmp
+  Class: EnvironmentalKPI
+  Class: MachineUsageKPI
+  Class: MaintenanceKPI
+  Class: ProductionKPI
+    Class: Production
+    Class: ProductionCost
+    Class: Quality
+Class: Entity
+  Class: Machine
+    Class: AssemblyMachine
+    Class: CuttingMachine
+      Class: CapacityCuttingMachine
+      Class: LaserCutter
+    Class: LaserWeldingMachine
+    Class: RivetingMachine
+    Class: TestingMachine
+Class: Machine
+  Class: AssemblyMachine
+  Class: CuttingMachine
+    Class: CapacityCuttingMachine
+    Class: LaserCutter
+  Class: LaserWeldingMachine
+  Class: RivetingMachine
+  Class: TestingMachine
+Class: CapacityCuttingMachine
+Class: Assemble
+Class: AssemblyMachine
+Class: CuttingMachine
+  Class: CapacityCuttingMachine
+  Class: LaserCutter
+Class: LaserCutter
+Class: Consumption
+Class: EnergyKPI
+  Class: Consumption
+  Class: EnergyCost
+Class: EnergyCost
+Class: CustomKPItmp
+Class: Cut
+Class: EnvironmentalKPI
+Class: LaserWeldingMachine
+Class: MachineUsageKPI
+Class: MaintenanceKPI
+Class: Production
+Class: ProductionKPI
+  Class: Production
+  Class: ProductionCost
+  Class: Quality
+Class: ProductionCost
+Class: Quality
+Class: Rivet
+Class: RivetingMachine
+Class: Test
+Class: TestingMachine
+Class: Weld
+
+Properties:
+Property: atomic
+  Type: DataProperty
+  Data Type: bool
+Property: atomic_formula
+  Type: DataProperty
+  Data Type: str
+Property: capacity
+  Type: DataProperty
+  Data Type: str
+Property: description
+  Type: DataProperty
+  Data Type: str
+Property: forecastable
+  Type: DataProperty
+  Data Type: bool
+Property: formula
+  Type: DataProperty
+  Data Type: str
+Property: id
+  Type: DataProperty
+  Data Type: str
+Property: unit_measure
+  Type: DataProperty
+  Data Type: str
+Property: consumesMaterial
+  Type: ObjectProperty
+  Domain: Operation
+  Range: Material
+Property: isConsumedBy
+  Type: ObjectProperty
+  Domain: Material
+  Range: Operation
+Property: isProducedBy
+  Type: ObjectProperty
+  Domain: KPI
+  Range: Entity
+Property: producesKPI
+  Type: ObjectProperty
+  Domain: Entity
+  Range: KPI
+Property: isProducedBy_op
+  Type: ObjectProperty
+  Domain: KPI
+  Range: Operation
+Property: producesKPI_op
+  Type: ObjectProperty
+  Domain: Operation
+  Range: KPI
+Property: performedBy
+  Type: ObjectProperty
+  Domain: Operation
+  Range: Machine
+Property: performsOperation
+  Type: ObjectProperty
+  Domain: Machine
+  Range: Operation
+
+Individuals:
+Individual: assembly_machine_1
+  description: A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors
+  id: assembly_machine_1
+  producesKPI: idle_time_avg
+  producesKPI: idle_time_max
+  producesKPI: idle_time_min
+  producesKPI: idle_time_sum
+  producesKPI: machine_utilization_rate
+  producesKPI: operative_time
+  producesKPI: working_time_avg
+  producesKPI: working_time_max
+  producesKPI: working_time_min
+  producesKPI: working_time_sum
+Individual: idle_time_avg
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the average.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: idle_time_avg
+  unit_measure: s
+Individual: idle_time_max
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: idle_time_max
+  unit_measure: s
+Individual: idle_time_min
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: idle_time_min
+  unit_measure: s
+Individual: idle_time_sum
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the sum.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: idle_time_sum
+  unit_measure: s
+Individual: machine_utilization_rate
+  atomic: False
+  atomic_formula: working_time_sum/(working_time_sum+idle_time_sum)
+  description: This KPI allows to assess how much a machine was used over a period.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: working_time_sum/operative_time
+  id: machine_utilization_rate
+  unit_measure: %
+Individual: operative_time
+  atomic: False
+  atomic_formula: working_time_sum+idle_time_sum
+  description: This KPI measures the time the machine spends in operative state (when it is both in working state and idle state).
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: working_time_sum+idle_time_sum
+  id: operative_time
+  unit_measure: s
+Individual: working_time_avg
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the average.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: working_time_avg
+  unit_measure: s
+Individual: working_time_max
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the maximum.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: working_time_max
+  unit_measure: s
+Individual: working_time_min
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in idle state, considering the minimum.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: working_time_min
+  unit_measure: s
+Individual: working_time_sum
+  atomic: True
+  atomic_formula: -
+  description: This KPI is atomic, it measures the time the machine spends in working state, considering the sum.
+  isProducedBy: assembly_machine_1
+  isProducedBy: assembly_machine_2
+  forecastable: False
+  formula: -
+  id: working_time_sum
+  unit_measure: s
+Individual: assembly_machine_2
+  description: A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors
+  id: assemlby_machine_2
+  producesKPI: idle_time_avg
+  producesKPI: idle_time_max
+  producesKPI: idle_time_min
+  producesKPI: idle_time_sum
+  producesKPI: machine_utilization_rate
+  producesKPI: operative_time
+  producesKPI: working_time_avg
+  producesKPI: working_time_max
+  producesKPI: working_time_min
+  producesKPI: working_time_sum
