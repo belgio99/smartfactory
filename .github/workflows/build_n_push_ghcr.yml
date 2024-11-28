@@ -55,20 +55,19 @@ jobs:
 
     - name: Build Docker image
       run: |
-        # Extract repository name from full repo path
+        # Extract repository name (e.g., "smartfactory" from "belgio99/smartfactory")
         REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+        # Construct the image name dynamically
         IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.branch_name }}
-        
-        # Build Docker image with two tags: commit ID and latest
+        # Build the Docker image with both the commit ID and latest tags
         docker build -t ghcr.io/${IMAGE_NAME}:${{ env.commit_id }} \
                      -t ghcr.io/${IMAGE_NAME}:latest \
                      ./${{ env.branch_name }}
 
     - name: Push Docker image
       run: |
-        REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.branch_name }}
-
+        # Push the image using the dynamically constructed name
+        IMAGE_NAME=${{ github.repository_owner }}/$(echo "${{ github.repository }}" | cut -d'/' -f2)/${{ env.branch_name }}
         # Push both tags
         docker push ghcr.io/${IMAGE_NAME}:${{ env.commit_id }}
         docker push ghcr.io/${IMAGE_NAME}:latest
