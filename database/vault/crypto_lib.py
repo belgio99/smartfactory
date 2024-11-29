@@ -2,7 +2,8 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 import struct
 import pandas as pd
-from vault_lib import start_vault, stop_vault, create_client
+from vault.vault_lib import start_vault, stop_vault, create_client
+
 
 KEY_NAME = "druid-key"
 

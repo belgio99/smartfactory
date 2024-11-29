@@ -9,7 +9,7 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 load_dotenv(dotenv_path=env_path) # Load environment variables from the .env file
 
 # Add the parent directory of 'vault' to sys.path
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from vault.crypto_lib import encrypt_csv
 
@@ -109,6 +109,10 @@ def main():
                 print(f"Skipping file {file_name}: {e}")
             except Exception as e:
                 print(f"An error occurred during conversion of {file_name}: {e}")
+
+    # Check if the list of CSV files is empty
+    if not csv_files:
+        print("Upload folder empty")
 
     # Then submit only the CSV files to Druid
     for csv_file_path in csv_files:

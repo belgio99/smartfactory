@@ -28,119 +28,119 @@ volumes:
   minio_data: {}
 
 services:
-  #   postgres:
-  #     container_name: postgres
-  #     image: postgres:latest
-  #     ports:
-  #       - "5433:5432"  # Change 5433 to any available port
-  #     platform: linux/amd64
-  #     volumes:
-  #       - metadata_data:/var/lib/postgresql/data
-  #     environment:
-  #       POSTGRES_HOST_AUTH_METHOD: trust
-  #     env_file:
-  #       - database/.env
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    ports:
+      - "5433:5432" # Change 5433 to any available port
+    platform: linux/amd64
+    volumes:
+      - metadata_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+    env_file:
+      - database/.env
 
-  #   # Need 3.5 or later for container nodes
-  #   zookeeper:
-  #     container_name: zookeeper
-  #     image: zookeeper:3.5.10
-  #     platform: linux/amd64
-  #     ports:
-  #       - "2181:2181"
-  #     environment:
-  #       - ZOO_MY_ID=1
-  #       - ZOO_SERVERS=server.1=zookeeper:2888:3888  # Set only a single server
+  # Need 3.5 or later for container nodes
+  zookeeper:
+    container_name: zookeeper
+    image: zookeeper:3.5.10
+    platform: linux/amd64
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOO_MY_ID=1
+      - ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
 
-  #   coordinator:
-  #     image: apache/druid:31.0.0
-  #     container_name: coordinator
-  #     platform: linux/amd64
-  #     volumes:
-  #       - druid_shared:/opt/shared
-  #       - coordinator_var:/opt/druid/var
-  #       - ./database:/obj_storage
-  #     depends_on:
-  #       - zookeeper
-  #       - postgres
-  #     ports:
-  #       - "8081:8081"
-  #     command:
-  #       - coordinator
-  #     env_file:
-  #       - database/environment
+  coordinator:
+    image: apache/druid:31.0.0
+    container_name: coordinator
+    platform: linux/amd64
+    volumes:
+      - druid_shared:/opt/shared
+      - coordinator_var:/opt/druid/var
+      - ./database:/obj_storage
+    depends_on:
+      - zookeeper
+      - postgres
+    ports:
+      - "8081:8081"
+    command:
+      - coordinator
+    env_file:
+      - database/environment
 
-  #   broker:
-  #     image: apache/druid:31.0.0
-  #     container_name: broker
-  #     platform: linux/amd64
-  #     volumes:
-  #       - broker_var:/opt/druid/var
-  #     depends_on:
-  #       - zookeeper
-  #       - postgres
-  #       - coordinator
-  #     ports:
-  #       - "8082:8082"
-  #     command:
-  #       - broker
-  #     env_file:
-  #       - database/environment
+  broker:
+    image: apache/druid:31.0.0
+    container_name: broker
+    platform: linux/amd64
+    volumes:
+      - broker_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8082:8082"
+    command:
+      - broker
+    env_file:
+      - database/environment
 
-  #   historical:
-  #     image: apache/druid:31.0.0
-  #     container_name: historical
-  #     platform: linux/amd64
-  #     volumes:
-  #       - druid_shared:/opt/shared
-  #       - historical_var:/opt/druid/var
-  #     depends_on:
-  #       - zookeeper
-  #       - postgres
-  #       - coordinator
-  #     ports:
-  #       - "8083:8083"
-  #     command:
-  #       - historical
-  #     env_file:
-  #       - database/environment
+  historical:
+    image: apache/druid:31.0.0
+    container_name: historical
+    platform: linux/amd64
+    volumes:
+      - druid_shared:/opt/shared
+      - historical_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8083:8083"
+    command:
+      - historical
+    env_file:
+      - database/environment
 
-  #   middlemanager:
-  #     image: apache/druid:31.0.0
-  #     container_name: middlemanager
-  #     platform: linux/amd64
-  #     volumes:
-  #       - druid_shared:/opt/shared
-  #       - middle_var:/opt/druid/var
-  #       - ./database:/obj_storage
-  #     depends_on:
-  #       - zookeeper
-  #       - postgres
-  #       - coordinator
-  #     ports:
-  #       - "8091:8091"
-  #       - "8100-8105:8100-8105"
-  #     command:
-  #       - middleManager
-  #     env_file:
-  #       - database/environment
+  middlemanager:
+    image: apache/druid:31.0.0
+    container_name: middlemanager
+    platform: linux/amd64
+    volumes:
+      - druid_shared:/opt/shared
+      - middle_var:/opt/druid/var
+      - ./database:/obj_storage
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8091:8091"
+      - "8100-8105:8100-8105"
+    command:
+      - middleManager
+    env_file:
+      - database/environment
 
-  #   router:
-  #     image: apache/druid:31.0.0
-  #     container_name: router
-  #     platform: linux/amd64
-  #     volumes:
-  #       - router_var:/opt/druid/var
-  #     depends_on:
-  #       - zookeeper
-  #       - postgres
-  #       - coordinator
-  #     ports:
-  #       - "8888:8888"
-  #     command:
-  #       - router
-  #     env_file:
-  #       - database/environment
+  router:
+    image: apache/druid:31.0.0
+    container_name: router
+    platform: linux/amd64
+    volumes:
+      - router_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8888:8888"
+    command:
+      - router
+    env_file:
+      - database/environment
 
   db:
     container_name: db
