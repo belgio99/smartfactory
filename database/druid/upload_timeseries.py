@@ -1,10 +1,17 @@
 import os
+import sys
 import pandas as pd
 import requests
 from dotenv import load_dotenv
-from crypto_lib import encrypt_csv
+from pathlib import Path
 
-load_dotenv() # Load environment variables from the .env file
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path) # Load environment variables from the .env file
+
+# Add the parent directory of 'vault' to sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from vault.crypto_lib import encrypt_csv
 
 # Helper function to convert different formats to CSV if needed
 def convert_to_csv(file_path):
