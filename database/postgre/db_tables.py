@@ -1,8 +1,10 @@
 import os
-from dotenv import load_dotenv
 import psycopg2
+from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv() # Load environment variables from the .env file
+env_path = Path(__file__).resolve().parent.parent / ".env"
+load_dotenv(dotenv_path=env_path) # Load environment variables from the .env file
 
 def get_postgres_cursor():
     try:
@@ -61,7 +63,7 @@ if __name__ == "__main__":
             Description VARCHAR(255) NOT NULL,
             TriggeredAt TIMESTAMP NOT NULL,
             MachineName VARCHAR(50) NOT NULL,
-            isPush BIT DEFAULT 0,
+            isPush BOOLEAN DEFAULT FALSE,
             Severity VARCHAR(10) NOT NULL
             CHECK (Severity IN ('Low', 'Medium', 'High'))
             )
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         for query in create_table_queries:
             cur.execute(query)
             conn.commit()
-            print("Table created successfully")
 
+        print("Tables created successfully")
         cur.close()
         conn.close()
