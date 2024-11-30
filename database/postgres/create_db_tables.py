@@ -77,6 +77,14 @@ if __name__ == "__main__":
             FOREIGN KEY (AlertID) REFERENCES Alerts(AlertID) ON DELETE CASCADE,
             FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS Models (
+            ID SERIAL PRIMARY KEY,
+            KPI VARCHAR(50) NOT NULL,
+            MachineName VARCHAR(50) NOT NULL,
+            ModelPath TEXT NOT NULL
+            )
             """
         ]
 

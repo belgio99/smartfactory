@@ -24,8 +24,8 @@ def main():
     client = initialize_minio_client()
 
     # Define the bucket names
-    reports_bucket_name = "reports-bucket"
-    backup_bucket_name = "backups-bucket"
+    reports_bucket_name = "reports"
+    models_bucket_name = "models"
 
     # Create the buckets if they don't exist
     try:
@@ -35,11 +35,11 @@ def main():
         else:
             print(f"Bucket '{reports_bucket_name}' already exists.")
 
-        if not client.bucket_exists(backup_bucket_name):
-            client.make_bucket(backup_bucket_name)
-            print(f"Bucket '{backup_bucket_name}' created successfully.")
+        if not client.bucket_exists(models_bucket_name):
+            client.make_bucket(models_bucket_name)
+            print(f"Bucket '{models_bucket_name}' created successfully.")
         else:
-            print(f"Bucket '{backup_bucket_name}' already exists.")
+            print(f"Bucket '{models_bucket_name}' already exists.")
     except S3Error as exc:
         print("Error occurred while checking/creating buckets.", exc)
 
