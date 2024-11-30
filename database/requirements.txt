@@ -1,0 +1,5 @@
+hvac
+minio
+pandas
+python-dotenv
+psycopg2-binary
