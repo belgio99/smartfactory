@@ -10,7 +10,7 @@ from database.connection import get_db_connection, query_db_with_params, close_c
 from constants import *
 import logging
 
-from api_auth import ACCESS_TOKEN_EXPIRW_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
+from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
 from datetime import datetime, timedelta, timezone
 from jose import jwt
@@ -165,7 +165,7 @@ def login(body: Login):
         close_connection(connection, cursor)
         logging.info("User logged in successfully")
     
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRW_MINUTES)
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = jwt.encode(
             {"sub": result[1], "role": result[3], "exp": datetime.now(timezone.utc) + access_token_expires},
             SECRET_KEY,

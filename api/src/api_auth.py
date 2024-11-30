@@ -10,10 +10,10 @@ from database.connection import get_db_connection
 
 SECRET_KEY = 'fJ0KSAxFqFiAFPxpAw7QdlUINm8yo7EB'   # DUMMY KEY, PLEASE USE os.getenv("SECRET_KEY") IN PRODUCTION
 ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRW_MINUTES = 30 # change this value accordingly to your requirements
+ACCESS_TOKEN_EXPIRE_MINUTES = 30 # change this value accordingly to your requirements
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/smartfacrory/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/smartfactory/login")
 
 api_key_header = APIKeyHeader(name="X-API-Key")
 
