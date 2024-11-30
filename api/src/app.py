@@ -141,7 +141,7 @@ def get_user_settings(userId: str, api_key: str = Depends(get_verify_api_key(["g
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/smartfactory/login")
-def login(body: Login):
+def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to login a user.
     This endpoint receives the user credentials and logins the user if it is present in the database.
@@ -185,7 +185,7 @@ def login(body: Login):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/smartfactory/logout")
-def logout(userId: str):
+def logout(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to logout a user.
     This endpoint receives the userId and logouts the user if it is present in the database.
@@ -216,7 +216,7 @@ def logout(userId: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
-def register(body: Register):
+def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to register a user.
     This endpoint receives the user info and inserts a new user if it is not present in the database.
