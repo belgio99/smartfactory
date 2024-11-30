@@ -32,6 +32,18 @@ class Register(BaseModel):
     role: str
     site: str
 
+class ChangePassword(BaseModel):
+    """
+    Represents the register request body.
+
+    Attributes:
+        old_password (str): The old password of the user.
+        new_password (str): The new password of the user.
+    """
+    old_password: str
+    new_password: str
+
+
 class UserInfo(BaseModel):
     """
     Represents a user.

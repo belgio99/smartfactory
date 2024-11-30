@@ -258,7 +258,50 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
 
-# TODO: rename
+@app.put("/smartfactory/user/{userId}", status_code=status.HTTP_201_CREATED)
+def change_password(userId: str, body: ChangePassword, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to change a user's password.
+    This endpoint receives the user id and the old password inserted, and updates the user's password if the old password is correct.
+    Args:
+        body (ChangePassword): the user details of the user, including both the new and old password.
+    Returns:
+        UserInfo object with the details of the user created.
+    Raises:
+        HTTPException: If the user is not present in the database
+    """
+    try:
+        connection, cursor = get_db_connection()   
+        # Check if old password is correct
+        query = "SELECT Password FROM Users WHERE UserID = %s"
+        response = query_db_with_params(cursor, connection, query, (userId,))
+
+        if not response or not password_context.verify(body.old_password, response[0][0]):
+            logging.error("Invalid credentials")
+            raise HTTPException(status_code=401, detail="Invalid password")
+        
+        hashed_password = password_context.hash(body.new_password)
+        # Update user password in the database
+        query_update = "UPDATE Users SET password = %s WHERE UserID = %s;"
+        cursor.execute(query_update, (body.username, body.email, body.role, hashed_password, body.site))
+        connection.commit()
+        # check if updated correctly
+        result = cursor.rowcount()
+        if result == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        close_connection(connection, cursor)
+        return JSONResponse(content={"message": "Password changed successfully"}, status_code=200)
+    
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
+        raise e
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        close_connection(connection, cursor)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/smartfactory/dashboardSettings/{userId}")
 def retrieve_dashboard_settings(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
