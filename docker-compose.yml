@@ -57,7 +57,7 @@ services:
     volumes:
       - druid_shared:/opt/shared
       - coordinator_var:/opt/druid/var
-      - ./database:/obj_storage
+      - ./database/druid/upload:/druid/upload
     depends_on:
       - zookeeper
       - postgres
@@ -110,7 +110,7 @@ services:
     volumes:
       - druid_shared:/opt/shared
       - middle_var:/opt/druid/var
-      - ./database:/obj_storage
+      - ./database/druid/upload:/druid/upload
     depends_on:
       - zookeeper
       - postgres
