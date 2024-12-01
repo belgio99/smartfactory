@@ -300,6 +300,14 @@
     
 
 
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine"/>
+    </owl:Class>
+    
+
+
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter">
@@ -312,6 +320,14 @@
 
     <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine">
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
+    </owl:Class>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LowCapacityCuttingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LowCapacityCuttingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine"/>
     </owl:Class>
     
 
@@ -343,6 +359,14 @@
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material -->
 
     <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine -->
+
+    <owl:Class rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine">
+        <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine"/>
+    </owl:Class>
     
 
 
@@ -475,6 +499,16 @@
     
 
 
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_3 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_3">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
+        <sa-ontology:description>A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors</sa-ontology:description>
+        <sa-ontology:id>assembly_machine_3</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#idle_time_avg">
@@ -543,6 +577,66 @@
     
 
 
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
+        <sa-ontology:description>A machine ideal for heavy-duty cutting tasks on materials like thick steel, aluminum, or titanium. These machines are designed for large-scale industrial jobs and high productivity.</sa-ontology:description>
+        <sa-ontology:id>Large Capacity Cutting Machine 1</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
+        <sa-ontology:description>A machine ideal for heavy-duty cutting tasks on materials like thick steel, aluminum, or titanium. These machines are designed for large-scale industrial jobs and high productivity.</sa-ontology:description>
+        <sa-ontology:id>Large Capacity Cutting Machine 2</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_cutter_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_cutter_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter"/>
+        <sa-ontology:description>A machine that uses a high-powered laser beam to cut materials with high precision. Ideal for shaping metals, plastics, wood, and other materials with complex details or tight tolerances</sa-ontology:description>
+        <sa-ontology:id>Laser Cutter</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine"/>
+        <sa-ontology:description>A machine that uses a laser beam to weld metallic components. It offers high precision and minimal heat-affected zones, making it ideal for delicate applications such as electronics and mechanical components.</sa-ontology:description>
+        <sa-ontology:id>Laser Welding Machine 1</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine"/>
+        <sa-ontology:description>A machine that uses a laser beam to weld metallic components. It offers high precision and minimal heat-affected zones, making it ideal for delicate applications such as electronics and mechanical components.</sa-ontology:description>
+        <sa-ontology:id>Laser Welding Machine 2</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LowCapacityCuttingMachine"/>
+        <sa-ontology:description>Designed for light-duty operations, this machine is suitable for thin materials or applications requiring precision on a small scale. Commonly used for prototypes or small production batches.</sa-ontology:description>
+        <sa-ontology:id>Low Capacity Cutting Machine 1</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#machine_utilization_rate -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#machine_utilization_rate">
@@ -560,6 +654,36 @@
     
 
 
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
+        <sa-ontology:description>A versatile machine for medium-intensity cutting operations. It can handle thicker or denser materials, making it applicable across various industrial sectors.</sa-ontology:description>
+        <sa-ontology:id>Medium Capacity Cutting Machine 1</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
+        <sa-ontology:description>A versatile machine for medium-intensity cutting operations. It can handle thicker or denser materials, making it applicable across various industrial sectors.</sa-ontology:description>
+        <sa-ontology:id>Medium Capacity Cutting Machine 2</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
+        <sa-ontology:description>A versatile machine for medium-intensity cutting operations. It can handle thicker or denser materials, making it applicable across various industrial sectors.</sa-ontology:description>
+        <sa-ontology:id>Medium Capacity Cutting Machine 3</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#operative_time -->
 
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#operative_time">
@@ -573,6 +697,46 @@
         <sa-ontology:formula>working_time_sum+idle_time_sum</sa-ontology:formula>
         <sa-ontology:id>operative_time</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#riveting_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#riveting_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#RivetingMachine"/>
+        <sa-ontology:description>A machine designed to join two or more components using rivets. Widely used in the aerospace, automotive, and metal structure construction industries.</sa-ontology:description>
+        <sa-ontology:id>Riveting Machine</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
+        <sa-ontology:description>A machine used for testing components or final products. It can perform mechanical, electrical, or functional checks to ensure quality and compliance with design specifications.</sa-ontology:description>
+        <sa-ontology:id>Testing Machine 1</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
+        <sa-ontology:description>A machine used for testing components or final products. It can perform mechanical, electrical, or functional checks to ensure quality and compliance with design specifications.</sa-ontology:description>
+        <sa-ontology:id>Testing Machine 2</sa-ontology:id>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3 -->
+
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3">
+        <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
+        <sa-ontology:description>A machine used for testing components or final products. It can perform mechanical, electrical, or functional checks to ensure quality and compliance with design specifications.</sa-ontology:description>
+        <sa-ontology:id>Testing Machine 3</sa-ontology:id>
     </owl:NamedIndividual>
     
 
@@ -691,6 +855,14 @@
             <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#KPI"/>
             <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Material"/>
             <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Operation"/>
+        </owl:members>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LowCapacityCuttingMachine"/>
+            <rdf:Description rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         </owl:members>
     </rdf:Description>
 </rdf:RDF>
