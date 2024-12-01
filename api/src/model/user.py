@@ -29,7 +29,6 @@ class Register(BaseModel):
     email: str
     role: str
     password: str
-    role: str
     site: str
 
 class ChangePassword(BaseModel):

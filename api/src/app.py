@@ -278,7 +278,9 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
         # Check if old password is correct
         query = "SELECT Password FROM Users WHERE UserID = %s"
         response = query_db_with_params(cursor, connection, query, (userId,))
-
+        print(response)
+        print(response[0][0])
+        print(body.old_password)
         if not response or not password_context.verify(body.old_password, response[0][0]):
             logging.error("Invalid credentials")
             raise HTTPException(status_code=401, detail="Invalid password")
