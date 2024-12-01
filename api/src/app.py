@@ -1,3 +1,4 @@
+from threading import Thread
 from typing import Annotated
 from fastapi.responses import JSONResponse
 from pydantic import Json
@@ -10,7 +11,9 @@ from user_settings_service import persist_user_settings, retrieve_user_settings,
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from constants import *
 import logging
-import time
+from model.task import *
+from contextlib import asynccontextmanager
+import asyncio
 
 from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
@@ -18,9 +21,31 @@ from model.report import Report
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 
-
-app = FastAPI()
 logging.basicConfig(level=logging.INFO)
+
+tasks = []
+tasks_lock = asyncio.Lock()
+
+async def task_scheduler():
+    """Central scheduler that runs periodic tasks."""
+    while True:
+        async with tasks_lock:
+            for t in tasks:
+                if t.shouldRun():
+                    await t.run()
+        await asyncio.sleep(1)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager to start and stop the scheduler."""
+    scheduler_task = asyncio.create_task(task_scheduler())
+    try:
+        yield 
+    finally:
+        scheduler_task.cancel()  # Cancel the scheduler on application shutdown
+        await scheduler_task  # Ensure it exits cleanly
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -376,8 +401,8 @@ def retrieve_reports(userId: int, api_key: str = Depends(get_verify_api_key(["gu
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.post("/smartfactory/generateReport", status_code=status.HTTP_201_CREATED)
-def generate_report(userId: Annotated[str, Body()], params: Annotated[dict, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+@app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
+def generate_report(userId: Annotated[str, Body()], params: Annotated[dict, Body()], is_scheduled = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID FROM Users WHERE UserID = %s"
@@ -396,7 +421,34 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[dict, Body
         report_db = cursor.fetchone()
         report = Report(id=report_db[0], name=report_db[1], type=report_db[2], data=report_data)
         close_connection(connection, cursor)
+        logging.info(report.model_dump_json)
         return JSONResponse(content={"data": report.model_dump()}, status_code=201)
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
+        raise e
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        close_connection(connection, cursor)
+        raise HTTPException(status_code=500, detail=str(e))
+    
+def generate_and_send_report(userId: str, params: dict, api_key: str):
+    logging.info("Started scheduled report generation")
+    report = generate_report(userId, params, True, api_key)
+    #TODO send email
+
+@app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
+async def schedule_report(userId: Annotated[str, Body()], params: Annotated[dict, Body()], period: Annotated[SchedulingFrequency, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+    try:
+        connection, cursor = get_db_connection()   
+        query = "SELECT UserID FROM Users WHERE UserID = %s"
+        response = query_db_with_params(cursor, connection, query, (int(userId),))
+        if not response:
+            logging.error("User not found")
+            raise HTTPException(status_code=404, detail="User not found")
+        close_connection(connection, cursor)
+        async with tasks_lock:
+            tasks.append(Task(func=generate_and_send_report, args=(userId, params, api_key), delay=period.seconds))
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
