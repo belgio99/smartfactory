@@ -11,15 +11,28 @@ except LookupError:
 
 
 class RagExplainer:
-    def __init__(self, context: List[Tuple[str, str]] = [], threshold: float = 60.0, verbose: bool = False):
+    def __init__(
+        self,
+        context: List[Tuple[str, str]] = [],
+        threshold: float = 60.0,
+        verbose: bool = False,
+        tokenize_context: bool = True
+    ):
         """
-        Initializes the RagExplainer object with the given context, threshold, and verbose flag.
+        Initializes the RagExplainer object with the given context, threshold, verbose flag, and context tokenization flag.
+
+        Parameters:
+        - context: List of tuples containing source name and context string.
+        - threshold: Similarity threshold for matching.
+        - verbose: Flag to enable verbose output.
+        - tokenize_context: If True, context strings are tokenized into sentences.
         """
         self.threshold = threshold
         self.verbose = verbose
+        self.tokenize_context = tokenize_context
 
         # Initialize context data structures
-        self.context_sentences = []        # List of unique sentences
+        self.context_sentences = []        # List of unique sentences or strings
         self.sentence_to_source = {}       # Mapping from sentence to source name
 
         # Process initial context (if any)
@@ -82,18 +95,24 @@ class RagExplainer:
 
     def _process_context(self, context: List[Tuple[str, str]]):
         """
-        Processes the context by tokenizing and adding to the internal data structures.
+        Processes the context by tokenizing (if applicable) and adding to the internal data structures.
         """
         for idx, (source_name, ctx) in enumerate(context):
-            ctx_sentences = sent_tokenize(ctx)
-            if not ctx_sentences:
-                raise ValueError(f"The context at index {idx} does not contain any sentences after tokenization.")
-            for sentence in ctx_sentences:
-                if sentence not in self.sentence_to_source:
-                    self.context_sentences.append(sentence)
-                    self.sentence_to_source[sentence] = source_name
+            if self.tokenize_context:
+                ctx_strings = sent_tokenize(ctx)
+                if not ctx_strings:
+                    raise ValueError(f"The context at index {idx} does not contain any sentences after tokenization.")
+            else:
+                ctx_strings = [ctx] if ctx else []
+                if not ctx_strings:
+                    raise ValueError(f"The context at index {idx} is empty.")
+
+            for string in ctx_strings:
+                if string not in self.sentence_to_source:
+                    self.context_sentences.append(string)
+                    self.sentence_to_source[string] = source_name
                 else:
-                    # Sentence already exists, possibly from a different source_name
+                    # String already exists, possibly from a different source_name
                     pass  # We can choose to keep the first occurrence
 
     def add_to_context(self, extra_context: List[Tuple[str, str]]):
@@ -195,8 +214,8 @@ class RagExplainer:
 
 if __name__ == "__main__":
     # Example usage
-    # Initialize RagExplainer without context
-    explainer = RagExplainer(threshold=55.0, verbose=False)
+    # Initialize RagExplainer with tokenize_context flag
+    explainer = RagExplainer(threshold=55.0, verbose=False, tokenize_context=False)
 
     # Add initial context
     context = [
@@ -237,14 +256,16 @@ if __name__ == "__main__":
 
     explainer.add_to_context(extra_context)
 
-    response = ("Artificial intelligence has revolutionized industries by improving processes in fields like transportation and healthcare. "
-                "For instance, machine learning allows systems to adapt and learn without being explicitly programmed. "
-                "The Earth's atmosphere is vital for life, with nitrogen and oxygen making up its majority. "
-                "The Sun, central to our solar system, has a mass that constitutes the majority of the system. "
-                "Planets like Jupiter and Saturn are gas giants, while Earth supports life due to its unique atmosphere and magnetic field. "
-                "Historical events such as the Industrial Revolution reshaped human societies, laying the groundwork for today's interconnected world. "
-                "My name is Alex, and I'm fascinated by these topics. "
-                "The Sun, central to our solar system, has a mass that constitutes the majority of the system.")
+    response = (
+        "Artificial intelligence has revolutionized industries by improving processes in fields like transportation and healthcare. "
+        "For instance, machine learning allows systems to adapt and learn without being explicitly programmed. "
+        "The Earth's atmosphere is vital for life, with nitrogen and oxygen making up its majority. "
+        "The Sun, central to our solar system, has a mass that constitutes the majority of the system. "
+        "Planets like Jupiter and Saturn are gas giants, while Earth supports life due to its unique atmosphere and magnetic field. "
+        "Historical events such as the Industrial Revolution reshaped human societies, laying the groundwork for today's interconnected world. "
+        "My name is Alex, and I'm fascinated by these topics. "
+        "The Sun, central to our solar system, has a mass that constitutes the majority of the system."
+    )
 
     # Call the attribute_response_to_context method
     textResponse, textExplanation, attribution_results = explainer.attribute_response_to_context(response)
