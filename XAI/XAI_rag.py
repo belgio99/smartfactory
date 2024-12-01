@@ -1,4 +1,5 @@
-from typing import List, Dict, Any, Tuple, Callable
+from typing import List, Dict, Any, Tuple
+import numpy as np
 from rapidfuzz import process, fuzz
 import nltk
 from nltk.tokenize import sent_tokenize
@@ -9,15 +10,20 @@ try:
 except LookupError:
     nltk.download('punkt', quiet=True)
 
+# Import for embeddings
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
+
 
 class RagExplainer:
     def __init__(
         self,
         context: List[Tuple[str, str]] = [],
-        threshold: float = 55.0,
+        threshold: float = 60.0,
         verbose: bool = False,
         tokenize_context: bool = True,
-        scorer: Callable[[str, str], float] = fuzz.partial_ratio
+        use_embeddings: bool = False,
+        embedding_model_name: str = 'all-MiniLM-L6-v2'
     ):
         """
         Initializes the RagExplainer object with the given parameters.
@@ -27,16 +33,24 @@ class RagExplainer:
         - threshold: Similarity threshold for matching.
         - verbose: Flag to enable verbose output.
         - tokenize_context: If True, context strings are tokenized into sentences.
-        - scorer: Scoring function used by RapidFuzz for matching.
+        - use_embeddings: If True, use embeddings for similarity matching.
+        - embedding_model_name: The name of the embedding model to use.
         """
         self.threshold = threshold
         self.verbose = verbose
         self.tokenize_context = tokenize_context
-        self.scorer = scorer
+        self.use_embeddings = use_embeddings
 
         # Initialize context data structures
         self.context_sentences = []        # List of unique sentences or strings
         self.sentence_to_source = {}       # Mapping from sentence to source name
+        self.context_embeddings = None     # Embeddings for context sentences
+
+        # Initialize embedding model if needed
+        if self.use_embeddings:
+            self.embedding_model = SentenceTransformer(embedding_model_name)
+        else:
+            self.embedding_model = None  # Not used when use_embeddings=False
 
         # Process initial context (if any)
         self.add_to_context(context)
@@ -100,6 +114,8 @@ class RagExplainer:
         """
         Processes the context by tokenizing (if applicable) and adding to the internal data structures.
         """
+        new_context_sentences = []
+        new_sentence_to_source = {}
         for idx, (source_name, ctx) in enumerate(context):
             if self.tokenize_context:
                 ctx_strings = sent_tokenize(ctx)
@@ -114,9 +130,21 @@ class RagExplainer:
                 if string not in self.sentence_to_source:
                     self.context_sentences.append(string)
                     self.sentence_to_source[string] = source_name
+                    new_context_sentences.append(string)
+                    new_sentence_to_source[string] = source_name
                 else:
                     # String already exists, possibly from a different source_name
                     pass  # We can choose to keep the first occurrence
+
+        # Update embeddings if using embeddings
+        if self.use_embeddings and new_context_sentences:
+            # Generate embeddings for new context sentences
+            new_embeddings = self.embedding_model.encode(new_context_sentences, convert_to_tensor=True)
+            if self.context_embeddings is None:
+                self.context_embeddings = new_embeddings
+            else:
+                # Concatenate with existing embeddings
+                self.context_embeddings = np.concatenate((self.context_embeddings, new_embeddings), axis=0)
 
     def add_to_context(self, extra_context: List[Tuple[str, str]]):
         """
@@ -162,51 +190,104 @@ class RagExplainer:
         textResponse = ''
         textExplanation = ''
 
-        # Step 3: Compare each response segment with all context segments
-        for response_segment in response_segments:
-            original_response_segment = response_segment  # Store the original segment without references
+        if self.use_embeddings:
+            # Generate embeddings for response segments
+            response_embeddings = self.embedding_model.encode(response_segments, convert_to_tensor=True)
 
-            # Use RapidFuzz to find the best match for the response segment
-            match = process.extractOne(
-                response_segment, self.context_sentences, scorer=self.scorer, score_cutoff=self.threshold
-            )
+            # Compute cosine similarity between response segments and context sentences
+            similarity_matrix = cosine_similarity(response_embeddings, self.context_embeddings)
 
-            # Initialize default values
-            context_match = None
-            similarity_score = 0
-            source_name = None
+            for idx, response_segment in enumerate(response_segments):
+                original_response_segment = response_segment  # Store the original segment without references
 
-            # If a match is found, unpack the values and build textResponse and textExplanation during the loop
-            if match:
-                context_match, similarity_score, _ = match
-                source_name = self.sentence_to_source.get(context_match)
-                if (source_name, context_match) not in references:
-                    # Add reference to textExplanation
-                    references.append((source_name, context_match))
-                    textExplanation += f'[{len(references)}] {source_name}: {context_match}\n'
-                # Add reference number to response segment
-                ref_num = references.index((source_name, context_match)) + 1
+                # Find the best match above the threshold
+                similarities = similarity_matrix[idx]
+                max_similarity = np.max(similarities)
+                best_match_idx = np.argmax(similarities)
 
-                # Insert reference number before punctuation
-                response_segment = self._insert_reference(response_segment, ref_num)
-                textResponse += response_segment + ' '
-            else:
-                textResponse += response_segment + ' '
+                # Convert similarity to percentage
+                similarity_score = max_similarity * 100
 
-            # Prepare the result dictionary
-            result = {
-                "response_segment": original_response_segment,  # Without reference numbers
-                "context": context_match,
-                "source_name": source_name,
-                "similarity_score": similarity_score
-            }
+                if similarity_score >= self.threshold:
+                    context_match = self.context_sentences[best_match_idx]
+                    source_name = self.sentence_to_source.get(context_match)
+                    if (source_name, context_match) not in references:
+                        # Add reference to textExplanation
+                        references.append((source_name, context_match))
+                        textExplanation += f'[{len(references)}] {source_name}: {context_match}\n'
+                    # Add reference number to response segment
+                    ref_num = references.index((source_name, context_match)) + 1
 
-            # Append the result to the attribution list
-            attribution.append(result)
+                    # Insert reference number before punctuation
+                    response_segment = self._insert_reference(response_segment, ref_num)
+                    textResponse += response_segment + ' '
+                else:
+                    context_match = None
+                    source_name = None
+                    similarity_score = 0
+                    textResponse += response_segment + ' '
 
-            # Verbose output
-            if self.verbose:
-                self._print_verbose(result, textResponse.strip(), textExplanation.strip())
+                # Prepare the result dictionary
+                result = {
+                    "response_segment": original_response_segment,  # Without reference numbers
+                    "context": context_match,
+                    "source_name": source_name,
+                    "similarity_score": similarity_score
+                }
+
+                # Append the result to the attribution list
+                attribution.append(result)
+
+                # Verbose output
+                if self.verbose:
+                    self._print_verbose(result, textResponse.strip(), textExplanation.strip())
+
+        else:
+            # Use fuzzy string matching with fuzz.partial_ratio
+            for response_segment in response_segments:
+                original_response_segment = response_segment  # Store the original segment without references
+
+                # Use RapidFuzz to find the best match for the response segment
+                match = process.extractOne(
+                    response_segment, self.context_sentences, scorer=fuzz.partial_ratio, score_cutoff=self.threshold
+                )
+
+                # Initialize default values
+                context_match = None
+                similarity_score = 0
+                source_name = None
+
+                # If a match is found, unpack the values and build textResponse and textExplanation during the loop
+                if match:
+                    context_match, similarity_score, _ = match
+                    source_name = self.sentence_to_source.get(context_match)
+                    if (source_name, context_match) not in references:
+                        # Add reference to textExplanation
+                        references.append((source_name, context_match))
+                        textExplanation += f'[{len(references)}] {source_name}: {context_match}\n'
+                    # Add reference number to response segment
+                    ref_num = references.index((source_name, context_match)) + 1
+
+                    # Insert reference number before punctuation
+                    response_segment = self._insert_reference(response_segment, ref_num)
+                    textResponse += response_segment + ' '
+                else:
+                    textResponse += response_segment + ' '
+
+                # Prepare the result dictionary
+                result = {
+                    "response_segment": original_response_segment,  # Without reference numbers
+                    "context": context_match,
+                    "source_name": source_name,
+                    "similarity_score": similarity_score
+                }
+
+                # Append the result to the attribution list
+                attribution.append(result)
+
+                # Verbose output
+                if self.verbose:
+                    self._print_verbose(result, textResponse.strip(), textExplanation.strip())
 
         # Remove trailing whitespace
         textResponse = textResponse.strip()
@@ -217,12 +298,13 @@ class RagExplainer:
 
 if __name__ == "__main__":
     # Example usage
-    # Initialize RagExplainer with tokenize_context flag and custom scorer
+    # Initialize RagExplainer with use_embeddings=True
     explainer = RagExplainer(
         threshold=55.0,
         verbose=False,
         tokenize_context=True,
-        scorer=fuzz.partial_ratio  # You can change this to any scorer function from rapidfuzz
+        use_embeddings=True,
+        embedding_model_name='all-MiniLM-L6-v2'  # You can choose a different model if desired
     )
 
     # Add initial context
