@@ -1,7 +1,8 @@
+from typing import Annotated
 from fastapi.responses import JSONResponse
 from pydantic import Json
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Body, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from notification_service import send_notification, retrieve_alerts
@@ -9,9 +10,11 @@ from user_settings_service import persist_user_settings, retrieve_user_settings,
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from constants import *
 import logging
+import time
 
 from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
+from model.report import Report
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 
@@ -244,8 +247,8 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
             cursor.execute(query_insert, (body.username, body.email, body.role, hashed_password, body.site))
-            userid = cursor.fetchone()[0]
             connection.commit()
+            userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
             return UserInfo(userId=str(userid), username=body.username, email=body.email, role=body.role, site=body.site, access_token='')
 
@@ -343,6 +346,59 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
             raise HTTPException(status_code=404, detail="User not found")
         
         return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/smartfactory/reports")
+def retrieve_reports(userId: int, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    try:
+        connection, cursor = get_db_connection()   
+        query = "SELECT ReportID, Name, Type, FilePath FROM Reports WHERE OwnerID = %s"
+        response = query_db_with_params(cursor, connection, query, (userId,))
+        if not response or response[0] is None:
+            logging.info("No reports for userID %s", str(userId))
+            return JSONResponse(content={"data": []}, status_code=200)
+        reports = []
+        path_to_report = {}
+        for row in response:
+            reports.append(Report(id=row[0], name=row[1], type=row[2], data="").model_dump()) #TODO remove, just for test
+            logging.info(row[3])
+            path_to_report[row[3]] = Report(id=row[0], name=row[1], type=row[2], data="")
+        close_connection(connection, cursor)
+        #TODO get reports from DB
+        for path in path_to_report.keys():
+            break #TODO set data for each report and add to reports list
+        return JSONResponse(content={"data": reports}, status_code=200)
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/smartfactory/generateReport", status_code=status.HTTP_201_CREATED)
+def generate_report(userId: Annotated[str, Body()], params: Annotated[dict, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+    try:
+        connection, cursor = get_db_connection()   
+        query = "SELECT UserID FROM Users WHERE UserID = %s"
+        response = query_db_with_params(cursor, connection, query, (int(userId),))
+        if not response:
+            logging.error("User not found")
+            raise HTTPException(status_code=404, detail="User not found")
+        report_prompt = ""
+        #TODO call RAG to generate report
+        report_data = ""
+        #TODO insert report into DB
+        filepath = "path"
+        query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
+        cursor.execute(query_insert, (params.get("name") or "Report"+datetime.now().strftime("%d_%m_%Y"), params.get("type") or "Standard", int(userId), datetime.now(), filepath, params.get("site") or "Test",))
+        connection.commit()
+        report_db = cursor.fetchone()
+        report = Report(id=report_db[0], name=report_db[1], type=report_db[2], data=report_data)
+        close_connection(connection, cursor)
+        return JSONResponse(content={"data": report.model_dump()}, status_code=201)
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
+        raise e
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))

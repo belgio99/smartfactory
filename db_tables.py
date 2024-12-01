@@ -1,8 +1,8 @@
 import os
-# from dotenv import load_dotenv
+from dotenv import load_dotenv
 import psycopg2
 
-# load_dotenv() # Load environment variables from the .env file
+load_dotenv() # Load environment variables from the .env file
 
 def get_postgres_cursor():
     try:
@@ -83,18 +83,18 @@ if __name__ == "__main__":
 
         # Insert dummy data into the Microservices table
 
-        # dummy_microservices_keys_query = """
-        # INSERT INTO Microservices (ServiceID, Key) VALUES
-        # ('api-layer', '06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7'),
-        # ('ai-agent', 'a3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
-        # ('kpi-engine', 'b3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
-        # ('knowledge-base', 'c3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
-        # ('data', '12d326d6-8895-49b9-8e1b-a760462ac13f'),
-        # ('gui', '111c50cc-6b03-4c01-9d2f-aac6b661b716');
-        # """
-        # cur.execute(dummy_microservices_keys_query)
-        # conn.commit()
-        # print("Dummy data inserted into Microservices table")
+        dummy_microservices_keys_query = """
+        INSERT INTO Microservices (ServiceID, Key) VALUES
+        ('api-layer', '06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7'),
+        ('ai-agent', 'a3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
+        ('kpi-engine', 'b3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
+        ('knowledge-base', 'c3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
+        ('data', '12d326d6-8895-49b9-8e1b-a760462ac13f'),
+        ('gui', '111c50cc-6b03-4c01-9d2f-aac6b661b716');
+        """
+        cur.execute(dummy_microservices_keys_query)
+        conn.commit()
+        print("Dummy data inserted into Microservices table")
 
         # insert_users_query = """
         # INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES
