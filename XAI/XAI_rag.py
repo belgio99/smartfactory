@@ -10,29 +10,20 @@ except LookupError:
     nltk.download('punkt', quiet=True)
 
 
-class ResponseAttributor:
-    def __init__(self, context: List[Tuple[str, str]], threshold: float = 60.0, verbose: bool = False):
+class RagExplainer:
+    def __init__(self, context: List[Tuple[str, str]] = [], threshold: float = 60.0, verbose: bool = False):
         """
-        Initializes the ResponseAttributor object with the given context, threshold, and verbose flag.
+        Initializes the RagExplainer object with the given context, threshold, and verbose flag.
         """
-        self.context = context
         self.threshold = threshold
         self.verbose = verbose
 
-        # Input validation
-        self._validate_inputs()
+        # Initialize context data structures
+        self.context_sentences = []        # List of unique sentences
+        self.sentence_to_source = {}       # Mapping from sentence to source name
 
-        # Segment the context into sentences, maintaining source names
-        self.context_segments = []
-        for idx, (source_name, ctx) in enumerate(self.context):
-            ctx_sentences = sent_tokenize(ctx)
-            if not ctx_sentences:
-                raise ValueError(f"The context at index {idx} does not contain any sentences after tokenization.")
-            for sentence in ctx_sentences:
-                self.context_segments.append((source_name, sentence))
-
-        if not self.context_segments:
-            raise ValueError("No context sentences found after tokenization.")
+        # Process initial context (if any)
+        self.add_to_context(context)
 
     def _print_verbose(self, result, textResponse, textExplanation):
         print(f"Response Segment: {result['response_segment']}")
@@ -50,18 +41,14 @@ class ResponseAttributor:
         print(textExplanation)
         print("-" * 50)
 
-    def _validate_inputs(self):
+    def _validate_context(self, context):
         """
-        Validates the inputs to the ResponseAttributor class.
-
-        Raises:
-            ValueError: If any of the inputs are invalid.
+        Validates the context input.
         """
-        # Validate context
-        if not isinstance(self.context, list):
-            raise ValueError(f"The 'context' parameter must be a list of tuples. Received type {type(self.context).__name__}.")
+        if not isinstance(context, list):
+            raise ValueError(f"The 'context' parameter must be a list of tuples. Received type {type(context).__name__}.")
         else:
-            for i, item in enumerate(self.context):
+            for i, item in enumerate(context):
                 if not (isinstance(item, tuple) and len(item) == 2):
                     raise ValueError(f"All items in the 'context' list must be tuples of (source_name, context_string). Item at index {i} is invalid.")
                 source_name, ctx = item
@@ -70,6 +57,7 @@ class ResponseAttributor:
                 if not isinstance(ctx, str):
                     raise ValueError(f"The context string at index {i} must be a string. Received type {type(ctx).__name__}.")
 
+    def _validate_threshold_and_verbose(self):
         # Validate threshold
         if not isinstance(self.threshold, (int, float)):
             raise ValueError(f"The 'threshold' parameter must be a number (int or float). Received type {type(self.threshold).__name__}.")
@@ -92,6 +80,32 @@ class ResponseAttributor:
             # No period or comma at the end, just add the reference number at the end
             return response_segment + f'[{ref_num}]'
 
+    def _process_context(self, context: List[Tuple[str, str]]):
+        """
+        Processes the context by tokenizing and adding to the internal data structures.
+        """
+        for idx, (source_name, ctx) in enumerate(context):
+            ctx_sentences = sent_tokenize(ctx)
+            if not ctx_sentences:
+                raise ValueError(f"The context at index {idx} does not contain any sentences after tokenization.")
+            for sentence in ctx_sentences:
+                if sentence not in self.sentence_to_source:
+                    self.context_sentences.append(sentence)
+                    self.sentence_to_source[sentence] = source_name
+                else:
+                    # Sentence already exists, possibly from a different source_name
+                    pass  # We can choose to keep the first occurrence
+
+    def add_to_context(self, extra_context: List[Tuple[str, str]]):
+        """
+        Adds extra context to the existing context, avoiding duplicates.
+        """
+        # Validate the extra context
+        self._validate_context(extra_context)
+
+        # Process and add to context
+        self._process_context(extra_context)
+
     def attribute_response_to_context(self, response: str) -> Tuple[str, str, List[Dict[str, Any]]]:
         """
         Attributes segments of a response to the most similar segments in the provided context.
@@ -108,6 +122,9 @@ class ResponseAttributor:
         Raises:
         - ValueError: If inputs are not of the expected types or formats.
         """
+        # Validate threshold and verbose
+        self._validate_threshold_and_verbose()
+
         # Validate response
         if not isinstance(response, str):
             raise ValueError(f"The 'response' parameter must be a string. Received type {type(response).__name__}.")
@@ -123,17 +140,13 @@ class ResponseAttributor:
         textResponse = ''
         textExplanation = ''
 
-        # Prepare data for matching: context_sentences (list of strings), mapping to source names
-        context_sentences = [sentence for (_, sentence) in self.context_segments]
-
-        # Map from context_sentence to source_name
-        sentence_to_source = {sentence: source_name for (source_name, sentence) in self.context_segments}
-
         # Step 3: Compare each response segment with all context segments
         for response_segment in response_segments:
+            original_response_segment = response_segment  # Store the original segment without references
+
             # Use RapidFuzz to find the best match for the response segment
             match = process.extractOne(
-                response_segment, context_sentences, scorer=fuzz.token_set_ratio, score_cutoff=self.threshold
+                response_segment, self.context_sentences, scorer=fuzz.token_set_ratio, score_cutoff=self.threshold
             )
 
             # Initialize default values
@@ -144,7 +157,7 @@ class ResponseAttributor:
             # If a match is found, unpack the values and build textResponse and textExplanation during the loop
             if match:
                 context_match, similarity_score, _ = match
-                source_name = sentence_to_source.get(context_match)
+                source_name = self.sentence_to_source.get(context_match)
                 if (source_name, context_match) not in references:
                     # Add reference to textExplanation
                     references.append((source_name, context_match))
@@ -160,7 +173,7 @@ class ResponseAttributor:
 
             # Prepare the result dictionary
             result = {
-                "response_segment": response_segment,
+                "response_segment": original_response_segment,  # Without reference numbers
                 "context": context_match,
                 "source_name": source_name,
                 "similarity_score": similarity_score
@@ -181,7 +194,11 @@ class ResponseAttributor:
 
 
 if __name__ == "__main__":
-    # Example context and response with large text
+    # Example usage
+    # Initialize RagExplainer without context
+    explainer = RagExplainer(threshold=55.0, verbose=False)
+
+    # Add initial context
     context = [
         # (source_name, context_string)
         ("Astronomy Book", "The solar system consists of the Sun and the celestial objects that are gravitationally bound to it."),
@@ -210,6 +227,16 @@ if __name__ == "__main__":
         ("History Book", "It enables unprecedented collaboration and exchange.")
     ]
 
+    explainer.add_to_context(context)
+
+    # Add extra context
+    extra_context = [
+        ("New Source", "Mars is known as the Red Planet."),
+        ("New Source", "It is the fourth planet from the Sun."),
+    ]
+
+    explainer.add_to_context(extra_context)
+
     response = ("Artificial intelligence has revolutionized industries by improving processes in fields like transportation and healthcare. "
                 "For instance, machine learning allows systems to adapt and learn without being explicitly programmed. "
                 "The Earth's atmosphere is vital for life, with nitrogen and oxygen making up its majority. "
@@ -219,25 +246,15 @@ if __name__ == "__main__":
                 "My name is Alex, and I'm fascinated by these topics. "
                 "The Sun, central to our solar system, has a mass that constitutes the majority of the system.")
 
-    # Call the class with verbose output
-    try:
-        attributor = ResponseAttributor(
-            context=context,
-            threshold=55.0,
-            verbose=False
-        )
+    # Call the attribute_response_to_context method
+    textResponse, textExplanation, attribution_results = explainer.attribute_response_to_context(response)
 
-        textResponse, textExplanation, attribution_results = attributor.attribute_response_to_context(response)
-
-    except ValueError as e:
-        print(f"Error: {e}")
-    else:
-        # Process the results as needed
-        print("\nFinal Outputs:")
-        print("Text Response:")
-        print(textResponse)
-        print("\nText Explanation:")
-        print(textExplanation)
-        print("\nAttribution Results:")
-        for result in attribution_results:
-            print(result)
+    # Output the results
+    print("\nFinal Outputs:")
+    print("Text Response:")
+    print(textResponse)
+    print("\nText Explanation:")
+    print(textExplanation)
+    print("\nAttribution Results:")
+    for result in attribution_results:
+        print(result)
