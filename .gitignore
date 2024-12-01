@@ -4,10 +4,5 @@
 .DS_Store
 obj_storage/smart_app_data.csv
 obj_storage/smart_app_data.pkl
-App/api_layer/src/__pycache__/notification_service.cpython-312.pyc
-App/api_layer/src/__pycache__/user_settings_service.cpython-312.pyc
-App/api_layer/src/database/__pycache__/connection.cpython-312.pyc
-App/api_layer/src/model/__pycache__/alert.cpython-312.pyc
-App/api_layer/test/__pycache__/test_db_connection.cpython-312.pyc
-App/api_layer/test/__pycache__/test_notification_service.cpython-312.pyc
-App/api_layer/test/__pycache__/test_user_settings_service.cpython-312.pyc
+
+*.pyc
