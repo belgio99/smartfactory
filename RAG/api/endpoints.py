@@ -12,12 +12,16 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
 from langchain.prompts import FewShotPromptTemplate, PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.globals import set_llm_cache
+from langchain_core.caches import InMemoryCache
+from collections import deque
 from dotenv import load_dotenv
-import os
-import sys
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+
+# History lenght parameter
+HISTORY_LEN = 10
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +35,9 @@ graph = RdfGraph(
 graph.load_schema()
 
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+set_llm_cache(InMemoryCache())
+
+history = deque(maxlen=HISTORY_LEN)
 
 # Initialize FastAPI router
 router = APIRouter()
@@ -75,8 +82,10 @@ def toDate(data):
 # if label == "predictions" or label == "kpi_calc", it will also return the url to communicate
 def prompt_classifier(input):
 
-    # classification using gemini 1.5 flash with few shot learning
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
+    # Format the history
+    history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
+        [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+    )
 
     # few shots examples
     esempi = [
@@ -97,15 +106,22 @@ def prompt_classifier(input):
     few_shot_prompt = FewShotPromptTemplate(
         examples=esempi,
         example_prompt=esempio_template,
-        suffix="Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
-        input_variables=["text_input"]
+        prefix= "{history}\n\nFEW-SHOT EXAMPLES:",
+        suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
+        input_variables=["history", "text_input"]
     )
-    prompt = few_shot_prompt.format(text_input=input)
-    label =llm.invoke(prompt).content.strip("\n")
+    prompt = few_shot_prompt.format(history=history_context, text_input=input.text)
+    label = llm.invoke(prompt).content.strip("\n")
 
     # Query generation
     url=""
     if label == "predictions" or label == "kpi_calc":
+
+        # Format the history
+        history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
+            [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+        )
+
         esempi = [
             {"testo": "Predict for tomorrow the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on last week data", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, weeks=1, days=1" },
             {"testo": "Predict the future Power Consumption Efficiency for Riveting Machine 2 over the next 5 days","data": f"Power Consumption Efficiency, Riveting Machine 2, NULL, days=5"},
@@ -120,17 +136,24 @@ def prompt_classifier(input):
             input_variables=["testo", "data"],
             template="Text: {testo}\nData: {data}\n"
         )
+
         few_shot_prompt = FewShotPromptTemplate(
             examples=esempi,
             example_prompt=esempio_template,
-            suffix= "Fill the Data field for the following prompt \nText: {text_input}\nData:\nThe filled field needs to contain four values as the examples above",
-            input_variables=["text_input"]
+            prefix= "{history}\n\nFEW-SHOT EXAMPLES:",
+            suffix= "Task: Fill the Data field for the following prompt \nText: {text_input}\nData:\nThe filled field needs to contain four values as the examples above",
+            input_variables=["history", "text_input"]
         )
-        prompt = few_shot_prompt.format(text_input= input)
+
+        prompt = few_shot_prompt.format(history=history_context, text_input=input.text)
+
         data = llm.invoke(prompt)
         data=data.content.strip("\n").split(": ")[1].split(", ")
+
         kpi_id = data[0].lower().replace(" ","_")
+
         machine_id = data[1].replace(" ","")
+
         # first couple of dates parsing
         date=toDate(data[2]).split("->")
         url=f"http://127.0.0.1:8000/{label}/{kpi_id}/calculate?machineType={machine_id}&startTime={date[0]}&endTime={date[1]}"
@@ -292,8 +315,8 @@ async def handle_predictions(url):
     response = await ask_predictor_engine(url)
     return response['data']
 
-async def handle_new_kpi(question, llm, graph):
-    kpi_generation = KPIGenerationChain(llm, graph)
+async def handle_new_kpi(question, llm, graph, history):
+    kpi_generation = KPIGenerationChain(llm, graph, history)
     response = kpi_generation.chain.invoke(question.text)
     return response['result']
 
@@ -302,10 +325,10 @@ async def handle_report(url):
     kpi_response = await ask_kpi_engine(url)
     return predictor_response['data'] + kpi_response['data']
 
-async def handle_dashboard(question, llm, graph):
+async def handle_dashboard(question, llm, graph, history):
     with open("docs/gui_elements.txt", "r") as f:
         gui_elements = f.read()
-    dashboard_generation = DashboardGenerationChain(llm, graph)
+    dashboard_generation = DashboardGenerationChain(llm, graph, history)
     response = dashboard_generation.chain.invoke(question.text)
     return response['result'] + '\n' + gui_elements
 
@@ -313,8 +336,8 @@ async def handle_kpi_calc(url):
     response = await ask_kpi_engine(url)
     return response['data']
 
-async def handle_kb_q(question, llm, graph):
-    general_qa = GeneralQAChain(llm, graph)
+async def handle_kb_q(question, llm, graph, history):
+    general_qa = GeneralQAChain(llm, graph, history)
     response = general_qa.chain.invoke(question.text)
     return response['result']
 
@@ -326,27 +349,44 @@ async def ask_question(question: Question):
     # Mapping of handlers
     handlers = {
         'predictions': lambda: handle_predictions(url),
-        'new_kpi': lambda: handle_new_kpi(question, llm, graph),
+        'new_kpi': lambda: handle_new_kpi(question, llm, graph, history),
         'report': lambda: handle_report(url),
-        'dashboard': lambda: handle_dashboard(question, llm, graph),
+        'dashboard': lambda: handle_dashboard(question, llm, graph, history),
         'kpi_calc': lambda: handle_kpi_calc(url),
-        'kb_q': lambda: handle_kb_q(question, llm, graph),
+        'kb_q': lambda: handle_kb_q(question, llm, graph, history),
     }
 
     # Check if the label is valid
     if label not in handlers:
-        raise ValueError(f"Unknown label: {label}")
+        # Format the history
+        history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
+            [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+        )
+        llm_result = llm.invoke(history_context + "\n\n" + question.text)
+        # Update the history
+        history.append({'question': question.text, 'answer': llm_result.content})
+        return Answer(text=llm_result.content)
 
     # Execute the handler
     context = await handlers[label]()
 
+    if label == 'kb_q':
+        # Update the history
+        history.append({'question': question.text, 'answer': context})
+        return Answer(text=context)
+
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
+        # Format the history
+        history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
+            [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+        )
         prompt = prompt_manager.get_prompt(label)
-        formatted_prompt = prompt.format(_CONTEXT_=context, _USER_QUERY_=question.text)
+        formatted_prompt = prompt.format(_HISTORY_=history_context, _CONTEXT_=context, _USER_QUERY_=question.text)
         llm_result = llm.invoke(formatted_prompt)
-        return Answer(text=llm_result.content)
 
-    # For 'kb_q', return the context directly
-    return Answer(text=context)
+        # Update the history
+        history.append({'question': question.text, 'answer': llm_result.content})
+
+        return Answer(text=llm_result.content)
 
