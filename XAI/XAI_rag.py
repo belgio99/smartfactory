@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Callable
 from rapidfuzz import process, fuzz
 import nltk
 from nltk.tokenize import sent_tokenize
@@ -14,22 +14,25 @@ class RagExplainer:
     def __init__(
         self,
         context: List[Tuple[str, str]] = [],
-        threshold: float = 60.0,
+        threshold: float = 55.0,
         verbose: bool = False,
-        tokenize_context: bool = True
+        tokenize_context: bool = True,
+        scorer: Callable[[str, str], float] = fuzz.token_set_ratio
     ):
         """
-        Initializes the RagExplainer object with the given context, threshold, verbose flag, and context tokenization flag.
+        Initializes the RagExplainer object with the given parameters.
 
         Parameters:
         - context: List of tuples containing source name and context string.
         - threshold: Similarity threshold for matching.
         - verbose: Flag to enable verbose output.
         - tokenize_context: If True, context strings are tokenized into sentences.
+        - scorer: Scoring function used by RapidFuzz for matching.
         """
         self.threshold = threshold
         self.verbose = verbose
         self.tokenize_context = tokenize_context
+        self.scorer = scorer
 
         # Initialize context data structures
         self.context_sentences = []        # List of unique sentences or strings
@@ -165,7 +168,7 @@ class RagExplainer:
 
             # Use RapidFuzz to find the best match for the response segment
             match = process.extractOne(
-                response_segment, self.context_sentences, scorer=fuzz.token_set_ratio, score_cutoff=self.threshold
+                response_segment, self.context_sentences, scorer=self.scorer, score_cutoff=self.threshold
             )
 
             # Initialize default values
@@ -214,8 +217,13 @@ class RagExplainer:
 
 if __name__ == "__main__":
     # Example usage
-    # Initialize RagExplainer with tokenize_context flag
-    explainer = RagExplainer(threshold=55.0, verbose=False, tokenize_context=False)
+    # Initialize RagExplainer with tokenize_context flag and custom scorer
+    explainer = RagExplainer(
+        threshold=55.0,
+        verbose=False,
+        tokenize_context=True,
+        scorer=fuzz.token_set_ratio  # You can change this to any scorer function from rapidfuzz
+    )
 
     # Add initial context
     context = [
