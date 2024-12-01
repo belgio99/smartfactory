@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import {getKpiList} from "../../api/PersistentDataManager";
 import Chart from "../Chart/Chart";
-import {simulateChartData, TimeFrame} from "../../api/QuerySimulator";
+import {simulateChartData} from "../../api/QuerySimulator";
 import {KPI} from "../../api/DataStructures";
 
 //TODO Adapt to use QuerySimulator format, or adapt QuerySimulator to use this format
@@ -25,9 +25,9 @@ const ForecastingPage: React.FC = () => {
                 return;
             }
             const now = new Date();
-            const before = new Date();
-            before.setMonth(now.getMonth() - 1);
-            const data = await simulateChartData(kpi, new TimeFrame(before, now), "line");
+            const future = new Date();
+            future.setMonth(now.getMonth() + 1);
+            const data = await simulateChartData(kpi, {from:now, to:future, aggregation: "days"}, "line");
             setSelectedKpi(kpiId);
             setForecastData(data);
         } else {

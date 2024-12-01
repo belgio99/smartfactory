@@ -3,13 +3,9 @@ import React, {useEffect, useState} from "react";
 import {DashboardEntry, DashboardLayout} from "../../api/DataStructures";
 import Chart from "../Chart/Chart";
 import {getKpiList} from "../../api/PersistentDataManager";
-import {simulateChartData} from "../../api/QuerySimulator";
-import FilterOptions from "../KpiSelector/FilterOptions"; // Import your Chart component
-interface TimeFrame {
-    from: string;
-    to: string;
-    aggregation?: string;
-}
+import {simulateChartData2} from "../../api/QuerySimulator";
+import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptionsV2"; // Import your Chart component
+import TimeSelector, {TimeFrame} from "../KpiSelector/TimeSelector";
 
 const Dashboard: React.FC = () => {
     const {dashboardId} = useParams<{ dashboardId: string }>();
@@ -17,13 +13,15 @@ const Dashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState<any[][]>([]);
     const kpiList = getKpiList(); // Cache KPI list once
-    const [filters, setFilters] = useState({site: 'All', productionLine: 'All', machines: 'All'});
-    const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: '', to: '', aggregation: ''});
+    const [filters, setFilters] = useState(new Filter("All", []));
+    const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: 'hour'});
 
+    //on first data load
     useEffect(() => {
         const fetchDashboardDataAndCharts = async () => {
             try {
                 setLoading(true);
+                setFilters(new Filter("All", [])); // Reset filters
 
                 // Fetch dashboard layout
                 const response = await fetch(`/mockData/dashboards/${dashboardId}.json`);
@@ -38,7 +36,7 @@ const Dashboard: React.FC = () => {
                         console.error(`KPI with ID ${entry.kpi} not found.`);
                         return [];
                     }
-                    return await simulateChartData(kpi, undefined, entry.graph_type, filters); // Add appropriate filters
+                    return await simulateChartData2(kpi, timeFrame, entry.graph_type, undefined); // Add appropriate filters
                 });
 
                 const resolvedChartData = await Promise.all(chartDataPromises);
@@ -49,19 +47,33 @@ const Dashboard: React.FC = () => {
                 setLoading(false);
             }
         };
-        fetchDashboardDataAndCharts();
-    }, [dashboardId, filters, kpiList]);
 
-    // Effect to ensure the "from" date is not later than the "to" date
+        fetchDashboardDataAndCharts();
+    }, [dashboardId, kpiList]);
+
     useEffect(() => {
-        if (timeFrame.from && timeFrame.to && timeFrame.from > timeFrame.to) {
-            // If "from" is later than "to", set "to" to be the same as "from"
-            setTimeFrame((prevState) => ({
-                ...prevState,
-                to: prevState.from,
-            }));
+        const fetchChartData = async () => {
+            // Ensure promises are created dynamically based on latest dependencies
+            const chartDataPromises = dashboardData.views.map(async (entry: DashboardEntry) => {
+                const kpi = kpiList.find((k) => k.id === Number(entry.kpi));
+                if (!kpi) {
+                    console.error(`KPI with ID ${entry.kpi} not found.`);
+                    return [];
+                }
+                return await simulateChartData2(kpi, timeFrame, entry.graph_type, filters); // Add appropriate filters
+            });
+
+            console.log("Fetching with timeFrame:", timeFrame); // Debugging output
+            const resolvedChartData = await Promise.all(chartDataPromises);
+            setChartData(resolvedChartData);
+        };
+
+        // Avoid fetching during initial loading
+        if (!loading) {
+            fetchChartData();
         }
-    }, [timeFrame.from, timeFrame.to]);
+    }, [filters, timeFrame]);
+
 
     if (loading) {
         return (
@@ -70,14 +82,14 @@ const Dashboard: React.FC = () => {
             </div>
         );
     }
-
     return (
         <div className="p-8 space-y-8 bg-gray-50 min-h-screen">
             {/* Dashboard Title */}
             <h1 className="text-3xl font-extrabold text-center text-gray-800">{dashboardData.name}</h1>
-
-            <div><FilterOptions filters={filters} onChange={setFilters}/></div>
-
+            <div className="flex space-x-4">
+                <div><FilterOptionsV2 filter={filters} onChange={setFilters}/></div>
+                <div><TimeSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame}/></div>
+            </div>
             {/* Grid Layout */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center w-f">
                 {dashboardData.views.map((entry: DashboardEntry, index: number) => {
@@ -114,6 +126,7 @@ const Dashboard: React.FC = () => {
                                     data={chartData[index]} // Pass the fetched chart data
                                     graphType={entry.graph_type}
                                     kpi={kpi}
+                                    timeUnit={timeFrame.aggregation}
                                 />
                             </div>
                         </div>

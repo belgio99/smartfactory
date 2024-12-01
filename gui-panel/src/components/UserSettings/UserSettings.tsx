@@ -62,7 +62,7 @@ const UserSettings: React.FC = () => {
 
           {/* Display Settings Section */}
           <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">Display Settings</h2>
+            <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">Display Settings (Not Yet Implemented)</h2>
             <div className="flex items-center">
               <label htmlFor="font-size" className="block text-sm font-medium text-gray-700 mr-4">
                 Font Size

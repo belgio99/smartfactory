@@ -1,8 +1,4 @@
-export interface TimeFrame {
-    from: string;
-    to: string;
-    aggregation?: string;
-}
+import {TimeFrame} from "../components/KpiSelector/TimeSelector";
 
 export interface JsonObject {
     data_type: string;

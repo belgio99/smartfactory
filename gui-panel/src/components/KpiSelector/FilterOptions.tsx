@@ -2,11 +2,11 @@ import React, {useEffect, useMemo, useState} from 'react';
 import {getMachineList} from "../../api/PersistentDataManager";
 
 interface FilterOptionsProps {
-    filters: { site: string; productionLine: string; machines: string };
-    onChange: (filters: { site: string; productionLine: string; machines: string }) => void;
+    filters: { site: string; productionLine: string; machines: string; machine_type: string };
+    onChange: (filters: { site: string; productionLine: string; machines: string; machine_type: string }) => void;
 }
 
-const FilterOptions: React.FC<FilterOptionsProps> = ({ filters, onChange }) => {
+const FilterOptions: React.FC<FilterOptionsProps> = ({filters, onChange}) => {
     const [isExpanded, setIsExpanded] = useState(false); // State to track whether the options are expanded
 
     // Memoize compatible production lines to avoid re-filtering on each render
@@ -30,7 +30,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({ filters, onChange }) => {
     useEffect(() => {
         if (filters.site !== 'All') {
             if (!compatibleProductionLines.includes(filters.productionLine)) {
-                onChange({ ...filters, productionLine: 'All', machines: 'All' });
+                onChange({...filters, productionLine: 'All', machines: 'All'});
             }
         }
     }, [filters, compatibleProductionLines, onChange]);
@@ -39,13 +39,13 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({ filters, onChange }) => {
     useEffect(() => {
         if (filters.site !== 'All' && filters.productionLine !== 'All') {
             if (!compatibleMachines.includes(filters.machines)) {
-                onChange({ ...filters, machines: 'All' });
+                onChange({...filters, machines: 'All'});
             }
         }
     }, [filters, compatibleMachines, onChange]);
 
     const updateFilter = (key: keyof typeof filters, value: string) => {
-        onChange({ ...filters, [key]: value });
+        onChange({...filters, [key]: value});
     };
 
     return (
@@ -85,7 +85,8 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({ filters, onChange }) => {
 
                             {/* Production Line Filter */}
                             <div className="flex items-center space-x-4">
-                                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Production Line:</label>
+                                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Production
+                                    Line:</label>
                                 <select
                                     className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
                                     value={filters.productionLine}

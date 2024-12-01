@@ -3,16 +3,16 @@
   "name": "Dashboard 1",
   "views": [
     {
-      "kpi": "10",
-      "graph_type": "line"
-    },
-    {
       "kpi": "14",
-      "graph_type": "barv"
+      "graph_type": "hist"
     },
     {
       "kpi": "17",
-      "graph_type": "pie"
+      "graph_type": "scatter"
+    },
+    {
+      "kpi": "1",
+      "graph_type": "area"
     }
   ]
 }

@@ -1,18 +1,28 @@
 import React, {useState} from 'react';
 import classNames from 'classnames';
+import { useNavigate } from 'react-router-dom';
 
-interface Message {
+export interface Message {
   id: number;
   sender: 'user' | 'assistant';
   content: string;
+  extraData?: {
+    type: string;
+    [key: string]: any;
+  };
 }
 
 const ChatAssistant: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const navigate = useNavigate();
 
   const toggleChat = () => setIsChatOpen((prev) => !prev);
+
+  const handleNavigation = (data: any) => {
+    navigate(data.target, { state: { metadata: data.metadata } });
+  };
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;

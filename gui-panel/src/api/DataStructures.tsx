@@ -4,13 +4,13 @@ export class Machine {
     machineId: string;
     line?: string;
     site: string;
-    type?: string;
+    type: string;
 
-    constructor(machineId: string, site: string, type?: string, line?: string) {
+    constructor(machineId: string, site: string, type: string, line?: string) {
         this.machineId = machineId;
         this.site = site;
         if (line) this.line = line;
-        if (type) this.type = type;
+        this.type = type;
     }
 
     static encode(instance: Machine): Record<string, any> {
@@ -26,7 +26,7 @@ export class Machine {
         if (
             typeof json.machineId !== "string" ||
             typeof json.site !== "string" ||
-            (json.type && typeof json.type !== "string") ||
+            typeof json.type !== "string" ||
             (json.productionLine && typeof json.productionLine !== "string")
         ) {
             console.log(json);
@@ -77,7 +77,7 @@ export class KPI {
 
 }
 
-const supportedGraphTypes = ["line", "barv", "pie"];
+const supportedGraphTypes = ["line", "area", "barv", "barh", "pie", "donut", "scatter", "hist", "stacked_bar"];
 
 export class DashboardEntry {
     kpi: number;

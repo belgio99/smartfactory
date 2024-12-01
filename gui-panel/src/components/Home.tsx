@@ -17,6 +17,7 @@ import KpiViewer from "./KpiViewer/KpiViewer";
 import ReportSchedules from "./Reports/ReportSchedules";
 import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
+import AIDashboard from "./Dashboard/AIDashboard";
 
 
 // Mock data for demonstration
@@ -116,6 +117,7 @@ const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
                         <Route path="home" element={<Home/>}/>
                         <Route path="dashboards/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/:dashboardPath/:dashboardId" element={<Dashboard/>}/>
+                        <Route path="dashboards/new" element={<AIDashboard/>}/>
                         <Route path="user-settings" element={<UserSettings/>}/>
                         <Route path="data-view" element={<DataView/>}/>
                         <Route path="log" element={<LogPage/>}/>

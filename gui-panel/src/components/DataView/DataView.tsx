@@ -3,18 +3,21 @@ import KpiSelector from '../KpiSelector/KpiSelector';
 import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
 import {getKpiList} from "../../api/PersistentDataManager";
-import {simulateChartData} from "../../api/QuerySimulator";
+import {simulateChartData2} from "../../api/QuerySimulator";
+import {Filter} from "../KpiSelector/FilterOptionsV2";
+import {TimeFrame} from "../KpiSelector/TimeSelector"
 
 const DataView: React.FC = () => {
+
     const [kpi, setKpi] = useState<KPI>(getKpiList()[0]);
-    const [timeFrame, setTimeFrame] = useState('Month');
+    const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: "hour"});
     const [graphType, setGraphType] = useState('pie');
-    const [filters, setFilters] = useState({ site: 'All', productionLine: 'All', machines: 'All' });
+    const [filters, setFilters] = useState<Filter>(new Filter('All', []));
     const [chartData, setChartData] = useState<any[]>([]);
     // Function to fetch chart data with applied filters
 
     const fetchChartData = async () => {
-        const data = await simulateChartData(kpi, undefined, graphType, filters);
+        const data = await simulateChartData2(kpi, timeFrame, graphType, filters);
         setChartData(data);
     };
 
@@ -35,7 +38,7 @@ const DataView: React.FC = () => {
 
             {/* Chart Section */}
             <div className={` shadow-md p-5 bg-white flex w-auto`}>
-                <Chart data={chartData} graphType={graphType} kpi = {kpi}/>
+                <Chart data={chartData} graphType={graphType} kpi={kpi} timeUnit={timeFrame.aggregation}/>
             </div>
         </div>
     );

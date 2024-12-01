@@ -1,21 +1,19 @@
 [
   {
-    "id": "Lines",
-    "name": "Production Lines Dashboards",
+    "id": "TestingPresets",
+    "name": "Testing Dashboards",
     "children": [
       {
         "id": "1",
-        "name": "Production Line #1"
-      }
-    ]
-  },
-  {
-    "id": "placeholder_f",
-    "name": "Saved Dashboard Folder Name",
-    "children": [
+        "name": "Testboard #1"
+      },
       {
-        "id": "placeholder_d",
-        "name": "Saved Dashboard Name"
+        "id": "pies",
+        "name": "Testboard #2"
+      },
+      {
+        "id": "bars",
+        "name": "Testboard #3"
       }
     ]
   }
