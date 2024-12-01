@@ -271,27 +271,30 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
     Returns:
         UserInfo object with the details of the user created.
     Raises:
-        HTTPException: If the user is not present in the database
+        HTTPException: If the user is not present in the database, the old password is incorrect, or an unexpected error occurs
     """
     try:
         connection, cursor = get_db_connection()   
         # Check if old password is correct
         query = "SELECT Password FROM Users WHERE UserID = %s"
         response = query_db_with_params(cursor, connection, query, (userId,))
-        print(response)
-        print(response[0][0])
-        print(body.old_password)
-        if not response or not password_context.verify(body.old_password, response[0][0]):
-            logging.error("Invalid credentials")
-            raise HTTPException(status_code=401, detail="Invalid password")
-        
+        if not response:
+            raise HTTPException(status_code=401, detail="User not found")
+        try:
+            if not password_context.verify(body.old_password, response[0][0]):
+                logging.error("Invalid old password")
+                return JSONResponse(content={"message": "Invalid old password"}, status_code=401)
+        except ValueError as e:
+            logging.error("Password not hashed")
+            raise HTTPException(status_code=500, detail=f"Password not hashed: {str(e)}")
+                
         hashed_password = password_context.hash(body.new_password)
         # Update user password in the database
         query_update = "UPDATE Users SET password = %s WHERE UserID = %s;"
-        cursor.execute(query_update, (body.username, body.email, body.role, hashed_password, body.site))
+        cursor.execute(query_update, (hashed_password, userId))
         connection.commit()
         # check if updated correctly
-        result = cursor.rowcount()
+        result = cursor.rowcount
         if result == 0:
             raise HTTPException(status_code=404, detail="User not found")
         
@@ -302,6 +305,7 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
         raise e
+
     except Exception as e:
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
