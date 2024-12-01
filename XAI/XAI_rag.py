@@ -17,7 +17,7 @@ class RagExplainer:
         threshold: float = 55.0,
         verbose: bool = False,
         tokenize_context: bool = True,
-        scorer: Callable[[str, str], float] = fuzz.token_set_ratio
+        scorer: Callable[[str, str], float] = fuzz.partial_ratio
     ):
         """
         Initializes the RagExplainer object with the given parameters.
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         threshold=55.0,
         verbose=False,
         tokenize_context=True,
-        scorer=fuzz.token_set_ratio  # You can change this to any scorer function from rapidfuzz
+        scorer=fuzz.partial_ratio  # You can change this to any scorer function from rapidfuzz
     )
 
     # Add initial context
