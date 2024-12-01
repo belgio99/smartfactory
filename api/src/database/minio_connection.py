@@ -1,5 +1,3 @@
-# TODO: fix imports
-''' 
 from minio import Minio
 from minio.error import S3Error
 from dotenv import load_dotenv
@@ -66,4 +64,3 @@ def download_object(client: Minio, bucket_name: str, object_name: str, file_path
     except S3Error as exc:
         print("Error occurred.", exc)
         return False
-'''

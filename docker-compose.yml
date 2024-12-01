@@ -7,6 +7,7 @@ volumes:
     router_var: {}
     druid_shared: {}
     db: {}
+    minio_data: {}
 
 services:
     api-layer:
@@ -17,16 +18,8 @@ services:
         depends_on:
             - smtp
             - router
-        environment:
-            - SMTP_SERVER=host.docker.internal
-            - SMTP_PORT=1025
-            - SMTP_EMAIL=noreply@smartfactory.com
-            - SMTP_PASSWORD=SmartAppPassword123
-            - POSTGRES_HOST=db
-            - POSTGRES_PORT=5432
-            - POSTGRES_USER=postgres
-            - POSTGRES_PASSWORD=FoolishPassword
-            - POSTGRES_DB=postgres
+        env_file:
+            - environment
         ports:
             - "8000:8000"
 
@@ -160,3 +153,15 @@ services:
             - "5432:5432"
         volumes:
             - db:/var/lib/postgresql/data
+
+    minio:
+        container_name: minio
+        image: quay.io/minio/minio:latest
+        volumes:
+            - minio_data:/data
+        ports:
+            - 9000:9000
+            - 9001:9001
+        env_file:
+            - environment
+        command: minio server /data
