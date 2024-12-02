@@ -11,87 +11,7 @@ const smoothData = (data: number[], alpha: number = 0.3): number[] => {
     }
     return ema;
 };
-
-export const simulateChartData = async (kpi: KPI, timeFrame?: TimeFrame, type: string = "line", filters?: {
-                                            site: string;
-                                            productionLine: string;
-                                            machines: string
-                                        }
-): Promise<any[]> => {
-    console.log('Fetching data with:', {kpi, timeFrame, type, filters});
-
-    let filteredData = getMachineList();
-
-    if (filters) {
-        // Apply site filter
-        if (filters.site !== 'All') {
-            filteredData = filteredData.filter((data) => data.site === filters.site);
-        }
-
-        // Apply production line filter
-        if (filters.productionLine !== 'All') {
-            filteredData = filteredData.filter((data) => data.line === filters.productionLine);
-        }
-
-        // Apply machine filter
-        if (filters.machines !== 'All') {
-            filteredData = filteredData.filter((data) => data.machineId === filters.machines);
-        }
-    }
-
-    switch (type) {
-        case 'radar':
-            return filteredData.map((machine) => ({
-                name: machine.machineId, // Label for the radar chart
-                kpi1: Math.random() * 100,
-                kpi2: Math.random() * 100,
-                kpi3: Math.random() * 100,
-                kpi4: Math.random() * 100,
-            }));
-        case 'line':
-        case 'area': // Generate time-series data with applied filters
-            const from = timeFrame ? timeFrame.from : new Date(); // Default to the current date if not set
-            const to = timeFrame ? timeFrame.to : new Date(); // Default to the current date if not set
-            const aggregation = timeFrame?.aggregation || 'hours'; // Default aggregation to 'hours' if not specified
-            // Helper function to add time units to a date
-            const addTimeUnit = (date: Date, unit: string, value: number): Date => {
-                const newDate = new Date(date);
-                if (unit === 'days') newDate.setDate(newDate.getDate() + value);
-                if (unit === 'months') newDate.setMonth(newDate.getMonth() + value);
-                if (unit === 'hours') newDate.setHours(newDate.getHours() + value);
-                return newDate;
-            };
-            const timeSeriesData = Array.from({length: 20}, (_, index) => {
-                let timestamp = addTimeUnit(from, aggregation, index); // Calculate timestamp based on aggregation
-
-                const entry: any = {timestamp: timestamp.toISOString()}; // Use the generated timestamp
-                const rawData = filteredData.map(() => Math.random() * 50); // Simulate random data
-
-                // Apply smoothing to the randomly generated data
-                const smoothedData = smoothData(rawData);
-
-                filteredData.forEach((machine, idx) => {
-                    entry[machine.machineId] = smoothedData[idx]; // Apply smoothed values
-                });
-
-                return entry;
-            });
-
-            // Sort the time series data by timestamp
-            return timeSeriesData.sort(
-                (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-            );
-        default: // Generate categorical data with applied filters
-            const categoricalData = filteredData.map((data) => ({
-                name: data.machineId,
-                value: Math.round(Math.random() * 100),
-            }));
-
-            return (categoricalData);
-    }
-};
-
-export const simulateChartData2 = async (
+export const simulateChartData = async (
     kpi: KPI,
     timeFrame: TimeFrame,
     type: string = "line",
@@ -131,12 +51,20 @@ export const simulateChartData2 = async (
             timePeriods.push(startDate.toISOString());
             startDate.setDate(startDate.getDate() + 1);
         }
-    } else if (timeUnit === 'month') {
-        // Split by months for a year-long time period
-        for (let i = 0; i < timeFrame.to.getMonth(); i++) {
-            const period = new Date(startDate);
-            period.setMonth(i);
-            timePeriods.push(period.toISOString());
+    } else if (timeUnit === 'week') {
+        const endDate = timeFrame.to;
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            timePeriods.push(currentDate.toISOString());
+            currentDate.setDate(currentDate.getDate() + 7); // Increment by 7 days for each week
+        }
+    }
+    else if (timeUnit === 'month') {
+        const endDate = timeFrame.to;
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            timePeriods.push(currentDate.toISOString());
+            currentDate.setMonth(currentDate.getMonth() + 1); // Increment by 1 month
         }
     }
 

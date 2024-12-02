@@ -10,7 +10,7 @@ import {
     Line,
     LineChart,
     Pie,
-    PieChart,
+    PieChart, ReferenceLine,
     ResponsiveContainer, Scatter, ScatterChart,
     Tooltip,
     XAxis,
@@ -34,6 +34,7 @@ interface ChartProps {
     graphType: string,
     kpi?: KPI,
     timeUnit?: string
+    timeThreshold?: boolean
 }
 
 //various colors for the charts
@@ -50,6 +51,8 @@ const formatTimeFrame = (timestamp: string, timeUnit?: string): string => {
             return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`; // HH:mm
         case 'day':
             return `${String(date.getDate()).padStart(2, '0')}`; // DD (day of the month plus month name)
+        case 'week':
+            return `${date.toLocaleString('default', {month: 'short'})} ${date.getDate()}`; // MMM DD
         case 'month':
             return `${date.toLocaleString('default', {month: 'short'})}`; // MMM (Month abbreviation)
         default:
@@ -144,7 +147,7 @@ const LineTooltip = ({active, payload, label, kpi}: any) => {
     return null;
 };
 
-const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) => {
+const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day', timeThreshold}) => {
     if (!data || data.length === 0) {
         return (
             <p style={{textAlign: 'center', marginTop: '20px', color: '#555'}}>
@@ -152,7 +155,6 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
             </p>
         );
     }
-
     switch (graphType) {
         case 'barv': // Vertical Bar Chart
             return (
@@ -192,6 +194,8 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<LineTooltip kpi={kpi}/>} trigger={"hover"}/>
+                        {timeThreshold && <ReferenceLine x={data[Math.floor(data.length / 2)].timestamp} stroke="red"
+                                                         label="Today"/>}
                         <Legend/>
                         {Object.keys(data[0] || {})
                             .filter((key) => key !== 'timestamp') // Exclude the timestamp key
@@ -405,7 +409,6 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                 </ResponsiveContainer>
             );
         case "heatmap":
-            const timePeriods = data.map((entry) => entry.timestamp); // Extract timestamps dynamically
             const machines = Object.keys(data[0] || {}).filter((key) => key !== "timestamp"); // Extract machine IDs
 
             // Get the min and max values from your dataset for dynamic color scaling

@@ -3,7 +3,7 @@ import React, {useEffect, useState} from "react";
 import {DashboardEntry, DashboardLayout} from "../../api/DataStructures";
 import Chart from "../Chart/Chart";
 import {getKpiList} from "../../api/PersistentDataManager";
-import {simulateChartData2} from "../../api/QuerySimulator";
+import {simulateChartData} from "../../api/QuerySimulator";
 import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptionsV2"; // Import your Chart component
 import TimeSelector, {TimeFrame} from "../KpiSelector/TimeSelector";
 
@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
                         console.error(`KPI with ID ${entry.kpi} not found.`);
                         return [];
                     }
-                    return await simulateChartData2(kpi, timeFrame, entry.graph_type, undefined); // Add appropriate filters
+                    return await simulateChartData(kpi, timeFrame, entry.graph_type, undefined); // Add appropriate filters
                 });
 
                 const resolvedChartData = await Promise.all(chartDataPromises);
@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
                     console.error(`KPI with ID ${entry.kpi} not found.`);
                     return [];
                 }
-                return await simulateChartData2(kpi, timeFrame, entry.graph_type, filters); // Add appropriate filters
+                return await simulateChartData(kpi, timeFrame, entry.graph_type, filters); // Add appropriate filters
             });
 
             console.log("Fetching with timeFrame:", timeFrame); // Debugging output

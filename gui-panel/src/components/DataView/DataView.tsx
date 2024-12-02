@@ -3,7 +3,7 @@ import KpiSelector from '../KpiSelector/KpiSelector';
 import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
 import {getKpiList} from "../../api/PersistentDataManager";
-import {simulateChartData2} from "../../api/QuerySimulator";
+import {simulateChartData} from "../../api/QuerySimulator";
 import {Filter} from "../KpiSelector/FilterOptionsV2";
 import {TimeFrame} from "../KpiSelector/TimeSelector"
 
@@ -17,7 +17,7 @@ const DataView: React.FC = () => {
     // Function to fetch chart data with applied filters
 
     const fetchChartData = async () => {
-        const data = await simulateChartData2(kpi, timeFrame, graphType, filters);
+        const data = await simulateChartData(kpi, timeFrame, graphType, filters);
         setChartData(data);
     };
 
