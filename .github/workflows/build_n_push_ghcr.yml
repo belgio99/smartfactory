@@ -15,7 +15,7 @@ jobs:
   set-job-name:
     runs-on: ubuntu-latest
     outputs:
-      job-title: ${{ env.job_title }} # Use the environment variable set below
+      job-title: ${{ env.job_title }}
     steps:
     - name: Extract branch name and commit ID
       id: set-title
@@ -37,7 +37,8 @@ jobs:
     - name: Set branch name and commit ID
       id: vars
       run: |
-        echo "branch_name=${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "branch_name=${GITHUB_REF##*/}" >> $GITHUB_ENV  # Original branch name
+        echo "lowercase_branch_name=$(echo ${GITHUB_REF##*/} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV  # Lowercased branch name
         echo "commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
 
     - name: Verify branch folder exists
@@ -56,19 +57,15 @@ jobs:
 
     - name: Build Docker image
       run: |
-        # Extract repository name (e.g., "smartfactory" from "belgio99/smartfactory")
         REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
-        # Construct the image name dynamically
-        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.branch_name }}
-        # Build the Docker image with both the commit ID and latest tags
+        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.lowercase_branch_name }}
         docker build -t ghcr.io/${IMAGE_NAME}:${{ env.commit_id }} \
                      -t ghcr.io/${IMAGE_NAME}:latest \
                      ./${{ env.branch_name }}
 
     - name: Push Docker image
       run: |
-        # Push the image using the dynamically constructed name
-        IMAGE_NAME=${{ github.repository_owner }}/$(echo "${{ github.repository }}" | cut -d'/' -f2)/${{ env.branch_name }}
-        # Push both tags
+        REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+        IMAGE_NAME=${{ github.repository_owner }}/${REPO_NAME}/${{ env.lowercase_branch_name }}
         docker push ghcr.io/${IMAGE_NAME}:${{ env.commit_id }}
         docker push ghcr.io/${IMAGE_NAME}:latest
