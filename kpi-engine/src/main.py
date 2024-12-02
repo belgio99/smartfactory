@@ -1,6 +1,8 @@
 from kpi_calculation import kpi_engine
 from fastapi import FastAPI, HTTPException
 import pandas as pd
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
 ''''
@@ -16,6 +18,14 @@ with open("smart_app_data.pkl", "rb") as file:
     df = pd.read_pickle(file)
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def read_root():
@@ -59,6 +69,6 @@ def main_test():
     kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_period='2024-08-27T00:00:00Z', end_period='2024-09-20T00:00:00Z', kpi_id='a')
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host=os.getEnv("KB_HOST"), port=os.getEnv("KB_PORT"), reload=True)
+    # uvicorn.run(app, host=os.getEnv("KB_HOST"), port=os.getEnv("KB_PORT"), reload=True)
+    uvicorn.run(app, host='0.0.0.0', port=8000)
     # main_test()
