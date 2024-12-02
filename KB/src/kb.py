@@ -133,6 +133,7 @@ def rdf_to_txt(onto, output_file):
                         file.write(f"  {prop.name}: {value.name}\n")
                     else: 
                         file.write(f"  {prop.name}: {value}\n")
+            file.write("\n")
 
 def add_kpi(kpi_info):
     if not is_valid(kpi_info):
@@ -154,19 +155,7 @@ def add_kpi(kpi_info):
 
 
 if __name__ == "__main__":
-    kpi_info = {
-        'id': ['KPI_1'],
-        'description': ['Test KPI'],
-        'atomic_formula': ['(A + B) + C'],
-        'formula': ['(A + B) + C'],
-        'unit_measure': ['flfl'],
-        'forecastable': [True],
-        'atomic': [False]
-    }
-
-    add_kpi(kpi_info)
-
-    #uvicorn.run(app, port=8000, host="0.0.0.0")
+    rdf_to_txt(onto, "../Ontology/ontology.txt")
 
 
 # -------------------------------------------- API Endpoints --------------------------------------------
