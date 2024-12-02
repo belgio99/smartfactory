@@ -4,6 +4,7 @@ import sympy
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
+import json
 
 app = FastAPI()
 
@@ -20,7 +21,15 @@ ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
 TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load()
 
+
 def get_kpi(kpi_id):
+    """
+    Get KPI data by its ID.
+    
+    Args:
+        kpi_id (str): The KPI ID.
+    """
+
     query = f'*{kpi_id}'
     results = onto.search(iri = query)
     json_d = {'Status': -1}
@@ -37,16 +46,6 @@ def get_kpi(kpi_id):
 
     return json_d
 
-def extract_datatype_properties(instance):
-    """
-    Extract datatype properties and their values from an instance.
-    """
-    datatype_data = {}
-    for prop in onto.data_properties():  # only datatype properties
-        value = prop[instance] 
-        if value: 
-            datatype_data[prop.name] = value[0]  # assume single value
-    return datatype_data
 
 def get_all_kpis():
     """
@@ -57,8 +56,11 @@ def get_all_kpis():
     for kpi in onto.KPI.instances():
         kpi_id = str(kpi.id[0])
         all_kpis[kpi_id] = extract_datatype_properties(kpi)
+        # add type of KPI given the class
+        #all_kpis[kpi_id]["type"] = 
 
     return all_kpis
+
 
 def get_all_machines():
     """
@@ -72,7 +74,108 @@ def get_all_machines():
 
     return all_machines
 
+
+def extract_datatype_properties(instance):
+    """
+    Extract datatype properties and their values from an instance.
+    """
+
+    datatype_data = {}
+    for prop in onto.data_properties():  # only datatype properties
+        value = prop[instance] 
+        if value: 
+            datatype_data[prop.name] = value[0]  # assume single value
+    return datatype_data
+
+
+def get_atomic_formula(kpi_id):
+    """
+    Get the atomic formula of a KPI by its ID.
+
+    Args:
+        kpi_id (str): The KPI ID.
+    """
+
+    kpi = get_kpi(kpi_id)
+    if kpi["Status"] == -1:
+        return None
+    else:
+        return kpi["atomic_formula"]
+    
+
+def get_unit_measure(kpi_id):
+    """
+    Get the unit measure of a KPI by its ID.
+
+    Args:
+        kpi_id (str): The KPI ID.
+    """
+
+    kpi = get_kpi(kpi_id)
+    if kpi["Status"] == -1:
+        return None
+    else:
+        return kpi["unit_measure"]
+
+
+def get_all_kpi_unit():
+    """
+    Retrieve all KPIs and their unit measures as dict
+    """
+ 
+    all_kpis = {}
+    for kpi in onto.KPI.instances():
+        kpi_id = str(kpi.id[0])
+        all_kpis[kpi_id] = kpi.unit_measure[0]
+
+ 
+    all_kpis = []
+    for kpi in onto.KPI.instances():
+        kpi_entry = {
+            "kpi": str(kpi.id[0]),
+            "unit": kpi.unit_measure[0]
+        }
+        all_kpis.append(kpi_entry)
+
+    return all_kpis
+
+
+def get_all_machine_kpi():
+    """
+    Retrieve all machines and their KPIs as a list of dicts in the specified format.
+    """
+
+    all_machines = []
+    
+    # Itera su tutte le istanze di macchine nell'ontologia
+    for machine in onto.search(type=onto.Machine):
+        # Recupera l'ID della macchina
+        machine_id = machine.id[0] if machine.id else str(machine.name)
+        
+        # Recupera i KPI associati utilizzando la proprietà producesKPI
+        kpis = []
+        for kpi in machine.producesKPI:
+            kpis.append(kpi.name)  # Nome del KPI associato
+        
+        # Crea il dizionario per la macchina e i suoi KPI
+        machine_entry = {
+            "machine": machine_id,
+            "kpi": kpis
+        }
+        all_machines.append(machine_entry)
+    
+    return all_machines
+
+
+
 def is_valid(kpi_info):
+    """
+    Check if the KPI information is valid.
+
+    Args:
+        kpi_info (dict): The KPI information.
+    """
+
     def is_equal(formula1, formula2):
         formula1 = sympy.simplify(sympy.sympify(formula1))
         formula2 = sympy.simplify(sympy.sympify(formula2))
@@ -88,7 +191,16 @@ def is_valid(kpi_info):
             
     return True
 
+
 def rdf_to_txt(onto, output_file):
+    """
+    Convert an ontology to a formatted TXT file.
+
+    Args:
+        onto (Ontology): The ontology to convert.
+        output_file (str): The path of the output TXT file.
+    """
+
     def write_class_hierarchy(file, cls, indent=0):
         """
         Funzione ricorsiva per scrivere la gerarchia delle classi, comprese le sottoclassi.
@@ -135,7 +247,15 @@ def rdf_to_txt(onto, output_file):
                         file.write(f"  {prop.name}: {value}\n")
             file.write("\n")
 
+
 def add_kpi(kpi_info):
+    """
+    Add a new KPI to the ontology.
+
+    Args:
+        kpi_info (dict): The KPI information.
+    """
+
     if not is_valid(kpi_info):
         return False
     
@@ -154,12 +274,44 @@ def add_kpi(kpi_info):
     return True
 
 
+def charts_txt(input_file):
+    """
+    Convert a JSON file with chart descriptions to a formatted TXT file.
+
+    Args:
+        input_file (str): Il percorso del file JSON di input.
+        output_file (str): Il percorso del file TXT di output.
+    """
+    
+    # Load the JSON file
+    with open(input_file, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    
+    """# Convert the JSON to the required format and write to the output file
+    with open(output_file, 'w', encoding='utf-8') as output:
+        for entry in data:
+            output.write(f"chart: {entry['chart']}\n")
+            output.write(f"description: {entry['description']}\n\n")
+
+    print(f"Conversion completed")"""
+
+    # Convert the JSON to the required format and return it as a string
+    result = ""
+    for entry in data:
+        result += f"chart: {entry['chart']}\n"
+        result += f"description: {entry['description']}\n\n"
+
+    print(f"Conversion completed")
+    
+    return result
+
+
 if __name__ == "__main__":
-    try:
+    """try:
         sync_reasoner()
         print("test reasoner")
     except Exception as error:
-        print(error)
+        print(error)"""
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 

@@ -1,0 +1,26 @@
+chart: line
+description: Best for visualizing trends over time. Ideal for KPIs like "consumption_avg", "cost_sum", or "throughput" when showing changes across timeframes such as days or months. Recommended when comparing performance across machines like "AssemblyMachine" or "LaserCutter".
+
+chart: area
+description: Similar to a line chart but emphasizes the magnitude of change by filling the area beneath the line. Useful for cumulative KPIs such as "power_sum" or "operative_time" and is especially effective for comparing overlapping trends.
+
+chart: barv
+description: A vertical bar chart is ideal for comparing KPI values across categories, such as "consumption_sum" by machine type ("AssemblyMachine", "CuttingMachine") or regions. Suitable for highlighting relative performance or distribution.
+
+chart: barh
+description: A horizontal bar chart is useful when category labels are long or when emphasizing ranking, such as "machine_utilization_rate" across multiple machines. Best for scenarios involving a large number of compared entities.
+
+chart: pie
+description: Best for showing proportional relationships. Use for KPIs like "quality" or "availability" when visualizing the distribution of values across machines or categories. Suitable for highlighting relative contributions to a whole.
+
+chart: donut
+description: A variation of the pie chart that provides space for additional information in the center. Ideal for KPIs like "oee" or "performance", where the overall percentage is important, but comparisons across segments are also needed.
+
+chart: scatter
+description: Use for exploring relationships between time and KPIs, such as "energy_cost_per_unit" or "idle_time_avg". Great for identifying correlations or outliers across machines and time intervals.
+
+chart: hist
+description: Represents the distribution of a KPI, such as "power_max" or "cycles_sum". Useful for understanding the frequency of data points within specific ranges. Applies to KPIs where variability is a key focus.
+
+chart: stacked_bar
+description: Best for comparing parts of a whole over time or categories. Use with KPIs like "good_cycles_sum" or "bad_cycles_sum" across machine types (e.g., "AssemblyMachine", "TestingMachine"). Highlights cumulative contributions.
