@@ -50,4 +50,4 @@ USER appuser
 #CMD ["gunicorn", "--bind", "0.0.0.0:8000", "-k", "uvicorn.workers.UvicornWorker", "App.api_layer\app:app"]
 CMD [ "python", "./src/kb.py" ]
 
-LABEL org.opencontainers.image.source = https://github.com/belgio99/smartfactory
+LABEL org.opencontainers.image.source https://github.com/belgio99/smartfactory
