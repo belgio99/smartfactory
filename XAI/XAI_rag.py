@@ -41,7 +41,7 @@ class RagExplainer:
 
         # Initialize context data structures
         self.context_sentences = []        # List to store unique context sentences or strings
-        self.sentence_to_source = {}       # Mapping from sentence to its source name
+        self.sentence_info = {}            # Mapping from sentence to {'source_name', 'original_context'}
         self.context_embeddings = None     # Embeddings for context sentences (used if use_embeddings=True)
 
         # Initialize embedding model if needed
@@ -58,6 +58,7 @@ class RagExplainer:
         if result['context']:
             print(f"Attributed Context: {result['context']}")
             print(f"Source Name: {result['source_name']}")
+            print(f"Original Context: {result['original_context']}")
             print(f"Similarity Score: {result['similarity_score']:.2f}%")
         else:
             print("No context meets the similarity threshold.")
@@ -131,10 +132,13 @@ class RagExplainer:
                 raise ValueError(f"The context at index {idx} is empty after tokenization.")
 
             for string in ctx_strings:
-                if string not in self.sentence_to_source:
+                if string not in self.sentence_info:
                     # Add the new sentence to the list and mapping
                     self.context_sentences.append(string)
-                    self.sentence_to_source[string] = source_name
+                    self.sentence_info[string] = {
+                        'source_name': source_name,
+                        'original_context': ctx
+                    }
                     new_context_sentences.append(string)
                 else:
                     # Sentence already exists; skip to avoid duplicates
@@ -202,17 +206,22 @@ class RagExplainer:
             )
 
             # Initialize default values
-            context_match, similarity_score, source_name = None, 0, None
+            context_match, similarity_score, source_name, original_context = None, 0, None, None
 
             if match:
                 # Unpack the match result
                 context_match, similarity_score, _ = match
-                # Get the source name for the matched context
-                source_name = self.sentence_to_source.get(context_match)
+                # Get the source info for the matched context
+                info = self.sentence_info.get(context_match, {})
+                source_name = info.get('source_name')
+                original_context = info.get('original_context')
                 # Update references and get the reference number
                 ref_num, textExplanation = self._update_references(references, source_name, context_match, textExplanation)
                 # Insert the reference number into the response segment
                 response_segment = self._insert_reference(response_segment, ref_num)
+
+            else:
+                original_context = None
 
             # Append the modified response segment to the textResponse
             textResponse += response_segment + ' '
@@ -222,7 +231,8 @@ class RagExplainer:
                 "response_segment": original_segment,  # Original response segment without references
                 "context": context_match,              # Matched context sentence
                 "source_name": source_name,            # Source name of the context
-                "similarity_score": similarity_score   # Similarity score
+                "similarity_score": similarity_score,  # Similarity score
+                "original_context": original_context   # Original context before tokenization
             })
 
             # If verbose mode is on, print detailed information
@@ -278,18 +288,22 @@ class RagExplainer:
             best_match_idx = np.argmax(similarities)  # Index of the best matching context sentence
             similarity_score = max_similarity * 100   # Convert similarity score to percentage
 
+            # Initialize default values
+            context_match, source_name, original_context = None, None, None
+
             if similarity_score >= self.threshold:
                 # Get the best matching context sentence
                 context_match = self.context_sentences[best_match_idx]
-                # Get the source name for the context
-                source_name = self.sentence_to_source.get(context_match)
+                # Get the source info for the context
+                info = self.sentence_info.get(context_match, {})
+                source_name = info.get('source_name')
+                original_context = info.get('original_context')
                 # Update references and get the reference number
                 ref_num, textExplanation = self._update_references(references, source_name, context_match, textExplanation)
                 # Insert the reference number into the response segment
                 response_segment = self._insert_reference(response_segment, ref_num)
             else:
-                # No match found above threshold
-                context_match, source_name, similarity_score = None, None, 0
+                similarity_score = 0
 
             # Append the modified response segment to the textResponse
             textResponse += response_segment + ' '
@@ -299,7 +313,8 @@ class RagExplainer:
                 "response_segment": original_segment,  # Original response segment without references
                 "context": context_match,              # Matched context sentence
                 "source_name": source_name,            # Source name of the context
-                "similarity_score": similarity_score   # Similarity score
+                "similarity_score": similarity_score,  # Similarity score
+                "original_context": original_context   # Original context before tokenization
             })
 
             # If verbose mode is on, print detailed information
