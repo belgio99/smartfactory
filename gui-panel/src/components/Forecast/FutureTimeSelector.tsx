@@ -2,7 +2,7 @@ import {TimeFrame} from "../KpiSelector/TimeSelector";
 import React from "react";
 
 export interface FutureTimeFrameSelectorProps {
-    timeFrame: TimeFrame;
+    timeFrame: { past: TimeFrame; future: TimeFrame } | null;
     setTimeFrame: ({past, future}: { past: TimeFrame; future: TimeFrame }) => void;
 }
 
@@ -75,9 +75,10 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
                 <select
                     className="block w-full h-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
                     onChange={handleChange}
-                    value={timeFrame.aggregation === 'day' ? 'nextWeek' :
-                        timeFrame.aggregation === 'week' ? 'nextMonth' : 'nextYear'}
+                    value={timeFrame ? timeFrame.past.aggregation === 'day' ? 'nextWeek' :
+                        timeFrame.past.aggregation === 'week' ? 'nextMonth' : 'nextYear' : 'none'}
                 >
+                    {!timeFrame && <option value="none">-- Select --</option>}
                     <option value="nextWeek">Next Week</option>
                     <option value="nextMonth">Next Month</option>
                     <option value="nextYear">Next Year</option>

@@ -11,20 +11,10 @@ type ForecastData = {
 };
 
 const ForecastingPage: React.FC = () => {
+    const [loading, setLoading] = useState(false);
     const [selectedKpi, setSelectedKpi] = useState<number | null>(null);
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
-    const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame }>({
-        past: {
-            from: new Date(Date.now() - 7 * 24 * 3600 * 1000),
-            to: new Date(),
-            aggregation: 'day',
-        },
-        future: {
-            from: new Date(),
-            to: new Date(Date.now() + 7 * 24 * 3600 * 1000),
-            aggregation: 'day',
-        },
-    });
+    const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame } | null>(null);
 
     useEffect(() => {
         console.log("Timeframe changed:", timeFrame);
@@ -32,10 +22,12 @@ const ForecastingPage: React.FC = () => {
     }, [timeFrame]);
 
     const fetchForecastData = async () => {
-        if (selectedKpi !== null) {
+        if (selectedKpi !== null && timeFrame !== null) {
+            setLoading(true);
             const kpi = getKpiList().find((k) => k.id === selectedKpi);
             if (!kpi) {
                 console.error(`KPI with ID ${selectedKpi} not found.`);
+                setLoading(false);
                 return;
             }
 
@@ -43,6 +35,7 @@ const ForecastingPage: React.FC = () => {
             const futureData = await simulateChartData(kpi, timeFrame.future, "line");
 
             setForecastData([...pastData, ...futureData]);
+            setLoading(false);
         }
     };
 
@@ -87,12 +80,14 @@ const ForecastingPage: React.FC = () => {
                 </div>
 
                 <div className="w-1/2">
-                    <FutureTimeFrameSelector timeFrame={timeFrame.future} setTimeFrame={setTimeFrame}/>
+                    <FutureTimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame}/>
                 </div>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-                {forecastData.length > 0 ? (
+                {loading ? (
+                    <p className="text-gray-600 text-center">Loading forecast data...</p>
+                ) : (forecastData.length > 0 && timeFrame ? (
                     <div>
                         <p className="text-sm text-gray-700 mb-4">
                             Forecasting data
@@ -110,7 +105,7 @@ const ForecastingPage: React.FC = () => {
                     </div>
                 ) : (
                     <p className="text-gray-600 text-center">Select a KPI to view its forecast.</p>
-                )}
+                ))}
             </div>
         </div>
     );

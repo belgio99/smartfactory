@@ -194,7 +194,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day', ti
                         />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<LineTooltip kpi={kpi}/>} trigger={"hover"}/>
-                        {timeThreshold && <ReferenceLine x={data[Math.floor(data.length / 2)].timestamp} stroke="red"
+                        {timeThreshold && data.length > 0 && <ReferenceLine x={data[Math.floor(data.length / 2)].timestamp} stroke="red"
                                                          label="Today"/>}
                         <Legend/>
                         {Object.keys(data[0] || {})

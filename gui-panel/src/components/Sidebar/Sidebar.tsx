@@ -3,9 +3,8 @@ import SidebarSection from './SidebarSection';
 import {DashboardFolder} from "../../api/DataStructures";
 import {SidebarItemProps} from "./SidebarItem";
 
-export const pointIcon = 'https://cdn.builder.io/api/v1/image/assets/TEMP/e4f31bc08d7f9cce9aa4820b2adc97643d3b0c001526273b80178ee6bf890b69?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130';
-export const folderIcon = 'https://cdn.builder.io/api/v1/image/assets/TEMP/eaf772e37067af09780cab33ecbf00699526f2539b536d7e2dac43b2122526b2?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130';
-export const pieIcon = 'https://cdn.builder.io/api/v1/image/assets/TEMP/0949995bd2a21ce720d84c11dc64463261305492e6cd6409f1dd6840a7747be9?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130';
+export const pointIcon: string = 'https://cdn.builder.io/api/v1/image/assets/TEMP/e4f31bc08d7f9cce9aa4820b2adc97643d3b0c001526273b80178ee6bf890b69?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130';
+export const folderIcon: string = "/icons/folder.svg";
 const DashboardSidebar: React.FC = () => {
 
     const sectionsItems = [
@@ -29,11 +28,12 @@ const DashboardSidebar: React.FC = () => {
             text: 'Log',
             path: '/log'
         },
-        {
+        /*{
             icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/0d48c9f5dfc5a5a35e09f99f937cac2777cbffd55ad9387fca9e140c2b0bc70f?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130',
             text: 'Production Lines',
             path: '/production-lines'
         },
+         */
         {icon: '/icons/kpi.svg', text: 'KPIs', path: '/kpis'},
         {icon: '/icons/forecast.svg', text: 'Forecasting', path: '/forecasts'},
     ];
@@ -41,30 +41,36 @@ const DashboardSidebar: React.FC = () => {
     const formatDashboards = (folders: DashboardFolder[]): SidebarItemProps[] => {
         const formatted: SidebarItemProps[] = [];
 
-        formatted.push({icon: pieIcon, text: 'Overview', path: '/dashboards/overview'})
+        formatted.push({icon: "/icons/pie.svg", text: 'Overview', path: '/dashboards/overview'});
         folders.forEach((folder) => {
             const currentPath = `/dashboards/${folder.id}`;
 
-            // Format the folder itself
+            // Add the folder item with its children
             formatted.push({
                 text: folder.name,
-                path: currentPath,  // Path will be the folder ID
-                icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/eaf772e37067af09780cab33ecbf00699526f2539b536d7e2dac43b2122526b2?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130',
-                folder: true
-            });
-
-            // Recursively format children
-            folder.children.forEach((child) => {
-                if (child instanceof DashboardFolder) {
-                    // Recursively process child folders
-                    formatted.push(...formatDashboards([child]));
-                } else { // Add pointers (endpoints) directly
-                    formatted.push({
-                        text: child.name,
-                        path: `${currentPath}/${child.id}`,  // Append pointer ID to the path
-                        icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/e4f31bc08d7f9cce9aa4820b2adc97643d3b0c001526273b80178ee6bf890b69?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130',  // Use pointIcon for individual dashboards
-                    });
-                }
+                path: currentPath,
+                icon: folderIcon,
+                folder: true,
+                children: folder.children.map((child) => {
+                    if (child instanceof DashboardFolder) {
+                        // Process nested folders
+                        return {
+                            text: child.name,
+                            path: `${currentPath}/${child.id}`,
+                            icon: folderIcon,
+                            folder: true,
+                            children: formatDashboards([child]), // Recursive children formatting
+                        };
+                    } else {
+                        // Add pointer (endpoint) items
+                        return {
+                            text: child.name,
+                            path: `${currentPath}/${child.id}`,
+                            icon: pointIcon,
+                            folder: false,
+                        };
+                    }
+                }),
             });
         });
 

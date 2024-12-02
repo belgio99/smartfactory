@@ -1,9 +1,15 @@
 import React from 'react';
 import {useNavigate} from 'react-router-dom';
 
-export type SidebarItemProps = { text: string, path: string, icon: string, folder?: boolean };
+export type SidebarItemProps = {
+    text: string,
+    path: string,
+    icon: string,
+    folder?: boolean, // Optional flag to indicate if the item is a folder
+    children?: SidebarItemProps[] // Optional children for folder items
+};
 
-const SidebarItem: React.FC<SidebarItemProps> = ({icon, text, path, folder}) => {
+const SidebarItem: React.FC<SidebarItemProps> = ({icon, text, path, folder, children}) => {
     const navigate = useNavigate();
 
     const handleClick = () => {
