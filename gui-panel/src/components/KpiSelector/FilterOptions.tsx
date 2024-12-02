@@ -1,124 +1,92 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useState, useMemo} from 'react';
 import {getMachineList} from "../../api/PersistentDataManager";
+import MachineFilterModal from './MachineFilter';
 
 interface FilterOptionsProps {
-    filters: { site: string; productionLine: string; machines: string; machine_type: string };
-    onChange: (filters: { site: string; productionLine: string; machines: string; machine_type: string }) => void;
+    filter: Filter;
+    onChange: (filters: Filter) => void;
 }
 
-const FilterOptions: React.FC<FilterOptionsProps> = ({filters, onChange}) => {
-    const [isExpanded, setIsExpanded] = useState(false); // State to track whether the options are expanded
+export class Filter {
+    machineType: string;
+    machineIds: string[];
 
-    // Memoize compatible production lines to avoid re-filtering on each render
-    const compatibleProductionLines = useMemo(() => {
-        const filterCondition = getMachineList().filter((data) => filters.site === 'All' || data.site === filters.site);
-        return ['All', ...new Set(filterCondition.map((data) => data.line))];
-    }, [filters.site]);
+    constructor(machineType: string, machineIds: string[]) {
+        this.machineType = machineType;
+        this.machineIds = machineIds;
+    }
+}
 
-    // Memoize compatible machines to avoid re-filtering on each render
-    const compatibleMachines = useMemo(() => {
-        const filterCondition = getMachineList().filter((data) => {
-            return (
-                (filters.site === 'All' || data.site === filters.site) &&
-                (filters.productionLine === 'All' || data.line === filters.productionLine)
-            );
-        });
-        return ['All', ...new Set(filterCondition.map((data) => data.machineId))];
-    }, [filters.site, filters.productionLine]);
+const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedMachineIds, setSelectedMachineIds] = useState(filter.machineIds);
 
-    // Effect to update productionLine options when site changes
-    useEffect(() => {
-        if (filters.site !== 'All') {
-            if (!compatibleProductionLines.includes(filters.productionLine)) {
-                onChange({...filters, productionLine: 'All', machines: 'All'});
-            }
+    // Memoize compatible machine types to avoid re-filtering on each render
+    const compatibleMachineTypes = useMemo(() => {
+        const machineTypes = getMachineList().map((data) => data.type);
+        return ['All', 'Custom Machine Set', ...new Set(machineTypes)];
+    }, []);
+
+    // Filter machines based on the selected machine type
+    const filteredMachines = useMemo(() => {
+        if (filter.machineType === 'All') {
+            return getMachineList(); // Show all machines if 'All' is selected
+        } else if (filter.machineType === 'Custom Machine Set') {
+            return []; // We'll handle custom machines separately via modal
+        } else {
+            return getMachineList().filter((machine) => machine.type === filter.machineType);
         }
-    }, [filters, compatibleProductionLines, onChange]);
+    }, [filter.machineType]);
 
-    // Effect to update machines options when productionLine changes
-    useEffect(() => {
-        if (filters.site !== 'All' && filters.productionLine !== 'All') {
-            if (!compatibleMachines.includes(filters.machines)) {
-                onChange({...filters, machines: 'All'});
-            }
-        }
-    }, [filters, compatibleMachines, onChange]);
-
-    const updateFilter = (key: keyof typeof filters, value: string) => {
-        onChange({...filters, [key]: value});
+    const handleModalSave = (machineIds: string[]) => {
+        setSelectedMachineIds(machineIds);
+        onChange({...filter, machineIds});
     };
 
     return (
         <div className="max-h-fit max-w-fit">
-            {/* Header with expand/collapse functionality */}
             <div className="flex justify-between items-center mb-4">
                 <div className="text-sm font-semibold text-gray-700">Filtering Options</div>
-                <img
-                    loading="lazy"
-                    src="https://cdn.builder.io/api/v1/image/assets/TEMP/6c33b492660f47ebadbd4ddc262746d4b9184c091300184241c32c88890005c5?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130"
-                    alt="Options Icon"
-                    className={`cursor-pointer transform transition-transform ${(isExpanded ? '' : 'rotate-180')}`}
-                    onClick={() => setIsExpanded(!isExpanded)} // Toggle the expansion
-                />
             </div>
 
-            {/* Only display filters if expanded */}
-            {isExpanded && (
-                <div>
-                    {/* Filter by section */}
-                    <div className="flex items-center mb-4 space-x-4 font-normal">
-                        {/* Horizontal Filters Row */}
-                        <div className="flex space-x-4">
-                            {/* Site Filter */}
-                            <div className="flex items-center space-x-4">
-                                <label className="text-sm font-medium text-gray-700">Site:</label>
-                                <select
-                                    className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
-                                    value={filters.site}
-                                    onChange={(e) => updateFilter('site', e.target.value)}
-                                >
-                                    <option value="All">All</option>
-                                    <option value="Site 1">Site 1</option>
-                                    <option value="Site 2">Site 2</option>
-                                </select>
-                            </div>
+            <div className="flex items-center mb-4 space-x-4 font-normal">
+                <div className="flex items-center space-x-4">
+                    <label className="text-sm font-medium text-gray-700">Machine Type:</label>
+                    <select
+                        className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
+                        value={filter.machineType}
+                        onChange={(e) => onChange({...filter, machineType: e.target.value})}
+                    >
+                        {compatibleMachineTypes.map((type, index) => (
+                            <option key={`${type}-${index}`} value={type}>
+                                {type}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-                            {/* Production Line Filter */}
-                            <div className="flex items-center space-x-4">
-                                <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Production
-                                    Line:</label>
-                                <select
-                                    className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
-                                    value={filters.productionLine}
-                                    onChange={(e) => updateFilter('productionLine', e.target.value)}
-                                >
-                                    {compatibleProductionLines.map((line, index) => (
-                                        <option key={`${line}-${index}`} value={line}>
-                                            {line}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Machines Filter */}
-                            <div className="flex items-center space-x-4">
-                                <label className="text-sm font-medium text-gray-700">Machines:</label>
-                                <select
-                                    className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
-                                    value={filters.machines}
-                                    onChange={(e) => updateFilter('machines', e.target.value)}
-                                >
-                                    {compatibleMachines.map((machine, index) => (
-                                        <option key={`${machine}-${index}`} value={machine}>
-                                            {machine}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                {filter.machineType === 'Custom Machine Set' && (
+                    <div className="flex items-center space-x-4">
+                        <button
+                            className="ml-4 bg-blue-500 text-white py-1 px-4 rounded-md hover:bg-blue-600 focus:outline-none"
+                            onClick={() => setIsModalOpen(true)}
+                        >
+                            Edit Machines
+                        </button>
+                        <div className="flex items-center ml-2 text-sm text-gray-600 font-semibold">{selectedMachineIds.length} Machines Selected
                         </div>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
+
+            {/* Modal Component */}
+            <MachineFilterModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onSave={handleModalSave}
+                initialMachineIds={selectedMachineIds}
+                machineType={filter.machineType}
+            />
         </div>
     );
 };

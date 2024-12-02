@@ -4,7 +4,7 @@ import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
 import {getKpiList} from "../../api/PersistentDataManager";
 import {simulateChartData} from "../../api/QuerySimulator";
-import {Filter} from "../KpiSelector/FilterOptionsV2";
+import {Filter} from "../KpiSelector/FilterOptions";
 import {TimeFrame} from "../KpiSelector/TimeSelector"
 
 const DataView: React.FC = () => {

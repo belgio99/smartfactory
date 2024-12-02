@@ -3,12 +3,12 @@
 export class Machine {
     machineId: string;
     line?: string;
-    site: string;
+    site?: string;
     type: string;
 
-    constructor(machineId: string, site: string, type: string, line?: string) {
+    constructor(machineId: string, type: string, site?: string, line?: string) {
         this.machineId = machineId;
-        this.site = site;
+        if (line) this.site = site;
         if (line) this.line = line;
         this.type = type;
     }
@@ -16,23 +16,23 @@ export class Machine {
     static encode(instance: Machine): Record<string, any> {
         return {
             machineId: instance.machineId,
-            site: instance.site,
             type: instance.type,
-            productionLine: instance.line,
+            site: instance?.site,
+            productionLine: instance?.line,
         };
     }
 
     static decode(json: Record<string, any>): Machine {
         if (
             typeof json.machineId !== "string" ||
-            typeof json.site !== "string" ||
+            (json.site && typeof json.site !== "string") ||
             typeof json.type !== "string" ||
             (json.productionLine && typeof json.productionLine !== "string")
         ) {
             console.log(json);
             throw new Error("Invalid JSON structure for Machine");
         }
-        return new Machine(json.machineId, json.site, json.type, json.productionLine);
+        return new Machine(json.machineId, json.type, json.site, json.productionLine);
     }
 
 }
@@ -75,6 +75,75 @@ export class KPI {
         return new KPI(json.id, json.type, json.name, json.description, json.unit);
     }
 
+}
+
+export class Schedule {
+    id: number;
+    name: string;
+    recurrence: string; // Daily, Weekly, Monthly
+    status: "Active" | "Inactive";
+    email: string;
+    startDate: string;
+    kpis: string[]; // List of selected KPIs
+    machines: string[]; // List of selected machines
+
+    constructor(
+        id: number,
+        name: string,
+        recurrence: string,
+        status: "Active" | "Inactive",
+        email: string,
+        startDate: string,
+        kpis: string[],
+        machines: string[]
+    ) {
+        this.id = id;
+        this.name = name;
+        this.recurrence = recurrence;
+        this.status = status;
+        this.email = email;
+        this.startDate = startDate;
+        this.kpis = kpis;
+        this.machines = machines;
+    }
+
+    static encode(instance: Schedule): Record<string, any> {
+        return {
+            id: instance.id,
+            name: instance.name,
+            recurrence: instance.recurrence,
+            status: instance.status === "Active",
+            email: instance.email,
+            startDate: instance.startDate,
+            kpis: instance.kpis,
+            machines: instance.machines,
+        };
+    }
+
+    static decode(json: Record<string, any>): Schedule {
+        if (
+            typeof json.id !== "number" ||
+            typeof json.name !== "string" ||
+            typeof json.recurrence !== "string" ||
+            typeof json.status !== "boolean" ||
+            typeof json.email !== "string" ||
+            typeof json.startDate !== "string" ||
+            !Array.isArray(json.kpis) ||
+            !Array.isArray(json.machines)
+        ) {
+            throw new Error("Invalid JSON structure for Schedule");
+        }
+        return new Schedule(
+            json.id,
+            json.name,
+            json.recurrence,
+            json.status ? "Active" : "Inactive",
+            json.email,
+            json.startDate,
+            json.kpis,
+            json.machines
+        );
+    }
 }
 
 const supportedGraphTypes = ["line", "area", "barv", "barh", "pie", "donut", "scatter", "hist", "stacked_bar"];
@@ -146,7 +215,7 @@ export class DashboardLayout {
 
 }
 
-export class DashboardPointer{
+export class DashboardPointer {
     id: string; // id for the internal path
     name: string; //displayed name in breadcrumb
 

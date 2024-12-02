@@ -1,11 +1,10 @@
 import React, {useEffect} from 'react';
 import Select from './Select';
 import GraphTypeSelector from './GraphTypeSelector';
-import FilterOptions from './FilterOptions';
 import {getKpiList} from "../../api/PersistentDataManager";
 import {KPI} from "../../api/DataStructures";
 import KpiSelect from "./KpiSelect";
-import FilterOptionsV2, {Filter} from "./FilterOptionsV2";
+import FilterOptionsV2, {Filter} from "./FilterOptions";
 import {TimeFrame} from "./TimeSelector";
 import TimeFrameSelector from "./TimeSelectorAdvanced"
 

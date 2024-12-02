@@ -6,7 +6,7 @@ import ProductionLineEditor from "./ProductionLineEditor";
 export interface ProductionLine {
     lineId: string;
     name: string;
-    site: string;
+    site?: string;
     machines: Machine[];
 }
 

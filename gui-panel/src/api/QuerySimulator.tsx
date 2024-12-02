@@ -1,6 +1,6 @@
 import {getMachineList} from "./PersistentDataManager";
 import {KPI} from "./DataStructures";
-import {Filter} from "../components/KpiSelector/FilterOptionsV2";
+import {Filter} from "../components/KpiSelector/FilterOptions";
 import {TimeFrame} from "../components/KpiSelector/TimeSelector";
 
 const smoothData = (data: number[], alpha: number = 0.3): number[] => {

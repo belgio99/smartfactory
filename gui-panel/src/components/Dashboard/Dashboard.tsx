@@ -4,7 +4,7 @@ import {DashboardEntry, DashboardLayout} from "../../api/DataStructures";
 import Chart from "../Chart/Chart";
 import {getKpiList} from "../../api/PersistentDataManager";
 import {simulateChartData} from "../../api/QuerySimulator";
-import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptionsV2"; // Import your Chart component
+import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptions"; // Import your Chart component
 import TimeSelector, {TimeFrame} from "../KpiSelector/TimeSelector";
 
 const Dashboard: React.FC = () => {
