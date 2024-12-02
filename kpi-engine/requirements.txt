@@ -1,4 +1,5 @@
 pandas
+python-dotenv
 sympy
 requests
 fastapi[standard]==0.109.0

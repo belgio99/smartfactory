@@ -23,12 +23,12 @@ Start the application using the following command:
 ```bash
 uvicorn main:app --reload
 ```
-This will start the API using environment values, usually on http://127.0.0.1:8000.
+This will start the API using environment values, usually on http://0.0.0.0:8000.
 
 ### API Access
 Access the API endpoint via the following URL format:
 ```bash
-http://127.0.0.1:8000/kpi/{kpiID}/calculate
+http://0.0.0.0:8000/kpi/{kpiID}/calculate
 ```
 Where {kpiID} is the KPI identifier.
 Query parameters can be added to customize filtering.

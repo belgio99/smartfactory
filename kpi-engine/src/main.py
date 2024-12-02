@@ -2,8 +2,15 @@ from kpi_calculation import kpi_engine
 from fastapi import FastAPI, HTTPException
 import pandas as pd
 import uvicorn
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+
+env_path = Path(__file__).resolve().parent.parent / ".env"
+print(env_path)
+load_dotenv(dotenv_path=env_path)
 
 ''''
 Start by using 'uvicorn main:app --reload'
@@ -69,6 +76,6 @@ def main_test():
     kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_period='2024-08-27T00:00:00Z', end_period='2024-09-20T00:00:00Z', kpi_id='a')
 
 if __name__ == "__main__":
-    # uvicorn.run(app, host=os.getEnv("KB_HOST"), port=os.getEnv("KB_PORT"), reload=True)
-    uvicorn.run(app, host='0.0.0.0', port=8000)
+    uvicorn.run(app, host=os.getenv("KB_HOST"), port=int(os.getenv("KB_PORT", 8000)))
+    # uvicorn.run(app, host='0.0.0.0', port=8000)
     # main_test()
