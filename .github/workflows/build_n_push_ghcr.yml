@@ -15,7 +15,7 @@ jobs:
   set-job-name:
     runs-on: ubuntu-latest
     outputs:
-      job-title: ${{ env.job_title }} # Use the environment variable set below
+      job-title: ${{ env.job_title }}
     steps:
     - name: Extract branch name and commit ID
       id: set-title
@@ -37,7 +37,7 @@ jobs:
     - name: Set branch name and commit ID
       id: vars
       run: |
-        echo "branch_name=${GITHUB_REF##*/}" >> $GITHUB_ENV
+        echo "branch_name=$(echo ${GITHUB_REF##*/} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
         echo "commit_id=$(echo ${GITHUB_SHA} | cut -c1-7)" >> $GITHUB_ENV
 
     - name: Verify branch folder exists
