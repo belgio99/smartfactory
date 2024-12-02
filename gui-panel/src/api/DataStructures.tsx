@@ -86,6 +86,7 @@ export class Schedule {
     startDate: string;
     kpis: string[]; // List of selected KPIs
     machines: string[]; // List of selected machines
+    machineType?: string; // All, Custom Machine Set, or a specific machine type
 
     constructor(
         id: number,
@@ -95,7 +96,8 @@ export class Schedule {
         email: string,
         startDate: string,
         kpis: string[],
-        machines: string[]
+        machines: string[],
+        machineType?: string
     ) {
         this.id = id;
         this.name = name;
@@ -105,6 +107,7 @@ export class Schedule {
         this.startDate = startDate;
         this.kpis = kpis;
         this.machines = machines;
+        this.machineType = machineType;
     }
 
     static encode(instance: Schedule): Record<string, any> {
@@ -141,7 +144,8 @@ export class Schedule {
             json.email,
             json.startDate,
             json.kpis,
-            json.machines
+            json.machines,
+            "Custom Machine Set"
         );
     }
 }

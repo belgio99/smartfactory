@@ -1,4 +1,4 @@
-import React, {useState, useMemo} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {getMachineList} from "../../api/PersistentDataManager";
 import MachineFilterModal from './MachineFilter';
 
@@ -19,7 +19,6 @@ export class Filter {
 
 const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedMachineIds, setSelectedMachineIds] = useState(filter.machineIds);
 
     // Memoize compatible machine types to avoid re-filtering on each render
     const compatibleMachineTypes = useMemo(() => {
@@ -38,9 +37,16 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
         }
     }, [filter.machineType]);
 
+    // Update machineIds when machineType changes
+    useEffect(() => {
+        if (filter.machineType !== 'Custom Machine Set') {
+            const machineIds = filteredMachines.map((machine) => machine.machineId);
+            onChange({...filter, machineIds}); // Propagate change to parent
+        }
+    }, [filter.machineType, filteredMachines, onChange]);
+
     const handleModalSave = (machineIds: string[]) => {
-        setSelectedMachineIds(machineIds);
-        onChange({...filter, machineIds});
+        onChange({...filter, machineIds}); // Only update machineIds directly for custom sets
     };
 
     return (
@@ -55,7 +61,9 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
                     <select
                         className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
                         value={filter.machineType}
-                        onChange={(e) => onChange({...filter, machineType: e.target.value})}
+                        onChange={(e) =>
+                            onChange({...filter, machineType: e.target.value})
+                        }
                     >
                         {compatibleMachineTypes.map((type, index) => (
                             <option key={`${type}-${index}`} value={type}>
@@ -73,7 +81,8 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
                         >
                             Edit Machines
                         </button>
-                        <div className="flex items-center ml-2 text-sm text-gray-600 font-semibold">{selectedMachineIds.length} Machines Selected
+                        <div className="flex items-center ml-2 text-sm text-gray-600 font-semibold">
+                            {filter.machineIds.length} Machines Selected
                         </div>
                     </div>
                 )}
@@ -84,7 +93,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSave={handleModalSave}
-                initialMachineIds={selectedMachineIds}
+                initialMachineIds={filter.machineIds}
                 machineType={filter.machineType}
             />
         </div>
