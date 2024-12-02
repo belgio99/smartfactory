@@ -21,7 +21,7 @@ import os
 ### II. Real-Time Analysis ###
 #####====================#####
 ##############################
-
+models_path = 'models/'
 def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q: int, d) -> list:
     total_len = train_len + horizon
     pred_ARIMA = []
