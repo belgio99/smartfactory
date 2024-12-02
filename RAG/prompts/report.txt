@@ -1,5 +1,3 @@
-{_HISTORY_}
-
 USER QUERY: "{_USER_QUERY_}"
 
 INSTRUCTION: 
@@ -10,8 +8,11 @@ INSTRUCTION:
 - [MACHINE_NAME] is the name of the machine being analyzed.
 - "Computable  KPIs" is a list of Key Performance Indicators (KPIs) and their associated values. For each KPI you're given ini input the mean the max and the min value on the overall period
 - "Forecasted KPI Predictions" is a list of forecastable KPIs and their associated values.
-- [OVERAL_SUMMARY_ON_ALL_MACHINES] is a brief textual summary that compares the KPI values for this machine across the specified period with other machines.
-Ensure the report is clear, concise, and aligned with the data provided in the context. "
+- [OVERAL_SUMMARY_ON_ALL_MACHINES] is a brief textual summary that compares the KPI values for this machine across the specified period with other machines. The overall summary must have three separate sections, one about machine comparison on computed KPIs. One that resume predicted values and one about anomalies, these reported as bullet list
+Ensure the report is clear, concise, and aligned with the data provided in the context. 
+
+Note:
+- if max mean or min are not reported in the contextual information put None"
 
 [DATE - DATE PERIOD] REPORT
 

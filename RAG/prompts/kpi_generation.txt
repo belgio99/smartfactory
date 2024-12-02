@@ -1,10 +1,7 @@
-{_HISTORY_}
-
 USER QUERY: "{_USER_QUERY_}"
 
 INSTRUCTION: 
 "Using the contextual information provided in the CONTEXT section about already tracked KPIs, generate the new KPI requested by the user. The input includes details of existing KPIs, such as their IDs, short descriptions of what the KPI tracks, units of measure and formulas (if applicable). Note that formulas are only provided for non-atomic KPIs, while atomic KPIs do not have this information.
-
 
 The output format MUST be this one:
 - ID: the ID representing the KPI (eg: power_consumption_efficiency)
@@ -15,7 +12,7 @@ The output format MUST be this one:
 - Unit of Measure: (eg %, Kw, m)
 - Domain: min, max and type of the value
 
-Give me only the best suitable KPI possible.
+Give me only the best suitable KPI possible in order to accomplish user need.
 "
 
 CONTEXT: 
