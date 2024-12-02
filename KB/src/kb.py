@@ -16,8 +16,8 @@ app.add_middleware(
 )
 
 
-ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
-TMP_ONTOLOGY_PATH = "../Ontology/tmp_ontology.rdf"
+ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
+TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load()
 
 def get_kpi(kpi_id):
@@ -155,8 +155,11 @@ def add_kpi(kpi_info):
 
 
 if __name__ == "__main__":
-    rdf_to_txt(onto, "../Ontology/ontology.txt")
-
+    try:
+        sync_reasoner()
+        print("test reasoner")
+    except Exception as error:
+        print(error)
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 
