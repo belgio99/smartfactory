@@ -312,6 +312,8 @@ if __name__ == "__main__":
         print("test reasoner")
     except Exception as error:
         print(error)"""
+    
+    uvicorn.run(app, port=8000, host="0.0.0.0")
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 
