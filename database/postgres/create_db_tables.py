@@ -40,7 +40,8 @@ if __name__ == "__main__":
             Password VARCHAR(255) NOT NULL,
             SiteName VARCHAR(50) NOT NULL,
             UserSettings TEXT,
-            UserDashboards TEXT
+            UserDashboards TEXT,
+            UserSchedules TEXT
             )
             """,
             """
