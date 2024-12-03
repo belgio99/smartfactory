@@ -1,0 +1,32 @@
+[
+  {
+    "id": 1,
+    "name": "Quarterly Sales Report",
+    "recurrence": "Monthly",
+    "status": true,
+    "email": "sales@company.com",
+    "startDate": "2024-12-01",
+    "kpis": [
+      "Energy Cost Savings",
+      "Power Consumption Efficiency"
+    ],
+    "machines": [
+      "Machine 1",
+      "Machine 2"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Annual Marketing Report",
+    "recurrence": "Yearly",
+    "status": false,
+    "email": "marketing@company.com",
+    "startDate": "2024-01-01",
+    "kpis": [
+      "Throughput"
+    ],
+    "machines": [
+      "Machine 3"
+    ]
+  }
+]

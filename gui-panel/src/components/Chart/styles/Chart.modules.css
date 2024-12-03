@@ -1,0 +1,23 @@
+.chartContainer {
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chartTitle {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .noDataText {
+    color: #555;
+    font-size: 16px;
+    text-align: center;
+    margin-top: 20px;
+  }
+  

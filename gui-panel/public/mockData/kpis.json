@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "type": "Energy",
+    "name": "Cost",
+    "description": "Measures the total electricity cost over a period.",
+    "unit": "euro per kWh"
+  },
+  {
+    "id": 2,
+    "type": "Energy",
+    "name": "Energy Cost Savings",
+    "description": "Tracks cost reductions in energy usage compared to a previous period.",
+    "unit": "euro per kWh"
+  },
+  {
+    "id": 3,
+    "type": "Energy",
+    "name": "Energy Cost Per Unit",
+    "description": "Calculates energy cost per production unit.",
+    "unit": "euro per kWh"
+  },
+  {
+    "id": 4,
+    "type": "Energy",
+    "name": "Power Consumption Efficiency",
+    "description": "Assesses energy efficiency based on working time and energy consumption.",
+    "unit": "%"
+  },
+  {
+    "id": 5,
+    "type": "Energy",
+    "name": "Power Consumption Trend",
+    "description": "Measures the change in energy consumption over time.",
+    "unit": "%"
+  },
+  {
+    "id": 6,
+    "type": "Machine Usage",
+    "name": "Machine Utilization Rate",
+    "description": "Evaluates how effectively a machine is utilized during a given period.",
+    "unit": "%"
+  },
+  {
+    "id": 7,
+    "type": "Machine Usage",
+    "name": "Operative Time",
+    "description": "Tracks total time a machine is operative (working or idle).",
+    "unit": "seconds"
+  },
+  {
+    "id": 8,
+    "type": "Production",
+    "name": "Throughput",
+    "description": "Calculates the average output produced per time unit.",
+    "unit": "# per second"
+  },
+  {
+    "id": 9,
+    "type": "Production",
+    "name": "Good Cycles",
+    "description": "Counts production cycles completed without defects.",
+    "unit": "#"
+  },
+  {
+    "id": 10,
+    "type": "Production",
+    "name": "Bad Cycles",
+    "description": "Tracks defective production cycles during a period.",
+    "unit": "#"
+  },
+  {
+    "id": 11,
+    "type": "Production",
+    "name": "Overall Equipment Effectiveness",
+    "description": "Assesses production efficiency considering availability, performance, and quality.",
+    "unit": "%"
+  },
+  {
+    "id": 12,
+    "type": "Production",
+    "name": "Cycle Time",
+    "description": "Measures average time to complete a production cycle.",
+    "unit": "seconds"
+  },
+  {
+    "id": 13,
+    "type": "Quality",
+    "name": "Yield",
+    "description": "Percentage of correctly produced output compared to total output.",
+    "unit": "%"
+  },
+  {
+    "id": 14,
+    "type": "Environmental",
+    "name": "Carbon Footprint",
+    "description": "Monitors total greenhouse gas emissions for a given period.",
+    "unit": "tCO2e"
+  },
+  {
+    "id": 15,
+    "type": "Environmental",
+    "name": "Water Usage",
+    "description": "Tracks water consumption during a specific period.",
+    "unit": "liters"
+  },
+  {
+    "id": 16,
+    "type": "Environmental",
+    "name": "Waste Generation",
+    "description": "Measures percentage of raw materials wasted during production.",
+    "unit": "%"
+  },
+  {
+    "id": 17,
+    "type": "Maintenance",
+    "name": "Maintenance Cost",
+    "description": "Calculates total cost of maintenance activities over time.",
+    "unit": "euro"
+  },
+  {
+    "id": 18,
+    "type": "Maintenance",
+    "name": "Mean Time Between Failures (MTBF)",
+    "description": "Tracks average time between two equipment failures.",
+    "unit": "seconds"
+  },
+  {
+    "id": 19,
+    "type": "Maintenance",
+    "name": "Mean Time to Repair (MTTR)",
+    "description": "Measures average time to repair a machine to operational status.",
+    "unit": "seconds"
+  },
+  {
+    "id": 20,
+    "type": "Energy",
+    "name": "Consumption",
+    "description": "Tracks the total energy consumed by a machine during a period.",
+    "unit": "kWh"
+  }
+]

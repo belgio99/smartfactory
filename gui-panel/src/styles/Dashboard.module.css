@@ -1,0 +1,15 @@
+.dashboardContainer {
+    display: flex;
+    min-height: 100vh;
+  }
+  
+  .mainContent {
+    flex-grow: 1;
+    padding: 20px;
+  }
+  
+  @media (max-width: 991px) {
+    .dashboardContainer {
+      flex-direction: column;
+    }
+  }
