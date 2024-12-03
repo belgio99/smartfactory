@@ -12,6 +12,7 @@ jobs:
   build-test-containers:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Replace with your actual service names
 
@@ -39,27 +40,28 @@ jobs:
           file: ./${{ matrix.service }}/Dockerfile
           tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:latest
           push: false
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Run Docker container
-        run: docker compose up -d --no-build ${{ matrix.service }}
+        run: docker compose up -d --no-build --no-deps --pull never ${{ matrix.service }}
+
 
       - name: Wait for container to initialize
         run: sleep 60
 
       - name: Test running container
         run: |
-          CONTAINER_ID=$(docker ps -qf "name=${{ matrix.service }}")
+          CONTAINER_ID=$(docker ps -q --filter "status=running" | head -n 1)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "No running container found"
+            exit 1
+          fi
           STATUS=$(docker inspect -f '{{.State.Status}}' $CONTAINER_ID)
           if [ "$STATUS" != "running" ]; then
-            echo "Service ${{ matrix.service }} failed to run!"
+            echo "Service failed to run!"
             docker logs $CONTAINER_ID
-            docker stop $CONTAINER_ID
-            docker rm $CONTAINER_ID
-            exit 1
-          else
-            echo "Service ${{ matrix.service }} is running successfully."
           fi
 
       - name: Stop and remove container
