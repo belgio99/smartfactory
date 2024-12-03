@@ -160,7 +160,7 @@ services:
       - minio_data:/data
     ports:
       - 9000:9000
-      - 9001:9001
+      - 9002:9001
     env_file:
       - database/.env
     command: minio server /data
