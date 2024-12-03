@@ -1,20 +1,79 @@
-[
+{"id": "root",
+  "name": "",
+  "children":[
   {
-    "id": "TestingPresets",
+    "id": "overview",
+    "name": "Overview Dashboard",
+    "views": [
+      {
+        "kpi": "1",
+        "graph_type": "line"
+      },
+      {
+        "kpi": "4",
+        "graph_type": "barv"
+      },
+      {
+        "kpi": "7",
+        "graph_type": "pie"
+      }
+    ]
+  },
+  {
+    "id": "testing",
     "name": "Testing Dashboards",
     "children": [
       {
         "id": "1",
-        "name": "Testboard #1"
+        "name": "Testboard #1",
+        "views": [
+          {
+            "kpi": "14",
+            "graph_type": "hist"
+          },
+          {
+            "kpi": "17",
+            "graph_type": "scatter"
+          },
+          {
+            "kpi": "1",
+            "graph_type": "area"
+          }
+        ]
       },
       {
         "id": "pies",
-        "name": "Testboard #2"
+        "name": "Testboard #2",
+        "views": [
+          {
+            "kpi": "10",
+            "graph_type": "pie"
+          },
+          {
+            "kpi": "9",
+            "graph_type": "donut"
+          }
+        ]
       },
       {
         "id": "bars",
-        "name": "Testboard #3"
+        "name": "Testboard #3",
+        "views": [
+          {
+            "kpi": "18",
+            "graph_type": "barh"
+          },
+          {
+            "kpi": "19",
+            "graph_type": "stacked_bar"
+          },
+          {
+            "kpi": "20",
+            "graph_type": "barv"
+          }
+        ]
       }
     ]
   }
 ]
+}

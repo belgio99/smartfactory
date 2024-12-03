@@ -2,13 +2,13 @@ import {useParams} from 'react-router-dom';
 import React, {useEffect, useState} from "react";
 import {DashboardEntry, DashboardLayout} from "../../api/DataStructures";
 import Chart from "../Chart/Chart";
-import {getKpiList} from "../../api/PersistentDataManager";
+import {getKpiList, findDashboardById} from "../../api/PersistentDataManager";
 import {simulateChartData} from "../../api/QuerySimulator";
-import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptions"; // Import your Chart component
+import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptions";
 import TimeSelector, {TimeFrame} from "../KpiSelector/TimeSelector";
 
 const Dashboard: React.FC = () => {
-    const {dashboardId} = useParams<{ dashboardId: string }>();
+    const {dashboardId, dashboardPath} = useParams<{ dashboardId: string, dashboardPath: string }>();
     const [dashboardData, setDashboardData] = useState<DashboardLayout>(new DashboardLayout("", "", []));
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState<any[][]>([]);
@@ -23,10 +23,9 @@ const Dashboard: React.FC = () => {
                 setLoading(true);
                 setFilters(new Filter("All", [])); // Reset filters
 
-                // Fetch dashboard layout
-                const response = await fetch(`/mockData/dashboards/${dashboardId}.json`);
-                const data = await response.json();
-                const dash: DashboardLayout = DashboardLayout.decode(data); // Assuming you have a decode method
+                // Fetch dashboard data by id
+                let dash = findDashboardById(`${dashboardId}`, `${dashboardPath}`);
+
                 setDashboardData(dash);
 
                 // Fetch chart data for each view
@@ -63,7 +62,6 @@ const Dashboard: React.FC = () => {
                 return await simulateChartData(kpi, timeFrame, entry.graph_type, filters); // Add appropriate filters
             });
 
-            console.log("Fetching with timeFrame:", timeFrame); // Debugging output
             const resolvedChartData = await Promise.all(chartDataPromises);
             setChartData(resolvedChartData);
         };
