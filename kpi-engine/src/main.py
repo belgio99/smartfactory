@@ -2,6 +2,7 @@ from kpi_calculation import kpi_engine
 from fastapi import FastAPI, HTTPException
 import pandas as pd
 import uvicorn
+from pydantic import BaseModel
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,15 +12,6 @@ from typing import Optional
 env_path = Path(__file__).resolve().parent.parent / ".env"
 print(env_path)
 load_dotenv(dotenv_path=env_path)
-
-''''
-Start by using 'uvicorn main:app --reload'
-examples: 
-http://127.0.0.1:8000/kpi/quality/calculate 
-http://127.0.0.1:8000/kpi/quality/calculate?machineType=Laser%20Cutter
-http://127.0.0.1:8000/kpi/quality/calculate?machineType=Laser%20Cutter&endPeriod=2024-10-10
-http://127.0.0.1:8000/kpi/yield_to_availability/calculate?machineType=Laser%20Cutter&endPeriod=2024-10-10 (this is a mockup of the dynamic kpi calculation)
-'''
 
 with open("smart_app_data.pkl", "rb") as file:
     df = pd.read_pickle(file)
@@ -34,22 +26,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+class KPIRequest(BaseModel):
+    KPI_Name: str
+    Machine_Name: Optional[str] = "all_machines"
+    Machine_Type: Optional[str] = "any"
+    Date_Start: Optional[str] = df['time'].min()[:10]
+    Date_End: Optional[str] = df['time'].max()[:10]
+    Aggregator: Optional[str] = 'sum'
+    startPreviousPeriod: Optional[str] = df['time'].min()[:10]
+    endPreviousPeriod: Optional[str] = df['time'].max()[:10]
+
+@app.post("/kpi")
 async def read_root():
     return {"message": "Welcome to the KPI Calculation Engine!"}
 
+@app.post("/kpi/calculate")
+async def calculate(request: KPIRequest):
+    ''' print(f"Received request: {request.json()}") '''
 
-@app.get("/kpi/{kpiID}/calculate")
-async def calculate(
-    kpiID: str,
-    machineId: Optional[str] = "all_machines",
-    machineType: Optional[str] = "any",
-    startPeriod: Optional[str] = df['time'].min()[:10],
-    endPeriod: Optional[str] = df['time'].max()[:10],
-    startPreviousPeriod: Optional[str] = "0",
-    endPreviousPeriod: Optional[str] = "3"
-    ):
-    print(f"Received kpiID: {kpiID}, \nmachineId: {machineId}, \nmachineType: {machineType}, \nstartPeriod: {startPeriod}, \nendPeriod: {endPeriod}\n")
+    kpiID = request.KPI_Name
+    machineId = request.Machine_Name
+    machineType = request.Machine_Type
+    startPeriod = request.Date_Start
+    endPeriod = request.Date_End
+    aggregator = request.Aggregator
+    unitOfMeasure = 'UoM'
+    startPreviousPeriod = request.startPreviousPeriod
+    endPreviousPeriod = request.endPreviousPeriod
+
+    # A list of all static KPI method calculation names is compiled for later use
     methods = {
     name: getattr(kpi_engine, name)
     for name in dir(kpi_engine)
@@ -59,23 +64,23 @@ async def calculate(
     if(kpiID == "dynamic_kpi"):
         raise HTTPException(status_code=404, detail=f"'dynamic_kpi' method not directly callable.")
 
+    # If the requested KPI is not in the static methods, call the dynamic KPI method. Otherwise, just call the good old static one
     if kpiID not in methods:
-        result, formula = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
+        result = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
     else:
-        result, formula = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
-    return {    "kpiID": kpiID,
-                "formula": formula,
-                "machineId": machineId,
-                "machineType": machineType,
-                "startPeriod": startPeriod,
-                "endPeriod": endPeriod,
-                "value": result
-                }
-
-def main_test():
-    kpi_engine.dynamic_kpi(df=df, machine_id='all_machines', machine_type='any', start_period='2024-08-27T00:00:00Z', end_period='2024-09-20T00:00:00Z', kpi_id='a')
+        result = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
+    
+    response = {
+        "Machine_Name": machineId,
+        "KPI_Name": kpiID,
+        "Value": result,
+        "Measure_Unit": machineType,
+        "Date_Start": startPeriod,
+        "Date_Finish": endPeriod,
+        "Aggregator": aggregator,
+        "Forecast": False
+    }
+    return response
 
 if __name__ == "__main__":
     uvicorn.run(app, host=os.getenv("KB_HOST"), port=int(os.getenv("KB_PORT", 8000)))
-    # uvicorn.run(app, host='0.0.0.0', port=8000)
-    # main_test()
