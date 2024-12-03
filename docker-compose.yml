@@ -221,20 +221,17 @@ services:
     depends_on:
       - smtp
       - router
-    profiles:
-      - api
 
   smtp:
-    image: mailhog/mailhog
-    ports:
-        - "11025:1025"
-        - "18025:8025"
-    environment:
-        MH_OUTGOING_SMTP_USERNAME: "noreply@smartfactory.com"
-        MH_OUTGOING_SMTP_PASSWORD: "SmartAppPassword123"
-    profiles:
-      - api
-    
+      image: mailhog/mailhog
+      ports:
+          - "11025:1025"
+          - "18025:8025"
+      environment:
+          MH_OUTGOING_SMTP_USERNAME: "noreply@smartfactory.com"
+          MH_OUTGOING_SMTP_PASSWORD: "SmartAppPassword123"
+
+
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
     platform: linux/amd64
