@@ -4,9 +4,9 @@ import {getKpiList} from "../../api/PersistentDataManager";
 const KpiViewer = () => {
     // Getter method for the list of elements
 
-    const [expanded, setExpanded] = useState<number | null>(null);
+    const [expanded, setExpanded] = useState<string | null>(null);
 
-    const toggleAccordion = (id:number) => {
+    const toggleAccordion = (id:string) => {
         setExpanded((prev) => (prev === id ? null : id));
     };
 

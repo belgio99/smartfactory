@@ -12,7 +12,7 @@ type ForecastData = {
 
 const ForecastingPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
-    const [selectedKpi, setSelectedKpi] = useState<number | null>(null);
+    const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
     const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame } | null>(null);
 
@@ -40,9 +40,9 @@ const ForecastingPage: React.FC = () => {
     };
 
     const handleKpiChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const kpiId = parseInt(e.target.value, 10);
+        const kpiId = e.target.value;
 
-        if (!isNaN(kpiId)) {
+        if (kpiId.length !== 0) {
             setSelectedKpi(kpiId);
         } else {
             setSelectedKpi(null);

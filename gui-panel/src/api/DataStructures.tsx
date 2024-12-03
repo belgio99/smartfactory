@@ -39,13 +39,13 @@ export class Machine {
 
 
 export class KPI {
-    id: number; // internal id
+    id: string; // internal id
     type: string; // category
     name: string; // displayed name
     description: string; // description
     unit: string;
 
-    constructor(id: number, type: string, name: string, value: string, unit: string) {
+    constructor(id: string, type: string, name: string, value: string, unit: string) {
         this.id = id;
         this.type = type;
         this.name = name;
@@ -64,7 +64,7 @@ export class KPI {
 
     static decode(json: Record<string, any>): KPI {
         if (
-            typeof json.id !== "number" ||
+            typeof json.id !== "string" ||
             typeof json.type !== "string" ||
             typeof json.name !== "string" ||
             typeof json.description !== "string" ||
@@ -226,10 +226,10 @@ export class Schedule {
 const supportedGraphTypes = ["line", "area", "barv", "barh", "pie", "donut", "scatter", "hist", "stacked_bar"];
 
 export class DashboardEntry {
-    kpi: number;
+    kpi: string;
     graph_type: string;
 
-    constructor(kpi: number, graph_type: string) {
+    constructor(kpi: string, graph_type: string) {
         this.kpi = kpi;
         this.graph_type = graph_type;
     }
@@ -242,7 +242,7 @@ export class DashboardEntry {
     }
 
     static decode(json: Record<string, any>): DashboardEntry {
-        if (
+        if (typeof json.kpi !== "string" ||
             typeof json.graph_type !== "string") {
             throw new Error("Invalid JSON structure for DashboardEntry");
         }
