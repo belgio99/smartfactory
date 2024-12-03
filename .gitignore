@@ -2,3 +2,8 @@
 smart_app_data.pkl
 smart_app_data.csv
 */*/upload
+.venv/
+.SA_venv/
+.vscode/settings.json
+.DS_Store
+*.pyc
