@@ -1,0 +1,8 @@
+langchain
+fastapi
+langchain-chroma
+langchain-community
+langchain-google-genai
+python-dotenv
+sentence_transformers
+rdflib
