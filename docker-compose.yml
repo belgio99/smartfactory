@@ -1,167 +1,186 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 volumes:
-    metadata_data: {}
-    middle_var: {}
-    historical_var: {}
-    broker_var: {}
-    coordinator_var: {}
-    router_var: {}
-    druid_shared: {}
-    db: {}
-    minio_data: {}
+  metadata_data: {}
+  middle_var: {}
+  historical_var: {}
+  broker_var: {}
+  coordinator_var: {}
+  router_var: {}
+  druid_shared: {}
+  db: {}
+  minio_data: {}
 
 services:
-    api-layer:
-        container_name: api-layer
-        build:
-            context: ./api
-            dockerfile: Dockerfile
-        depends_on:
-            - smtp
-            - router
-        env_file:
-            - database/environment
-        ports:
-            - "8000:8000"
+  postgres:
+    container_name: postgres
+    image: postgres:latest
+    platform: linux/amd64
+    volumes:
+      - metadata_data:/var/lib/postgresql/data
+#   environment:
+#      POSTGRES_HOST_AUTH_METHOD: trust
+    env_file:
+      - database/environment
 
-    smtp:
-        image: mailhog/mailhog
-        ports:
-            - "1025:1025"
-            - "8025:8025"
-        environment:
-            MH_OUTGOING_SMTP_USERNAME: "noreply@smartfactory.com"
-            MH_OUTGOING_SMTP_PASSWORD: "SmartAppPassword123"
+  # Need 3.5 or later for container nodes
+  zookeeper:
+    container_name: zookeeper
+    image: zookeeper:3.5.10
+    platform: linux/amd64
+    ports:
+      - "2181:2181"
+    environment:
+      - ZOO_MY_ID=1
+      #- ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
 
-    postgres:
-        container_name: postgres
-        image: postgres:latest
-        platform: linux/amd64
-        volumes:
-            - metadata_data:/var/lib/postgresql/data
-        environment:
-            - POSTGRES_PASSWORD=FoolishPassword
-            - POSTGRES_USER=druid
-            - POSTGRES_DB=druid
+  coordinator:
+    image: apache/druid:31.0.0
+    container_name: coordinator
+    platform: linux/amd64
+    volumes:
+      - druid_shared:/opt/shared
+      - coordinator_var:/opt/druid/var
+      - ./database/druid/upload:/druid/upload
+    depends_on:
+      - zookeeper
+      - postgres
+    ports:
+      - "8081:8081"
+    command:
+      - coordinator
+    env_file:
+      - database/environment
 
-    # Need 3.5 or later for container nodes
-    zookeeper:
-        container_name: zookeeper
-        image: zookeeper:3.5.10
-        platform: linux/amd64
-        ports:
-            - "2181:2181"
-        environment:
-            - ZOO_MY_ID=1
+  broker:
+    image: apache/druid:31.0.0
+    container_name: broker
+    platform: linux/amd64
+    volumes:
+      - broker_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8082:8082"
+    command:
+      - broker
+    env_file:
+      - database/environment
 
-    coordinator:
-        image: apache/druid:31.0.0
-        container_name: coordinator
-        platform: linux/amd64
-        volumes:
-            - druid_shared:/opt/shared
-            - coordinator_var:/opt/druid/var
-            - ./obj_storage:/obj_storage
-        depends_on:
-            - zookeeper
-            - postgres
-        ports:
-            - "8081:8081"
-        command:
-            - coordinator
-        env_file:
-            - database/environment
+  historical:
+    image: apache/druid:31.0.0
+    container_name: historical
+    platform: linux/amd64
+    volumes:
+      - druid_shared:/opt/shared
+      - historical_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8083:8083"
+    command:
+      - historical
+    env_file:
+      - database/environment
 
-    broker:
-        image: apache/druid:31.0.0
-        container_name: broker
-        platform: linux/amd64
-        volumes:
-            - broker_var:/opt/druid/var
-        depends_on:
-            - zookeeper
-            - postgres
-            - coordinator
-        ports:
-            - "8082:8082"
-        command:
-            - broker
-        env_file:
-            - database/environment
+  middlemanager:
+    image: apache/druid:31.0.0
+    container_name: middlemanager
+    platform: linux/amd64
+    volumes:
+      - druid_shared:/opt/shared
+      - middle_var:/opt/druid/var
+      - ./database/druid/upload:/druid/upload
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8091:8091"
+      - "8100-8105:8100-8105"
+    command:
+      - middleManager
+    env_file:
+      - database/environment
 
-    historical:
-        image: apache/druid:31.0.0
-        container_name: historical
-        platform: linux/amd64
-        volumes:
-            - druid_shared:/opt/shared
-            - historical_var:/opt/druid/var
-        depends_on:
-            - zookeeper
-            - postgres
-            - coordinator
-        ports:
-            - "8083:8083"
-        command:
-            - historical
-        env_file:
-            - database/environment
+  router:
+    image: apache/druid:31.0.0
+    container_name: router
+    platform: linux/amd64
+    volumes:
+      - router_var:/opt/druid/var
+    depends_on:
+      - zookeeper
+      - postgres
+      - coordinator
+    ports:
+      - "8888:8888"
+    command:
+      - router
+    env_file:
+      - database/environment
 
-    middlemanager:
-        image: apache/druid:31.0.0
-        container_name: middlemanager
-        platform: linux/amd64
-        volumes:
-            - druid_shared:/opt/shared
-            - middle_var:/opt/druid/var
-            - ./obj_storage:/obj_storage
-        depends_on:
-            - zookeeper
-            - postgres
-            - coordinator
-        ports:
-            - "8091:8091"
-            - "8100-8105:8100-8105"
-        command:
-            - middleManager
-        env_file:
-            - database/environment
+  db:
+    container_name: db
+    env_file:
+      - database/.env
+    image: postgres:latest
+    platform: linux/amd64
+    ports:
+      - "5432:5432"
+#    environment:
+   #   POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - db:/var/lib/postgresql/data
 
-    router:
-        image: apache/druid:31.0.0
-        container_name: router
-        platform: linux/amd64
-        volumes:
-            - router_var:/opt/druid/var
-        depends_on:
-            - zookeeper
-            - postgres
-            - coordinator
-        ports:
-            - "8888:8888"
-        command:
-            - router
-        env_file:
-            - database/environment
+  minio:
+    container_name: minio
+    image: quay.io/minio/minio:latest
+    volumes:
+      - minio_data:/data
+    ports:
+      - 9000:9000
+      - 9001:9001
+    env_file:
+      - database/.env
+    command: minio server /data
 
-    db:
-        container_name: db
-        env_file:
-            - database/environment
-        image: postgres:latest
-        platform: linux/amd64
-        ports:
-            - "5432:5432"
-        volumes:
-            - db:/var/lib/postgresql/data
-
-    minio:
-        container_name: minio
-        image: quay.io/minio/minio:latest
-        volumes:
-            - minio_data:/data
-        ports:
-            - 9000:9000
-            - 9001:9001
-        env_file:
-            - database/environment
-        command: minio server /data
+#  backrest:
+#    image: garethgeorge/backrest:latest
+#    container_name: backrest
+#    hostname: backrest
+#    volumes:
+#      - backrest_data:/data
+#      - backrest_config:/config
+#      - backrest_cache:/cache
+#      - /MY-BACKUP-DATA:/userdata # [optional] mount local paths to backup here.
+#      - /MY-REPOS:/repos # [optional] mount repos if using local storage, not necessary for remotes e.g. B2, S3, etc.
+#    environment:
+#      - BACKREST_DATA=/data # path for backrest data. restic binary and the database are placed here.
+#      - BACKREST_CONFIG=/config/config.json # path for the backrest config file.
+#      - XDG_CACHE_HOME=/cache # path for the restic cache which greatly improves performance.
+#      - TZ=America/Los_Angeles # set the timezone for the container, used as the timezone for cron jobs.
+#    restart: unless-stopped
+#    ports:
+#      - 9898:9898
+#
