@@ -193,7 +193,7 @@ services:
       - "10040:8000"
     env_file:
       - api/.env
-      - environment
+      - api/environment
     depends_on:
       - smtp
       - router

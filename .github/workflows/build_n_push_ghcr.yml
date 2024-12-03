@@ -43,7 +43,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Run Docker container
-        run: docker compose up -d ${{ matrix.service }}
+        run: docker compose up -d --no-build ${{ matrix.service }}
 
       - name: Wait for container to initialize
         run: sleep 60
