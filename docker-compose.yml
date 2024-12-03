@@ -45,7 +45,7 @@ services:
     image: zookeeper:3.5.10
     platform: linux/amd64
     ports:
-      - "2181:2181"
+      - "12181:2181"
     environment:
       - ZOO_MY_ID=1
       #- ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
@@ -62,7 +62,7 @@ services:
       - zookeeper
       - postgres
     ports:
-      - "8081:8081"
+      - "18081:8081"
     command:
       - coordinator
     env_file:
@@ -79,7 +79,7 @@ services:
       - postgres
       - coordinator
     ports:
-      - "8082:8082"
+      - "18082:8082"
     command:
       - broker
     env_file:
@@ -97,7 +97,7 @@ services:
       - postgres
       - coordinator
     ports:
-      - "8083:8083"
+      - "18083:8083"
     command:
       - historical
     env_file:
@@ -116,8 +116,8 @@ services:
       - postgres
       - coordinator
     ports:
-      - "8091:8091"
-      - "8100-8105:8100-8105"
+      - "18091:8091"
+      - "18100-18105:8100-8105"
     command:
       - middleManager
     env_file:
@@ -134,7 +134,7 @@ services:
       - postgres
       - coordinator
     ports:
-      - "8888:8888"
+      - "18888:8888"
     command:
       - router
     env_file:
@@ -147,7 +147,7 @@ services:
     image: postgres:latest
     platform: linux/amd64
     ports:
-      - "5432:5432"
+      - "15432:5432"
 #    environment:
    #   POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
@@ -159,8 +159,8 @@ services:
     volumes:
       - minio_data:/data
     ports:
-      - 9000:9000
-      - 9002:9001
+      - 19000:9000
+      - 19001:9001
     env_file:
       - database/.env
     command: minio server /data
@@ -169,37 +169,37 @@ services:
     image: ghcr.io/belgio99/smartfactory/kb:latest
     platform: linux/amd64
     ports: 
-      - "8100:8000"
+      - "18100:8000"
     
   data-processing:
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
     platform: linux/amd64
     ports: 
-      - "8200:8000"
+      - "18200:8000"
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
     platform: linux/amd64
     ports: 
-      - "8400:8000"
+      - "18400:8000"
   
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
     platform: linux/amd64
     ports: 
-      - "8500:8000"
+      - "18500:8000"
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
     platform: linux/amd64
     ports: 
-      - "8600:8000"
+      - "18600:8000"
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
     platform: linux/amd64
     ports: 
-      - "8800:8000"
+      - "18800:8000"
 
 
 
