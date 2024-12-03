@@ -165,6 +165,44 @@ services:
       - database/.env
     command: minio server /data
 
+  kb:
+    image: ghcr.io/belgio99/smartfactory/kb:latest
+    platform: linux/amd64
+    ports: 
+      - "8100:8000"
+    
+  data-processing:
+    image: ghcr.io/belgio99/smartfactory/data-processing:latest
+    platform: linux/amd64
+    ports: 
+      - "8200:8000"
+
+  api:
+    image: ghcr.io/belgio99/smartfactory/api:latest
+    platform: linux/amd64
+    ports: 
+      - "8400:8000"
+  
+  rag:
+    image: ghcr.io/belgio99/smartfactory/rag:latest
+    platform: linux/amd64
+    ports: 
+      - "8500:8000"
+
+  gui-panel:
+    image: ghcr.io/belgio99/smartfactory/gui-panel:latest
+    platform: linux/amd64
+    ports: 
+      - "8600:8000"
+
+  kpi-engine:
+    image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
+    platform: linux/amd64
+    ports: 
+      - "8800:8000"
+
+
+
 #  backrest:
 #    image: garethgeorge/backrest:latest
 #    container_name: backrest
