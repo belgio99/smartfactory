@@ -26,6 +26,8 @@ def main():
     # Define the bucket names
     reports_bucket_name = "reports"
     models_bucket_name = "models"
+    dashboards_bucket_name = "dashboards"
+    schedules_bucket_name = "schedules"
 
     # Create the buckets if they don't exist
     try:
@@ -40,6 +42,18 @@ def main():
             print(f"Bucket '{models_bucket_name}' created successfully.")
         else:
             print(f"Bucket '{models_bucket_name}' already exists.")
+
+        if not client.bucket_exists(dashboards_bucket_name):
+            client.make_bucket(dashboards_bucket_name)
+            print(f"Bucket '{dashboards_bucket_name}' created successfully.")
+        else:
+            print(f"Bucket '{dashboards_bucket_name}' already exists.")
+
+        if not client.bucket_exists(schedules_bucket_name):
+            client.make_bucket(schedules_bucket_name)
+            print(f"Bucket '{schedules_bucket_name}' created successfully.")
+        else:
+            print(f"Bucket '{schedules_bucket_name}' already exists.")
     except S3Error as exc:
         print("Error occurred while checking/creating buckets.", exc)
 
