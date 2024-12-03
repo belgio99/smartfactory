@@ -2,17 +2,18 @@ import {useParams} from 'react-router-dom';
 import React, {useEffect, useState} from "react";
 import {DashboardEntry, DashboardLayout} from "../../api/DataStructures";
 import Chart from "../Chart/Chart";
-import {getKpiList, findDashboardById} from "../../api/PersistentDataManager";
 import {simulateChartData} from "../../api/QuerySimulator";
 import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptions";
 import TimeSelector, {TimeFrame} from "../KpiSelector/TimeSelector";
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 const Dashboard: React.FC = () => {
+    const dataManager = PersistentDataManager.getInstance();
     const {dashboardId, dashboardPath} = useParams<{ dashboardId: string, dashboardPath: string }>();
     const [dashboardData, setDashboardData] = useState<DashboardLayout>(new DashboardLayout("", "", []));
     const [loading, setLoading] = useState(true);
     const [chartData, setChartData] = useState<any[][]>([]);
-    const kpiList = getKpiList(); // Cache KPI list once
+    const kpiList = dataManager.getKpiList(); // Cache KPI list once
     const [filters, setFilters] = useState(new Filter("All", []));
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: 'hour'});
 
@@ -24,7 +25,7 @@ const Dashboard: React.FC = () => {
                 setFilters(new Filter("All", [])); // Reset filters
 
                 // Fetch dashboard data by id
-                let dash = findDashboardById(`${dashboardId}`, `${dashboardPath}`);
+                let dash = dataManager.findDashboardById(`${dashboardId}`, `${dashboardPath}`);
 
                 setDashboardData(dash);
 

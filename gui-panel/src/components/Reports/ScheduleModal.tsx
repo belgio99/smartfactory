@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
 import FilterOptions from "../KpiSelector/FilterOptions";
-import {getKpiList} from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 interface ModalProps {
     isOpen: boolean;
@@ -11,6 +11,7 @@ interface ModalProps {
 }
 
 const ScheduleModal: React.FC<ModalProps> = ({isOpen, schedule, onSave, onClose}) => {
+    const dataManager = PersistentDataManager.getInstance();
     const [formData, setFormData] = useState<Partial<Schedule>>(schedule);
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
@@ -92,7 +93,7 @@ const ScheduleModal: React.FC<ModalProps> = ({isOpen, schedule, onSave, onClose}
 
                 <label className="block mb-2 text-sm font-medium text-gray-700">KPIs</label>
                 <div className="border rounded p-3 mb-1">
-                    {getKpiList().map((kpi) => (
+                    {dataManager.getKpiList().map((kpi) => (
                         <div key={kpi.id} className="flex items-center mb-2">
                             <input
                                 type="checkbox"

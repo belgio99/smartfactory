@@ -6,15 +6,15 @@
     "name": "Overview Dashboard",
     "views": [
       {
-        "kpi": "consumption_trend",
+        "kpi": "consumption_avg",
         "graph_type": "line"
       },
       {
-        "kpi": "bad_cycles",
+        "kpi": "bad_cycles_sum",
         "graph_type": "barv"
       },
       {
-        "kpi": "good_cycles",
+        "kpi": "good_cycles_avg",
         "graph_type": "pie"
       }
     ]
@@ -32,11 +32,11 @@
             "graph_type": "hist"
           },
           {
-            "kpi": "consumption_efficiency",
+            "kpi": "consumption_max",
             "graph_type": "scatter"
           },
           {
-            "kpi": "waste_generation",
+            "kpi": "cost_max",
             "graph_type": "area"
           }
         ]
@@ -46,11 +46,11 @@
         "name": "Testboard #2",
         "views": [
           {
-            "kpi": "yield",
+            "kpi": "idle_time_avg",
             "graph_type": "pie"
           },
           {
-            "kpi": "cycle_time",
+            "kpi": "working_time_sum",
             "graph_type": "donut"
           }
         ]
@@ -64,11 +64,11 @@
             "graph_type": "barh"
           },
           {
-            "kpi": "energy_consumption",
+            "kpi": "consumption_min",
             "graph_type": "stacked_bar"
           },
           {
-            "kpi": "mean_time_to_repair",
+            "kpi": "cost_avg",
             "graph_type": "barv"
           }
         ]
