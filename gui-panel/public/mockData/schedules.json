@@ -1,10 +1,10 @@
 [
   {
     "id": 1,
-    "name": "Quarterly Sales Report",
+    "name": "Quarterly Cost Report",
     "recurrence": "Monthly",
     "status": true,
-    "email": "sales@company.com",
+    "email": "mock@company.com",
     "startDate": "2024-12-01",
     "kpis": [
       "Energy Cost Savings",
@@ -17,10 +17,10 @@
   },
   {
     "id": 2,
-    "name": "Annual Marketing Report",
+    "name": "Annual Throughput Report",
     "recurrence": "Yearly",
     "status": false,
-    "email": "marketing@company.com",
+    "email": "mock@company.com",
     "startDate": "2024-01-01",
     "kpis": [
       "Throughput"

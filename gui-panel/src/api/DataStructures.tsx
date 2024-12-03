@@ -77,6 +77,79 @@ export class KPI {
 
 }
 
+export class KPIGroup {
+    category: string; // Top-level category (e.g., Energy)
+    subcategory: string; // Subcategory name (e.g., Consumption)
+    unit: string; // Unit of measurement for this group
+    metrics: KPIOptions[]; // Array of detailed metric options
+
+    constructor(category: string, subcategory: string, unit: string, metrics: KPIOptions[]) {
+        this.category = category;
+        this.subcategory = subcategory;
+        this.unit = unit;
+        this.metrics = metrics;
+    }
+
+    static encode(instance: KPIGroup): Record<string, any> {
+        return {
+            category: instance.category,
+            subcategory: instance.subcategory,
+            unit: instance.unit,
+            metrics: instance.metrics.map(KPIOptions.encode),
+        };
+    }
+
+    static decode(json: Record<string, any>): KPIGroup {
+        if (
+            typeof json.category !== "string" ||
+            typeof json.subcategory !== "string" ||
+            typeof json.unit !== "string" ||
+            !Array.isArray(json.metrics)
+        ) {
+            throw new Error("Invalid JSON structure for KPIGroup");
+        }
+
+        const metrics = json.metrics.map(KPIOptions.decode);
+        return new KPIGroup(json.category, json.subcategory, json.unit, metrics);
+    }
+}
+export class KPIOptions {
+    id: string; // Unique identifier for the metric
+    name: string; // Metric name (e.g., avg, min, max)
+    description: string; // Detailed description of the metric
+    forecastable: boolean; // Indicates if the metric is forecastable
+
+    constructor(id: string, name: string, description: string, forecastable: boolean) {
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.forecastable = forecastable;
+    }
+
+    static encode(instance: KPIOptions): Record<string, any> {
+        return {
+            id: instance.id,
+            name: instance.name,
+            description: instance.description,
+            forecastable: instance.forecastable,
+        };
+    }
+
+    static decode(json: Record<string, any>): KPIOptions {
+        if (
+            typeof json.id !== "string" ||
+            typeof json.name !== "string" ||
+            typeof json.description !== "string" ||
+            typeof json.forecastable !== "boolean"
+        ) {
+            throw new Error("Invalid JSON structure for KPIOptions");
+        }
+
+        return new KPIOptions(json.id, json.name, json.description, json.forecastable);
+    }
+}
+
+
 export class Schedule {
     id: number;
     name: string;
@@ -219,40 +292,12 @@ export class DashboardLayout {
 
 }
 
-export class DashboardPointer {
-    id: string; // id for the internal path
-    name: string; //displayed name in breadcrumb
-
-    constructor(id: string, name: string) {
-        this.id = id;
-        this.name = name;
-    }
-
-    static encode(instance: DashboardPointer): Record<string, any> {
-        return {
-            id: instance.id,
-            name: instance.name,
-        };
-    }
-
-    static decode(json: Record<string, any>): DashboardPointer {
-        if (
-            typeof json.id !== "string" ||
-            typeof json.name !== "string"
-        ) {
-            console.log(json);
-            throw new Error("Invalid JSON structure for DashboardPointer");
-        }
-        return new DashboardPointer(json.id, json.name);
-    }
-}
-
 export class DashboardFolder {
     id: string; // id for the internal path
     name: string; //displayed name in breadcrumb
-    children: (DashboardFolder | DashboardPointer)[] //another folder or the pointer to the layout to load
+    children: (DashboardFolder | DashboardLayout)[] //another folder or the pointer to the layout to load
 
-    constructor(id: string, name: string, children: (DashboardFolder | DashboardPointer)[]) {
+    constructor(id: string, name: string, children: (DashboardFolder | DashboardLayout)[]) {
         this.id = id;
         this.name = name;
         this.children = children;
@@ -267,7 +312,7 @@ export class DashboardFolder {
                 if (child instanceof DashboardFolder) {
                     return DashboardFolder.encode(child); // Encode DashboardFolder
                 } else {
-                    return DashboardPointer.encode(child); // Encode DashboardLayout id
+                    return DashboardLayout.encode(child); // Encode DashboardLayout id
                 }
             }),
         };
@@ -287,7 +332,7 @@ export class DashboardFolder {
         // Decode each child in the children array
         const children = json.children.map((childJson) => {
             if (!childJson.children) {
-                return DashboardPointer.decode(childJson); // Decode DashboardPointer
+                return DashboardLayout.decode(childJson); // Decode DashboardPointer
             } else {
                 return DashboardFolder.decode(childJson); // Decode DashboardFolder
             }

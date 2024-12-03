@@ -1,5 +1,4 @@
 import React, {useEffect} from 'react';
-import Select from './Select';
 import GraphTypeSelector from './GraphTypeSelector';
 import {getKpiList} from "../../api/PersistentDataManager";
 import {KPI} from "../../api/DataStructures";
@@ -23,7 +22,7 @@ const KpiSelector: React.FC<{
 }> = ({kpi, setKpi, timeFrame, setTimeFrame, graphType, setGraphType, filters, setFilters, onGenerate}) => {
     useEffect(() => {
         onGenerate();
-    }, [kpi, timeFrame, graphType]); // Dependencies to listen for changes
+    }, [kpi, timeFrame, graphType, filters]); // Dependencies to listen for changes
 
     return (
         <section className="p-6 mx-auto space-y-10 bg-white shadow-md rounded-lg">
@@ -40,7 +39,7 @@ const KpiSelector: React.FC<{
                 />
 
                 {/* Time Frame Selector */}
-                <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame} />
+                <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame}/>
 
 
                 {/* Graph Type Selector */}
