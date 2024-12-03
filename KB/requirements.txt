@@ -1,0 +1,5 @@
+fastapi
+sympy
+owlready2
+fastapi[standard]==0.109.0
+uvicorn[standard]==0.27.0

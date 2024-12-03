@@ -1,0 +1,73 @@
+.Header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+  }
+  
+  .breadcrumb ol {
+    display: flex;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+  }
+  
+  .breadcrumb li + li::before {
+    content: "/";
+    padding: 0 8px;
+    color: rgba(0, 0, 0, 0.4);
+  }
+  
+  .breadcrumb a {
+    color: #000;
+    text-decoration: none;
+  }
+  
+  .favoriteButton,
+  .notificationButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-right: 8px;
+  }
+  
+  .favoriteIcon,
+  .notificationIcon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .userInfo {
+    display: flex;
+    align-items: center;
+  }
+  
+  .userAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 8px;
+  }
+  
+  .userName {
+    font-size: 14px;
+    color: #000;
+  }
+  
+  @media (max-width: 991px) {
+    .dashboardHeader {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .userInfo {
+      margin-top: 10px;
+    }
+  }
