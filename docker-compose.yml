@@ -167,7 +167,7 @@ services:
 
   kb:
     build:
-      context: ./KB
+      context: ./kb
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
     platform: linux/amd64
@@ -195,10 +195,10 @@ services:
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
     build:
-      context: ./RAG
+      context: ./rag
       dockerfile: Dockerfile
     env_file:
-      - RAG/.env
+      - rag/.env
     platform: linux/amd64
     ports: 
       - "10050:8000"
