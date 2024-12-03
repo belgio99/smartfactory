@@ -193,7 +193,7 @@ services:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
     platform: linux/amd64
     ports: 
-      - "10060:8000"
+      - "10060:3000"
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
