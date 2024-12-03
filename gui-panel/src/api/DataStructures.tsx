@@ -112,7 +112,9 @@ export class KPIGroup {
         const metrics = json.metrics.map(KPIOptions.decode);
         return new KPIGroup(json.category, json.subcategory, json.unit, metrics);
     }
+
 }
+
 export class KPIOptions {
     id: string; // Unique identifier for the metric
     name: string; // Metric name (e.g., avg, min, max)

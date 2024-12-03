@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {getKpiList} from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 import Chart from "../Chart/Chart";
 import {simulateChartData} from "../../api/QuerySimulator";
 import FutureTimeFrameSelector from "./FutureTimeSelector";
@@ -11,6 +11,7 @@ type ForecastData = {
 };
 
 const ForecastingPage: React.FC = () => {
+    const dataManager = PersistentDataManager.getInstance();
     const [loading, setLoading] = useState(false);
     const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
@@ -24,7 +25,7 @@ const ForecastingPage: React.FC = () => {
     const fetchForecastData = async () => {
         if (selectedKpi !== null && timeFrame !== null) {
             setLoading(true);
-            const kpi = getKpiList().find((k) => k.id === selectedKpi);
+            const kpi = dataManager.getKpiList().find((k) => k.id === selectedKpi);
             if (!kpi) {
                 console.error(`KPI with ID ${selectedKpi} not found.`);
                 setLoading(false);
@@ -56,7 +57,7 @@ const ForecastingPage: React.FC = () => {
 
     const formatDate = (date: Date) => date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
 
-    const kpis = getKpiList();
+    const kpis = dataManager.getKpiList();
     return (
         <div className="ForecastingPage max-w-4xl mx-auto p-6 bg-gray-100">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">KPI Forecasting</h1>

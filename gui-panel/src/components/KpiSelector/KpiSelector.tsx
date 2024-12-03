@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
 import GraphTypeSelector from './GraphTypeSelector';
-import {getKpiList} from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 import {KPI} from "../../api/DataStructures";
 import KpiSelect from "./KpiSelect";
 import FilterOptionsV2, {Filter} from "./FilterOptions";
@@ -23,7 +23,7 @@ const KpiSelector: React.FC<{
     useEffect(() => {
         onGenerate();
     }, [kpi, timeFrame, graphType, filters]); // Dependencies to listen for changes
-
+    const dataManager = PersistentDataManager.getInstance();
     return (
         <section className="p-6 mx-auto space-y-10 bg-white shadow-md rounded-lg">
             {/* KPI, Time Frame and Graph Type Selectors in one line */}
@@ -33,7 +33,7 @@ const KpiSelector: React.FC<{
                     label="KPI"
                     description={`Select the KPI you want to visualize`}
                     value={kpi}
-                    options={getKpiList()}
+                    options={dataManager.getKpiList()}
                     onChange={setKpi}
                     iconSrc={chevronDownIcon}
                 />

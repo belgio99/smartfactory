@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import {getKpiList} from "../../api/PersistentDataManager";
+import React, {useState} from "react";
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 const KpiViewer = () => {
     // Getter method for the list of elements
 
     const [expanded, setExpanded] = useState<string | null>(null);
 
-    const toggleAccordion = (id:string) => {
+    const toggleAccordion = (id: string) => {
         setExpanded((prev) => (prev === id ? null : id));
     };
 
-    const kpiList = getKpiList()
+    const kpiList = PersistentDataManager.getInstance().getKpiList()
 
     return (
         <div className="KpiViewer max-w-6xl mx-auto p-6 bg-gray-100 rounded-lg shadow-lg">
