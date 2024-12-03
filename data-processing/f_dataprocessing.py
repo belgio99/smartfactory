@@ -15,6 +15,9 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
+
+import requests
+
 ####################################
 #####==========================#####
 ### I. Data Exploration Pipeline ###
@@ -25,14 +28,13 @@ import matplotlib.dates as mdates
 # analyzed in real-time. The same pipeline should be applied to any new batch
 # of data that we wish to add in the future and for which we have enough
 # historical data
-df = pd.read_pickle('smart_app_data.pkl')
 models_path = 'models/'
 
 def data_load(machine,kpi):
   # time series should be loaded from the dataset,
   # right now they can be read directly from the pickle file
-  kpi_data = df.loc[df['name'] == machine].loc[df['kpi'] == kpi]
-  return kpi_data['time'].values, kpi_data['avg'].values
+  # kpi_data = df.loc[df['name'] == machine].loc[df['kpi'] == kpi]
+  return 0# kpi_data['time'].values, kpi_data['avg'].values
 
 def data_extract_trends(ts):
   trends = {
@@ -67,12 +69,6 @@ def data_normalize_params(data):
   normalized_data = pd.Series(array_scaled.flatten(),index=data.index,name='Timestamp')
   return normalized_data
 
-# window_size = 30
-# df_zscore = zscore(df, window_size)
-
-# threshold = 3
-# outliers_dates = df_zscore[abs(df_zscore.Value) > threshold].index
-# outliers_dates
 def create_model_data(machine, kpi, path):
   a_dict = {}
   a_dict['trends'] = {
@@ -243,7 +239,6 @@ def characterize_KPI(machine, kpi):
 ### II. Real-Time Analysis ###
 #####====================#####
 ##############################
-models_path = 'models/'
 def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q: int, d: int) -> list:
     total_len = train_len + horizon
     pred_ARIMA = []
@@ -318,3 +313,17 @@ def make_prediction(machine, kpi, length):
       plt.ylabel('Value')
       plt.legend()
       plt.show()
+
+
+def send_Alert(url, data):
+  try:
+      response = requests.post(url, json=data)
+      print(f"Response status code: {response.status_code}")
+      print(f"Response body: {response.json()}")
+  except requests.exceptions.RequestException as e:
+      print(f"Error sending POST request: {e}")
+
+def kpi_exists(machine, KPI):
+
+  url = "http://service2:5000/api/resource" #get_kpi
+  Kpi_info = requests.post(url, json=data)
