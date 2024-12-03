@@ -1,0 +1,8 @@
+.venv/
+.SA_venv/
+.vscode/settings.json
+.DS_Store
+obj_storage/smart_app_data.csv
+obj_storage/smart_app_data.pkl
+
+*.pyc
