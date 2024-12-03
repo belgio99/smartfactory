@@ -1,0 +1,18 @@
+{
+  "id": "1",
+  "name": "Dashboard 1",
+  "views": [
+    {
+      "kpi": "14",
+      "graph_type": "hist"
+    },
+    {
+      "kpi": "17",
+      "graph_type": "scatter"
+    },
+    {
+      "kpi": "1",
+      "graph_type": "area"
+    }
+  ]
+}

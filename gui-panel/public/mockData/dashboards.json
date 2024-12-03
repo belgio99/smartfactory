@@ -1,0 +1,20 @@
+[
+  {
+    "id": "TestingPresets",
+    "name": "Testing Dashboards",
+    "children": [
+      {
+        "id": "1",
+        "name": "Testboard #1"
+      },
+      {
+        "id": "pies",
+        "name": "Testboard #2"
+      },
+      {
+        "id": "bars",
+        "name": "Testboard #3"
+      }
+    ]
+  }
+]
