@@ -61,6 +61,7 @@ jobs:
           if [ "$STATUS" != "running" ]; then
             echo "Service failed to run!"
             docker logs $CONTAINER_ID
+          fi
 
       - name: Stop and remove container
         run: |
