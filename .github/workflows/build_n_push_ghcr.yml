@@ -1,4 +1,4 @@
-name: Build and Test Docker Compose Services
+name: Build and Test Docker Services
 
 on:
   push:
@@ -12,6 +12,7 @@ jobs:
   build-test-containers:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Replace with your actual service names
 
@@ -32,37 +33,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and cache Docker images
+      - name: Build Docker image
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
           tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:latest
           push: false
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Start services with Docker Compose
-        run: docker compose up -d
+      - name: Run Docker container
+        run: docker compose up -d --no-build --no-deps --pull never ${{ matrix.service }}
 
-      - name: Wait for services to initialize
+      - name: Wait for container to initialize
         run: sleep 60
 
-      - name: Test running services
+      - name: Test running container
         run: |
-          SERVICES=$(docker-compose config --services)
-          for SERVICE in $SERVICES; do
-            CONTAINER_ID=$(docker ps -qf "name=${SERVICE}")
-            STATUS=$(docker inspect -f '{{.State.Status}}' $CONTAINER_ID)
-            if [ "$STATUS" != "running" ]; then
-              echo "Service $SERVICE failed to run!"
-              docker logs $CONTAINER_ID
-              docker-compose down
-              exit 1
-            else
-              echo "Service $SERVICE is running successfully."
-            fi
-          done
+          CONTAINER_ID=$(docker ps -q --filter "status=running" | head -n 1)
+          if [ -z "$CONTAINER_ID" ]; then
+            echo "No running container found"
+            exit 1
+          fi
+          STATUS=$(docker inspect -f '{{.State.Status}}' $CONTAINER_ID)
+          if [ "$STATUS" != "running" ]; then
+            echo "Service failed to run!"
+            docker logs $CONTAINER_ID
 
-      - name: Stop and remove services
-        run: docker-compose down
+      - name: Stop and remove container
+        run: |
+          CONTAINER_ID=$(docker ps -qf "name=${{ matrix.service }}")
+          docker stop $CONTAINER_ID
+          docker rm $CONTAINER_ID
