@@ -17,22 +17,22 @@ class Task(object):
 
 class SchedulingFrequency(Enum):
     TEST = "test"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
+    Daily = "Daily"
+    Weekly = "Weekly"
+    Monthly = "Monthly"
+    Yearly = "Yearly"
 
     @property
     def seconds(self):
         """Map each frequency name to its corresponding period in seconds."""
         if self == SchedulingFrequency.TEST:
             return 10  # 10 seconds just for test
-        if self == SchedulingFrequency.DAILY:
+        if self == SchedulingFrequency.Daily:
             return 86400  # 24 hours
-        elif self == SchedulingFrequency.WEEKLY:
+        elif self == SchedulingFrequency.Weekly:
             return 604800  # 7 days
-        elif self == SchedulingFrequency.MONTHLY:
-            return 2592000  # 30 days (approximate)
-        elif self == SchedulingFrequency.YEARLY:
+        elif self == SchedulingFrequency.Monthly:
+            return 2592000  # 30 days
+        elif self == SchedulingFrequency.Yearly:
             return 31536000  # 1 year
         return None

@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from task import SchedulingFrequency
 
 class Report(BaseModel):
     """
@@ -14,3 +15,13 @@ class Report(BaseModel):
     name: str
     type: str
     data: str
+
+class ScheduledReport(BaseModel):
+    id: int
+    name: str
+    recurrence: SchedulingFrequency
+    status: bool
+    email: str
+    startDate: str
+    kpis: list
+    machines: list

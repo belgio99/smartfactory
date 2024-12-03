@@ -14,23 +14,23 @@ import logging
 from model.task import *
 from contextlib import asynccontextmanager
 import asyncio
-
+from langchain_core.prompts import PromptTemplate
 from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
-from model.report import Report
+from model.report import Report, ScheduledReport
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 
 logging.basicConfig(level=logging.INFO)
 
-tasks = []
+tasks = dict()
 tasks_lock = asyncio.Lock()
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
     while True:
         async with tasks_lock:
-            for t in tasks:
+            for t in tasks.values():
                 if t.shouldRun():
                     await t.run()
         await asyncio.sleep(1)
@@ -414,7 +414,18 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[dict, Body
         if not response:
             logging.error("User not found")
             raise HTTPException(status_code=404, detail="User not found")
-        report_prompt = ""
+        prompt = PromptTemplate(
+                input_variables=["period", "kpi", "machines"],
+                template=(
+                    "Generate the periodic report for the period {period}, including the "
+                    "following KPIs: {kpi}; the KPIs concern the specified machines: {machines}."
+                )        
+        )
+        filled_prompt = prompt.format(
+            period=period,
+            kpi=params,
+            machines="macchina_1, macchina_2, macchina_3"
+        )
         #TODO call RAG to generate report
         report_data = ""
         #TODO insert report into DB
@@ -436,13 +447,13 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[dict, Body
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
     
-def generate_and_send_report(userId: str, params: dict, api_key: str):
+def generate_and_send_report(userId: str, params: ScheduledReport, api_key: str):
     logging.info("Started scheduled report generation")
     report = generate_report(userId, params, True, api_key)
     #TODO send email
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
-async def schedule_report(userId: Annotated[str, Body()], params: Annotated[dict, Body()], period: Annotated[SchedulingFrequency, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+async def schedule_report(userId: Annotated[str, Body()], params: Annotated[ScheduledReport, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID FROM Users WHERE UserID = %s"
@@ -451,8 +462,9 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[dict
             logging.error("User not found")
             raise HTTPException(status_code=404, detail="User not found")
         close_connection(connection, cursor)
+        #TODO save scheduling in DB
         async with tasks_lock:
-            tasks.append(Task(func=generate_and_send_report, args=(userId, params, api_key), delay=period.seconds))
+            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, params, api_key), delay=params.recurrence.seconds)
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
