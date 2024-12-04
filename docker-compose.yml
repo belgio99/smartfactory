@@ -267,6 +267,8 @@ services:
       - "10080:8000"
     profiles:
       - kpi-engine
+    env_file:
+      - kpi-engine/.env
 
 
 
