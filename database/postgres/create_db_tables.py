@@ -86,13 +86,12 @@ if __name__ == "__main__":
             MachineName VARCHAR(50) NOT NULL,
             ModelPath TEXT NOT NULL
             )
-            ,
+            """,
             """
             CREATE TABLE IF NOT EXISTS Microservices (
             ServiceID VARCHAR(20) PRIMARY KEY,
             Key VARCHAR(50) NOT NULL
             )
-            """
             """
         ]
 

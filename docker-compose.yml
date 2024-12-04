@@ -152,7 +152,12 @@ services:
     env_file:
       - database/environment
     profiles:
-      - database
+      - database 
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://router:8888/status/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   db:
     container_name: db
@@ -182,6 +187,22 @@ services:
     command: minio server /data
     profiles:
       - database
+
+  db-init:
+    platform: linux/amd64
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    env_file:
+      - database/.env
+    profiles:
+      - database
+    volumes:
+      - ./database/druid/upload:/druid/upload
+    depends_on:
+      router:
+        condition: service_healthy
+      
 
   kb:
     build:
