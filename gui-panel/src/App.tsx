@@ -16,12 +16,14 @@ const App = () => {
 >>>>>>> ebe76ee (Use new format for machine data structures)
 =======
     // User authentication state
+    // User authentication state
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 >>>>>>> 9be6c8f (Changed login form and userInfo)
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('');
     const [site, setSite] = useState('');
+<<<<<<< HEAD
 <<<<<<< HEAD
     const [role, setRole] = useState('');
     const [site, setSite] = useState('');
@@ -42,13 +44,27 @@ const App = () => {
 >>>>>>> 30aa761 (Added report api)
 =======
 >>>>>>> 9be6c8f (Changed login form and userInfo)
+=======
+    const [role, setRole] = useState('');
+    const [site, setSite] = useState('');
+
+    // Method to handle the login event
+    const handleLogin = (username: string, token: string, role: string, site: string) => {
+    // Method to handle the login event
+    const handleLogin = (username: string, token: string, role: string, site: string) => {
+>>>>>>> eca968f (Changed login form and userInfo)
         setIsAuthenticated(true);
         setUserId(userId);
         setUsername(username);
         setToken(token);
+        setRole(role);
+        setSite(site);
     };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> eca968f (Changed login form and userInfo)
     // Method to handle the logout event
     const handleLogout = () => {
         setIsAuthenticated(false);
@@ -56,6 +72,7 @@ const App = () => {
         setToken(null);
         setRole('');
         setSite('');
+<<<<<<< HEAD
 <<<<<<< HEAD
     };
 
@@ -114,6 +131,10 @@ const App = () => {
     );
 
 >>>>>>> 1ffe85c (Changed login form and userInfo)
+=======
+    }
+
+>>>>>>> eca968f (Changed login form and userInfo)
     return (
         <Router>
             <div className="flex flex-col justify-center text-center min-h-screen bg-gray-200 font-bold">
