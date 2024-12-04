@@ -46,8 +46,6 @@ const App = () => {
         setUserId(userId);
         setUsername(username);
         setToken(token);
-        setRole(role);
-        setSite(site);
     };
 
 <<<<<<< HEAD
