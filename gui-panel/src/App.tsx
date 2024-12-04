@@ -6,12 +6,16 @@ import DataManager from "./api/PersistentDataManager";
 
 const App = () => {
     // User authentication state
+<<<<<<< HEAD
     // User authentication state
+=======
+>>>>>>> fcd8ad7 (Changed login form and userInfo)
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('');
     const [site, setSite] = useState('');
+<<<<<<< HEAD
     const [role, setRole] = useState('');
     const [site, setSite] = useState('');
 
@@ -19,6 +23,11 @@ const App = () => {
     const handleLogin = (username: string, token: string, role: string, site: string) => {
     // Method to handle the login event
     const handleLogin = (username: string, token: string, role: string, site: string) => {
+=======
+
+    // Method to handle the login event
+    const handleLogin = (username: string, token: string, role: string, site: string) => {
+>>>>>>> fcd8ad7 (Changed login form and userInfo)
         setIsAuthenticated(true);
         setUsername(username);
         setToken(token);
