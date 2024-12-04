@@ -46,10 +46,9 @@ const App = () => {
         setUserId(userId);
         setUsername(username);
         setToken(token);
-        setRole(role);
-        setSite(site);
     };
 
+<<<<<<< HEAD
     // Method to handle the logout event
     const handleLogout = () => {
         setIsAuthenticated(false);
@@ -63,10 +62,13 @@ const App = () => {
 <<<<<<< HEAD
 =======
     // Initialize data and set loading to false once done
+=======
+>>>>>>> 1ffe85c (Changed login form and userInfo)
     async function initializeData() {
         try {
             const dataManager = DataManager.getInstance();
             await dataManager.initialize();
+<<<<<<< HEAD
             console.log("Data initialization completed.");
             console.log("KPI List:", dataManager.getKpiList());
             console.log("Machine List:", dataManager.getMachineList());
@@ -94,6 +96,24 @@ const App = () => {
     }
 
 >>>>>>> 6439e03 (switch kpi list with new one)
+=======
+        } catch (error) {
+            console.error("Error during initialization:", error);
+        }
+    }
+
+    initializeData().then(
+        () => {
+            console.log("Data initialization completed.");
+            // log the kpi list and the machine list
+            const dataManager = DataManager.getInstance();
+            console.log("KPI List:", dataManager.getKpiList());
+            console.log("Machine List:", dataManager.getMachineList());
+        },
+        error => console.error("Error during data initialization:", error)
+    );
+
+>>>>>>> 1ffe85c (Changed login form and userInfo)
     return (
         <Router>
             <div className="flex flex-col justify-center text-center min-h-screen bg-gray-200 font-bold">
