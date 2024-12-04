@@ -2,6 +2,7 @@ from kpi_calculation import kpi_engine
 from fastapi import FastAPI, HTTPException
 import pandas as pd
 import uvicorn
+import requests
 from pydantic import BaseModel
 import os
 from pathlib import Path
@@ -13,8 +14,20 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 print(env_path)
 load_dotenv(dotenv_path=env_path)
 
-with open("smart_app_data.pkl", "rb") as file:
-    df = pd.read_pickle(file)
+headers = {
+    "Content-Type": "application/json"
+}
+druid_url = "http://router:8888/druid/v2/sql"
+query_body = {
+        "query": "SELECT * FROM timeseries"
+    }
+try:
+    response = requests.post(druid_url, headers=headers, json=query_body)
+    response.raise_for_status()  # Raise an error for bad status codes
+    df = response.json()  # Return the JSON response
+except requests.exceptions.RequestException as e:
+    print(f"An error occurred: {e}")
+df = pd.DataFrame.from_dict(df, orient='columns')
 
 app = FastAPI()
 

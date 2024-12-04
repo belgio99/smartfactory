@@ -121,7 +121,7 @@ class kpi_engine:
         fd = df
 
         # kpi_formula = extract formula through API and kpi_id
-        # response = requests.get("{os.getenv("BASE_URL")}/kb/retrieve/{kpi_id}")
+        # response = extract formula through API and kpi_idrequests.get("{os.getenv("BASE_URL")}/kb/retrieve/{kpi_id}")
         # formula = response.get("atomic_formula")
         # unit_of_measure = response.get("unit_measure")
         formula = '((cycles_sum - bad_cycles_sum) / cycles_sum) * (working_time_sum / (working_time_sum + idle_time_sum))'
