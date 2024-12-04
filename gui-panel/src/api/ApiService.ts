@@ -57,9 +57,14 @@ export interface Alert {
 ///
 ///
 ///
-///
 
-// Method to login
+/**
+  * API POST used to login
+  * @param user - Username or email of the user
+  * @param isEmail - Boolean to check if the user is an email
+  * @param password - Password of the user
+  * @returns Promise will return the login response
+ */
 export const login = async (
   user: string,
   isEmail: boolean,
@@ -78,7 +83,15 @@ export const login = async (
   }
 };
 
-// Method to register
+/**
+ * API POST used to register a new user
+ * @param username - Username of the user
+ * @param email - Email of the user
+ * @param password - Password of the user
+ * @param role - Role of the user
+ * @param site - The site where the user is
+ * @returns userInfo - The user information
+ */
 export const register = async (
   username: string,
   email: string,
@@ -101,7 +114,11 @@ export const register = async (
   }
 };
 
-// Method to get reports
+/**
+ * API GET used to get reports
+ * @param userId - The user ID
+ * @returns Promise will return the reports
+ */
 export const getReports = async (userId?: string): Promise<Report[]> => {
   try {
     const response = await axios.get<{ data: Report[] }>(
@@ -117,7 +134,11 @@ export const getReports = async (userId?: string): Promise<Report[]> => {
   }
 };
 
-// Method to get historical data
+/**
+ * API GET used to get historical data
+ * @param query - The query to get the historical data
+ * @returns Promise will return the historical data
+ */
 export const getHistoricalData = async (query: string[]): Promise<HistoricalDataResponse> => {
   try {
     const response = await axios.get<{ data: HistoricalDataResponse }>(
@@ -133,7 +154,11 @@ export const getHistoricalData = async (query: string[]): Promise<HistoricalData
   }
 };
 
-// API Dashboard
+/**
+ * API GET used to get dashboards
+ * @param userId - The user ID
+ * @returns Promise will return the dashboards
+ */
 export const getDashboards = async (userId?: string): Promise<DashboardData> => {
   try {
     const response = await axios.get<{ data: DashboardData }>(
@@ -149,7 +174,12 @@ export const getDashboards = async (userId?: string): Promise<DashboardData> => 
   }
 };
 
-// API GET used to update user settings
+/**
+ * API POST used to update user settings
+ * @param userId - The user ID
+ * @param settings - The user settings [key: string]: string | number | boolean
+ * @returns Promise will return void
+ */
 export const updateUserSettings = async (
   userId: string,
   settings: UserSettings
@@ -162,7 +192,11 @@ export const updateUserSettings = async (
   }
 };
 
-// API POST used to get user settings
+/**
+ * API GET used to get user settings
+ * @param userId - The user ID
+ * @returns Promise will return the user settings [key: string]: string | number | boolean
+ */
 export const getUserSettings = async (userId: string): Promise<UserSettings> => {
   try {
     const response = await axios.get<{ userSettings: UserSettings }>(
@@ -175,7 +209,11 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
   }
 };
 
-// API GET used to get alerts
+/**
+ * API GET used to get alerts
+ * @param userId - The user ID
+ * @returns Promise will return the alerts [key: string]: string | number | boolean
+ */
 export const getAlerts = async (userId: string): Promise<Alert[]> => {
   try {
     const response = await axios.get<{ data: Alert[] }>(
