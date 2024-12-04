@@ -29,7 +29,6 @@ const GraphTypeSelector: React.FC<GraphTypeSelectorProps> = ({value, onChange}) 
         {type: 'area', icon: ''},
         {type: 'scatter', icon: ''},
         {type: 'hist', icon: ''},
-        {type: 'heatmap', icon: ''},
         {type: 'stacked_bar', icon: ''},
 
     ];
@@ -50,7 +49,8 @@ const GraphTypeSelector: React.FC<GraphTypeSelectorProps> = ({value, onChange}) 
                             className={`w-8 h-8 mx-auto mb-1 transition-all ${value === graph.type ? 'opacity-100' : 'opacity-60'}`}
                         />
                     )}
-                    <div className="text-center">{graph.type.replace(/\b\w/g, char => char.toUpperCase()) // Capitalize
+                    <div
+                        className="text-center">{graph.type.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase()) // Capitalize and replace _ with space
                     }</div>
                 </div>
             ))}

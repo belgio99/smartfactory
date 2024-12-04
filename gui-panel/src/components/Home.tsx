@@ -19,14 +19,6 @@ import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
 import AIDashboard from "./Dashboard/AIDashboard";
 
-
-// Mock data for demonstration
-export const mockDashboards = [
-    { id: 'Lines', name: 'Production Lines Dashboards', type: 'folder' },
-    { id: 'Lines/1', name: 'Production Line #1', type: 'point' },
-    { id: 'placeholder', name: 'Saved Dashboard Folder Name', type: 'folder' },
-];
-
 interface UserProps {
     username: string;
     role: string;
