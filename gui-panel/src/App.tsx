@@ -6,38 +6,34 @@ import DataManager from "./api/PersistentDataManager";
 
 const App = () => {
     // User authentication state
+    // User authentication state
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('');
     const [site, setSite] = useState('');
+    const [role, setRole] = useState('');
+    const [site, setSite] = useState('');
 
+    // Method to handle the login event
+    const handleLogin = (username: string, token: string, role: string, site: string) => {
     // Method to handle the login event
     const handleLogin = (username: string, token: string, role: string, site: string) => {
         setIsAuthenticated(true);
         setUsername(username);
         setToken(token);
+        setRole(role);
+        setSite(site);
     };
 
-    async function initializeData() {
-        try {
-            const dataManager = DataManager.getInstance();
-            await dataManager.initialize();
-        } catch (error) {
-            console.error("Error during initialization:", error);
-        }
+    // Method to handle the logout event
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+        setUsername('');
+        setToken(null);
+        setRole('');
+        setSite('');
     }
-
-    initializeData().then(
-        () => {
-            console.log("Data initialization completed.");
-            // log the kpi list and the machine list
-            const dataManager = DataManager.getInstance();
-            console.log("KPI List:", dataManager.getKpiList());
-            console.log("Machine List:", dataManager.getMachineList());
-        },
-        error => console.error("Error during data initialization:", error)
-    );
 
     return (
         <Router>
