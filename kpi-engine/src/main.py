@@ -15,7 +15,8 @@ print(env_path)
 load_dotenv(dotenv_path=env_path)
 
 headers = {
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
+    "kpi-engine-kpi-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234"
 }
 druid_url = "http://router:8888/druid/v2/sql"
 query_body = {
@@ -27,6 +28,7 @@ try:
     df = response.json()  # Return the JSON response
 except requests.exceptions.RequestException as e:
     print(f"An error occurred: {e}")
+    return
 df = pd.DataFrame.from_dict(df, orient='columns')
 
 app = FastAPI()
