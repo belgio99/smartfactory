@@ -38,6 +38,8 @@ services:
 #      POSTGRES_HOST_AUTH_METHOD: trust
     env_file:
       - database/environment
+    profiles:
+      - database
 
   # Need 3.5 or later for container nodes
   zookeeper:
@@ -49,6 +51,8 @@ services:
     environment:
       - ZOO_MY_ID=1
       #- ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
+    profiles:
+      - database
 
   coordinator:
     image: apache/druid:31.0.0
@@ -67,6 +71,8 @@ services:
       - coordinator
     env_file:
       - database/environment
+    profiles:
+      - database
 
   broker:
     image: apache/druid:31.0.0
@@ -84,6 +90,8 @@ services:
       - broker
     env_file:
       - database/environment
+    profiles:
+      - database
 
   historical:
     image: apache/druid:31.0.0
@@ -102,6 +110,8 @@ services:
       - historical
     env_file:
       - database/environment
+    profiles:
+      - database
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -122,6 +132,8 @@ services:
       - middleManager
     env_file:
       - database/environment
+    profiles:
+      - database
 
   router:
     image: apache/druid:31.0.0
@@ -139,6 +151,8 @@ services:
       - router
     env_file:
       - database/environment
+    profiles:
+      - database
 
   db:
     container_name: db
@@ -152,6 +166,8 @@ services:
    #   POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
       - db:/var/lib/postgresql/data
+    profiles:
+      - database
 
   minio:
     container_name: minio
@@ -164,6 +180,8 @@ services:
     env_file:
       - database/.env
     command: minio server /data
+    profiles:
+      - database
 
   kb:
     build:
@@ -173,6 +191,8 @@ services:
     platform: linux/amd64
     ports: 
       - "10010:8000"
+    profiles:
+      - kb
     
   data-processing:
     build:
@@ -182,6 +202,8 @@ services:
     platform: linux/amd64
     ports: 
       - "10030:8000"
+    profiles:
+      - data-processing
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
@@ -197,17 +219,20 @@ services:
     depends_on:
       - smtp
       - router
+    profiles:
+      - api
 
   smtp:
-      image: mailhog/mailhog
-      ports:
-          - "11025:1025"
-          - "18025:8025"
-      environment:
-          MH_OUTGOING_SMTP_USERNAME: "noreply@smartfactory.com"
-          MH_OUTGOING_SMTP_PASSWORD: "SmartAppPassword123"
-
-
+    image: mailhog/mailhog
+    ports:
+        - "11025:1025"
+        - "18025:8025"
+    environment:
+        MH_OUTGOING_SMTP_USERNAME: "noreply@smartfactory.com"
+        MH_OUTGOING_SMTP_PASSWORD: "SmartAppPassword123"
+    profiles:
+      - api
+    
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
     build:
@@ -218,6 +243,8 @@ services:
     platform: linux/amd64
     ports: 
       - "10050:8000"
+    profiles:
+      - rag
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
@@ -227,6 +254,8 @@ services:
     platform: linux/amd64
     ports: 
       - "10060:8000"
+    profiles:
+      - gui-panel
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
@@ -236,6 +265,8 @@ services:
     platform: linux/amd64
     ports: 
       - "10080:8000"
+    profiles:
+      - kpi-engine
 
 
 
