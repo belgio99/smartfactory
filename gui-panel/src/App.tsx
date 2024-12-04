@@ -5,35 +5,30 @@ import LoginForm from './components/LoginForm';
 import DataManager from "./api/PersistentDataManager";
 
 const App = () => {
+    // User authentication state
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
+    const [role, setRole] = useState('');
+    const [site, setSite] = useState('');
 
-    const handleLogin = (username: string, token: string) => {
+    // Method to handle the login event
+    const handleLogin = (username: string, token: string, role: string, site: string) => {
         setIsAuthenticated(true);
         setUsername(username);
         setToken(token);
+        setRole(role);
+        setSite(site);
     };
 
-    async function initializeData() {
-        try {
-            const dataManager = DataManager.getInstance();
-            await dataManager.initialize();
-        } catch (error) {
-            console.error("Error during initialization:", error);
-        }
+    // Method to handle the logout event
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+        setUsername('');
+        setToken(null);
+        setRole('');
+        setSite('');
     }
-
-    initializeData().then(
-        () => {
-            console.log("Data initialization completed.");
-            // log the kpi list and the machine list
-            const dataManager = DataManager.getInstance();
-            console.log("KPI List:", dataManager.getKpiList());
-            console.log("Machine List:", dataManager.getMachineList());
-        },
-        error => console.error("Error during data initialization:", error)
-    );
 
     return (
         <Router>
@@ -43,7 +38,7 @@ const App = () => {
                         {/* Rotta principale per la dashboard */}
                         <Route
                             path="/*"
-                            element={<Home username={username} role="Floor Factory Manager"/>}
+                            element={<Home username={username} role="Floor Factory Manager" token={token || ''} site={site}/>}
                         />
                         {/* Reindirizza qualsiasi rotta non valida */}
                         <Route path="*" element={<Navigate to="/"/>}/>
