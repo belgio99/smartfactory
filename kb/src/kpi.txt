@@ -1,0 +1,85 @@
+[
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "consumption"],
+    "unit": "kWh",
+    "metrics": [
+      { "id": "consumption_sum", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "consumption"],
+    "unit": "kWh",
+    "metrics": [
+      { "id": "consumption_min", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "consumption"],
+    "unit": "kWh",
+    "metrics": [
+      { "id": "consumption_max", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "consumption"],
+    "unit": "kWh",
+    "metrics": [
+      { "id": "consumption_avg", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "power"],
+    "unit": "kW",
+    "metrics": [
+      { "id": "power_sum", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "power"],
+    "unit": "kW",
+    "metrics": [
+      { "id": "power_min", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "power"],
+    "unit": "kW",
+    "metrics": [
+      { "id": "power_max", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnergyKPI",
+    "subcategory": ["Consumption", "power"],
+    "unit": "kW",
+    "metrics": [
+      { "id": "power_avg", "description": "...", "forecastable": true }
+    ]
+  },
+  {
+    "category": "EnvironmentalKPI",
+    "subcategory": []
+    unit: "...",
+    metrics: [
+        { "id": "water_usage", "description": "...", "forecastable": true }
+    ]
+  },
+ {
+    "category": "EnvironmentalKPI",
+    "subcategory": []
+    unit: "...",
+    metrics: [
+        { "id": "carbon_footprint", "description": "...", "forecastable": true }
+    ]
+  }    
+]
+
+
+'throughput': {'atomic': True, 'atomic_formula': 'throughput=cycles_sum/(working_time_sum+idle_time_sum)', 'description': 'The actual time it takes for an object to go from the raw state to the state to the finished product state, considering all assembly steps. In short, it is the average amount of output produced in a given time interval.', 'forecastable': True, 'formula': 'throughput=cycles_sum/(working_time_sum+idle_time_sum)', 'id': 'throughput', 'unit_measure': ' # per seconds', 'type': 'Production'}, 'quality': {'atomic': True, 'atomic_formula': 'quality=good_cycles_sum/cycles_sum', 'description': 'Percentage of correctly produced pieces compared to total pieces.', 'forecastable': True, 'formula': 'quality=good_cycles_sum/cycles_sum', 'id': 'quality', 'unit_measure': '%', 'type': 'Quality'}}
