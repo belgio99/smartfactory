@@ -16,7 +16,7 @@ load_dotenv(dotenv_path=env_path)
 
 headers = {
     "Content-Type": "application/json",
-    "kpi-engine-kpi-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234"
+    "x-kpi-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234"
 }
 druid_url = "http://router:8888/druid/v2/sql"
 query_body = {
