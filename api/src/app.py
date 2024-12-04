@@ -15,7 +15,7 @@ from model.task import *
 from contextlib import asynccontextmanager
 import asyncio
 
-from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
+from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
 from model.report import Report
 from datetime import datetime, timedelta, timezone
@@ -460,6 +460,17 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[dict
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@app.get("/smartfactory/dummy")
+async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Dummy endpoint for testing purposes.
+    Returns:
+        JSONResponse: A JSON response with a dummy message.
+    """
+    return JSONResponse(content={"message": "This is a dummy endpoint"}, status_code=200)
+
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
+
+   
