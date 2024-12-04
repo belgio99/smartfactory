@@ -6,6 +6,7 @@ import LoginForm from "./components/LoginForm";
 
 const App = () => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     // User authentication state
     const [isAuthenticated, setIsAuthenticated] = useState(true);
 =======
@@ -13,6 +14,10 @@ const App = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
     const [userId, setUserId] = useState('');
 >>>>>>> ebe76ee (Use new format for machine data structures)
+=======
+    // User authentication state
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+>>>>>>> 9be6c8f (Changed login form and userInfo)
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('');
@@ -28,15 +33,15 @@ const App = () => {
     const handleLogin = (username: string, token: string, role: string, site: string) => {
 =======
 
-    // Loading state to track if data is still being initialized
-    const [loading, setLoading] = useState(true);
-
     // Method to handle the login event
     const handleLogin = (username: string, token: string, role: string, site: string) => {
+<<<<<<< HEAD
 >>>>>>> fcd8ad7 (Changed login form and userInfo)
 =======
     const handleLogin = (userId: string, username: string, token: string, role: string, site: string) => {
 >>>>>>> 30aa761 (Added report api)
+=======
+>>>>>>> 9be6c8f (Changed login form and userInfo)
         setIsAuthenticated(true);
         setUserId(userId);
         setUsername(username);
@@ -48,11 +53,11 @@ const App = () => {
     // Method to handle the logout event
     const handleLogout = () => {
         setIsAuthenticated(false);
-        setUserId('');
         setUsername('');
         setToken(null);
         setRole('');
         setSite('');
+<<<<<<< HEAD
     };
 
 <<<<<<< HEAD
@@ -84,6 +89,8 @@ const App = () => {
                 <h1>Loading...</h1>
             </div>
         );
+=======
+>>>>>>> 9be6c8f (Changed login form and userInfo)
     }
 
 >>>>>>> 6439e03 (switch kpi list with new one)
@@ -95,7 +102,7 @@ const App = () => {
                         {/* Rotta principale per la dashboard */}
                         <Route
                             path="/*"
-                            element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}/>}
+                            element={<Home username={username} role="Floor Factory Manager" token={token || ''} site={site}/>}
                         />
                         {/* Reindirizza qualsiasi rotta non valida */}
                         <Route path="*" element={<Navigate to="/"/>}/>
