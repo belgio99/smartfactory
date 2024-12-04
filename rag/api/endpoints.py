@@ -373,7 +373,7 @@ async def ask_question(question: Question):
     if label == 'kb_q':
         # Update the history
         history.append({'question': question.userInput, 'answer': context})
-        return Answer(text=context, textExplanation='', data='query')
+        return Answer(textResponse=context, textExplanation='', data='query')
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
