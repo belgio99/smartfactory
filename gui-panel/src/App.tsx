@@ -17,18 +17,27 @@ const App = () => {
         setIsAuthenticated(true);
         setUsername(username);
         setToken(token);
-        setRole(role);
-        setSite(site);
     };
 
-    // Method to handle the logout event
-    const handleLogout = () => {
-        setIsAuthenticated(false);
-        setUsername('');
-        setToken(null);
-        setRole('');
-        setSite('');
+    async function initializeData() {
+        try {
+            const dataManager = DataManager.getInstance();
+            await dataManager.initialize();
+        } catch (error) {
+            console.error("Error during initialization:", error);
+        }
     }
+
+    initializeData().then(
+        () => {
+            console.log("Data initialization completed.");
+            // log the kpi list and the machine list
+            const dataManager = DataManager.getInstance();
+            console.log("KPI List:", dataManager.getKpiList());
+            console.log("Machine List:", dataManager.getMachineList());
+        },
+        error => console.error("Error during data initialization:", error)
+    );
 
     return (
         <Router>
