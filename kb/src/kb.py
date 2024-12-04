@@ -19,7 +19,7 @@ app.add_middleware(
 
 ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
 TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
-onto = get_ontology(ONTOLOGY_PATH).load()
+onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 
 def get_kpi(kpi_id):
@@ -28,11 +28,14 @@ def get_kpi(kpi_id):
     
     Args:
         kpi_id (str): The KPI ID.
+
+    Returns:
+        dict: The KPI data.
     """
 
     query = f'*{kpi_id}'
     results = onto.search(iri = query)
-    json_d = {'Status': -1}
+    json_d = {'Status': -1} # default status
 
     if len(results) == 0:
         return json_d
@@ -42,7 +45,7 @@ def get_kpi(kpi_id):
             if isinstance(prop, DataPropertyClass):
                 json_d[prop.name] = value
     
-    json_d["Status"] = 0
+    json_d["Status"] = 0 # success status
 
     return json_d
 
@@ -53,11 +56,14 @@ def get_machine(machine_id):
     
     Args:
         machine_id (str): The machine ID.
+
+    Returns:
+        dict: The machine data.
     """
 
     query = f'*{machine_id}'
     results = onto.search(iri = query)
-    json_d = {'Status': -1}
+    json_d = {'Status': -1} # default status
 
     if len(results) == 0:
         return json_d
@@ -67,7 +73,7 @@ def get_machine(machine_id):
             if isinstance(prop, DataPropertyClass):
                 json_d[prop.name] = value
     
-    json_d["Status"] = 0
+    json_d["Status"] = 0 # success status
 
     return json_d
 
@@ -75,13 +81,15 @@ def get_machine(machine_id):
 def get_all_kpis():
     """
     Retrieve all KPIs and their information as dict
+
+    Returns:
+        dict: The KPIs and their information.
     """
  
     all_kpis = {}
     for kpi in onto.KPI.instances():
         kpi_id = str(kpi.id[0])
-        all_kpis[kpi_id]['info'] = extract_datatype_properties(kpi)
-        # add type of KPI given the class
+        all_kpis[kpi_id] = extract_datatype_properties(kpi)
         all_kpis[kpi_id]["type"] = kpi.is_a[0].name
 
     return all_kpis
@@ -90,19 +98,94 @@ def get_all_kpis():
 def get_all_machines():
     """
     Retrieve all machines and their information as dict
+
+    Returns:
+        dict: The machines and their information.
     """
 
     all_machines = {}
     for machine in onto.Machine.instances():
         machine_id = str(machine.id[0])
         all_machines[machine_id] = extract_datatype_properties(machine)
+        all_machines[machine_id]["type"] = machine.is_a[0].name
 
     return all_machines
+
+
+def get_classes_hierarchy():
+    """
+    Organizes the classes in the ontology in a hierarchical structure.
+
+    Returns:
+        dict: The classes hierarchy.
+    """
+
+    hierarchy = {}
+
+    # Process all classes
+    for cls in onto.classes():
+        # Get the name of the class
+        class_name = cls.name
+
+        if class_name == "Operation" or class_name == "Material" or class_name == "Entity":
+            continue
+
+        # Find its subclasses
+        subclasses = [subcls.name for subcls in cls.subclasses()]
+
+        # Add the class and its subclasses to the hierarchy
+        if class_name not in hierarchy:
+            hierarchy[class_name] = []
+
+        for subclass in subclasses:
+            if subclass not in hierarchy[class_name]:
+                hierarchy[class_name].append(subclass)
+    
+    def build_tree(node):
+        """Recursively build a tree structure for the given node."""
+        children = hierarchy.get(node, [])
+        return {child: build_tree(child) for child in children}
+
+    # Start with the top-level keys (those not listed as children)
+    all_classes = set(hierarchy.keys())
+    children_classes = {child for children in hierarchy.values() for child in children}
+    top_level_classes = all_classes - children_classes
+
+    # Build the tree starting from the top-level classes
+    return {cls: build_tree(cls) for cls in top_level_classes}
+
+
+def get_kpi_hierarchy():
+    """
+    Organizes the KPIs in the ontology in a hierarchical structure.
+
+    Returns:
+        dict: The KPI hierarchy.
+    """
+    
+    # from get_classes_hierarchy, get only the element inside "KPI"
+    kpi_hierarchy = get_classes_hierarchy()["KPI"]
+    kpis = get_all_kpis()
+
+    # for each kpi, add the information to the hierarchy (using the type as key)
+    for kpi_id, kpi_info in kpis.items():
+        kpi_type = kpi_info["type"]
+        if kpi_type not in kpi_hierarchy:
+            kpi_hierarchy[kpi_type] = {}
+        kpi_hierarchy[kpi_type][kpi_id] = kpi_info
+
+    return kpi_hierarchy
 
 
 def extract_datatype_properties(instance):
     """
     Extract datatype properties and their values from an instance.
+
+    Args:
+        instance (Instance): The instance to extract properties from.
+
+    Returns:
+        dict: The datatype properties and their values.
     """
 
     datatype_data = {}
@@ -120,9 +203,12 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
     Args:
         machine_id (str): The machine ID.
         kpi_id (str): The KPI ID.
+
+    Returns:
+        dict: The status of the pair. {Status: 0} and the info of the pair if the pair exists, {Status: -1} otherwise.
     """
 
-    json_d = {'Status': -1}
+    json_d = {'Status': -1} # default status
 
     # Ottieni l'oggetto macchina dall'ontologia
     machine_instance = onto.search_one(id=machine_id)
@@ -132,8 +218,8 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
     # Controlla se il KPI è nella lista dei KPI prodotti dalla macchina
     produces_kpis = [kpi.name for kpi in machine_instance.producesKPI]
     if kpi_id in produces_kpis:
-        kpi_tmp = get_kpi(kpi_id) # get KPI info
-        json_d["Status"] = 0
+        kpi_tmp = get_kpi(kpi_id)
+        json_d["Status"] = 0 # success status
         json_d["machine_id"] = machine_id
         json_d["kpi_id"] = kpi_id
         json_d["unit_measure"] = kpi_tmp["unit_measure"]
@@ -142,13 +228,15 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
     return json_d
     
 
-
 def is_valid(kpi_info):
     """
     Check if the KPI information is valid.
 
     Args:
         kpi_info (dict): The KPI information.
+
+    Returns:
+        bool: True if the KPI information is valid, False otherwise.
     """
 
     def is_equal(formula1, formula2):
@@ -230,6 +318,9 @@ def add_kpi(kpi_info):
 
     Args:
         kpi_info (dict): The KPI information.
+
+    Returns:
+        bool: True if the KPI was added successfully, False otherwise.
     """
 
     if not is_valid(kpi_info):
@@ -258,6 +349,8 @@ def charts_txt(input_file):
     Args:
         input_file (str): Il percorso del file JSON di input.
         output_file (str): Il percorso del file TXT di output.
+
+    Returns:
     """
     
     # Load the JSON file
@@ -292,7 +385,14 @@ def charts_txt(input_file):
 async def get_kpi_endpoint(kpi_id: str):
     """
     Get KPI data by its ID via GET request.
+
+    Args:
+        kpi_id (str): The KPI ID.
+
+    Returns:
+        dict: The KPI data.
     """
+
     kpi_data = get_kpi(kpi_id)
     if kpi_data["Status"] == -1:
         return {"error": "KPI not found"}
@@ -304,7 +404,14 @@ async def get_kpi_endpoint(kpi_id: str):
 async def get_kpi_endpoint():
     """
     Get KPI data by its ID via GET request.
+
+    Args:
+        kpi_id (str): The KPI ID.
+
+    Returns:
+        dict: The KPI data.
     """
+
     kpi_data = get_all_kpis()
     if not kpi_data:
         return {"error": "KPI not found"}
@@ -323,8 +430,15 @@ def read_root():
 
 if __name__ == "__main__":
     try:
+        tmp = get_kpi_hierarchy()
+        with open("kpi_hierarchy.json", "w") as file:
+            json.dump(tmp, file, indent=4)
+        
         tmp = get_all_kpis()
-        print(tmp)
+        for kpi in tmp.items():
+            # print index
+            print(kpi[0])
+  
     except Exception as error:
         print(error)
     
