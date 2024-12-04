@@ -306,14 +306,8 @@ def charts_txt(input_file):
     return result
 
 
-if __name__ == "__main__":
-    """try:
-        sync_reasoner()
-        print("test reasoner")
-    except Exception as error:
-        print(error)"""
-    
-    uvicorn.run(app, port=8000, host="0.0.0.0")
+
+
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 
@@ -343,3 +337,18 @@ async def get_kpi_endpoint():
 @app.get("/kb")
 def read_root():
     return {"Hello": "World"}
+
+
+
+
+
+# -------------------------------------------- Main --------------------------------------------
+
+if __name__ == "__main__":
+    """try:
+        sync_reasoner()
+        print("test reasoner")
+    except Exception as error:
+        print(error)"""
+    
+    uvicorn.run(app, port=8000, host="0.0.0.0")
