@@ -319,7 +319,12 @@ export const interactWithAgent = async (userInput: string): Promise<{ textRespon
  * @returns Promise will return void
  */
 export const postAlert = async (alert: Alert): Promise<void> => {
-  await axios.post(`${BASE_URL}/smartfactory/postAlert`, alert);
+  try {
+    await axios.post(`${BASE_URL}/smartfactory/postAlert`, alert);
+  } catch (error: any) {
+    console.error('Post Alert API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to post alert');
+  }
 };
 
 /**
@@ -327,8 +332,13 @@ export const postAlert = async (alert: Alert): Promise<void> => {
  * @returns KPIObject - Promise will return the KPIs
  */
 export const retrieveKPIs = async (): Promise<KPIObject[]> => {
-  const response = await axios.get<{ kpis: KPIObject[] }>(`${BASE_URL}/smartfactory/kpi`);
-  return response.data.kpis;
+  try {
+    const response = await axios.get<{ kpis: KPIObject[] }>(`${BASE_URL}/smartfactory/kpi`);
+    return response.data.kpis;
+  } catch (error: any) {
+    console.error('Retrieve KPIs API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to retrieve KPIs');
+  }
 };
 
 /**
@@ -340,10 +350,15 @@ export const retrieveKPIs = async (): Promise<KPIObject[]> => {
  * @returns KPIValue - The KPI value
  */
 export const calculateKPIValue = async (kpiId: string, machineId?: string, startTime?: string, endTime?: string): Promise<KPIValue> => {
-  const response = await axios.get<KPIValue>(`${BASE_URL}/smartfactory/${kpiId}/calculate`, {
-    params: { machineId, startTime, endTime },
-  });
-  return response.data;
+  try {
+    const response = await axios.get<KPIValue>(`${BASE_URL}/smartfactory/${kpiId}/calculate`, {
+      params: { machineId, startTime, endTime },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Calculate KPI Value API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to calculate KPI value');
+  }
 };
 
 /**
@@ -352,8 +367,13 @@ export const calculateKPIValue = async (kpiId: string, machineId?: string, start
  * @returns string - Promise will return the KPI ID
  */
 export const insertKPI = async (kpi: Omit<KPIObject, 'id'>): Promise<string> => {
-  const response = await axios.post<{ kpiId: string }>(`${BASE_URL}/smartfactory/kpi`, { kpi });
-  return response.data.kpiId;
+  try {
+    const response = await axios.post<{ kpiId: string }>(`${BASE_URL}/smartfactory/kpi`, { kpi });
+    return response.data.kpiId;
+  } catch (error: any) {
+    console.error('Insert KPI API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to insert KPI');
+  }
 };
 
 /**
@@ -363,7 +383,12 @@ export const insertKPI = async (kpi: Omit<KPIObject, 'id'>): Promise<string> => 
  * @returns Promise will return void
  */
 export const postDashboardSettings = async (userId: string, settings: DashboardData): Promise<void> => {
-  await axios.post(`${BASE_URL}/smartfactory/dashboardSettings/${userId}`, settings);
+  try {
+    await axios.post(`${BASE_URL}/smartfactory/dashboardSettings/${userId}`, settings);
+  } catch (error: any) {
+    console.error('Post Dashboard Settings API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to post dashboard settings');
+  }
 };
 
 /**
@@ -372,6 +397,11 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
  * @returns Promise will return the dashboard settings
  */
 export const retrieveDashboardSettings = async (userId: string): Promise<DashboardData> => {
-  const response = await axios.get<DashboardData>(`${BASE_URL}/smartfactory/dashboardSettings/${userId}`);
-  return response.data;
+  try {
+    const response = await axios.get<DashboardData>(`${BASE_URL}/smartfactory/dashboardSettings/${userId}`);
+    return response.data;
+  } catch (error: any) {
+    console.error('Retrieve Dashboard Settings API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
+  }
 };
