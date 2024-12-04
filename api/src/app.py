@@ -19,7 +19,7 @@ import requests
 from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 from model.user import *
 from model.report import Report
-
+from dotenv import load_dotenv
 # TODO: how to import modules from rag directory ??
 from model.agent import Answer
 from datetime import datetime, timedelta, timezone
@@ -485,11 +485,10 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
         raise HTTPException(status_code=500, detail="Empty user input")
     # TODO: find where to store the env variables and how to retrieve them
     
-    RAG_API_ENDPOINT = 'http://rag:8000/agent/chat'
-    API_KEY = '06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7'
+    
     headers = {
         'Content-Type': 'application/json',
-        'x-api-key': API_KEY
+        'x-api-key': os.getenv('API_KEY')
     }
     body = {
         'userInput': userInput
@@ -497,7 +496,7 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
     try:
         # Send the user input to the RAG API and get the response
         print(f"sending request to RAG API: {body}")
-        response = requests.post(RAG_API_ENDPOINT, headers=headers, json = body)
+        response = requests.post(os.getenv('RAG_API_ENDPOINT'), headers=headers, json = body)
         response.raise_for_status()
         # Send the response to the user 
         answer = response.json()
