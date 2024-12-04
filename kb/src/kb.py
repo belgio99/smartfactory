@@ -47,6 +47,31 @@ def get_kpi(kpi_id):
     return json_d
 
 
+def get_machine(machine_id):
+    """
+    Get machine data by its ID.
+    
+    Args:
+        machine_id (str): The machine ID.
+    """
+
+    query = f'*{machine_id}'
+    results = onto.search(iri = query)
+    json_d = {'Status': -1}
+
+    if len(results) == 0:
+        return json_d
+
+    for prop in results[0].get_properties():
+        for value in prop[results[0]]:
+            if isinstance(prop, DataPropertyClass):
+                json_d[prop.name] = value
+    
+    json_d["Status"] = 0
+
+    return json_d
+
+
 def get_all_kpis():
     """
     Retrieve all KPIs and their information as dict
@@ -55,9 +80,9 @@ def get_all_kpis():
     all_kpis = {}
     for kpi in onto.KPI.instances():
         kpi_id = str(kpi.id[0])
-        all_kpis[kpi_id] = extract_datatype_properties(kpi)
+        all_kpis[kpi_id]['info'] = extract_datatype_properties(kpi)
         # add type of KPI given the class
-        #all_kpis[kpi_id]["type"] = 
+        all_kpis[kpi_id]["type"] = kpi.is_a[0].name
 
     return all_kpis
 
@@ -88,84 +113,34 @@ def extract_datatype_properties(instance):
     return datatype_data
 
 
-def get_atomic_formula(kpi_id):
+def is_pair_machine_kpi_exist(machine_id, kpi_id):
     """
-    Get the atomic formula of a KPI by its ID.
+    Check if a pair of machine and KPI exists.
 
     Args:
+        machine_id (str): The machine ID.
         kpi_id (str): The KPI ID.
     """
 
-    kpi = get_kpi(kpi_id)
-    if kpi["Status"] == -1:
-        return None
-    else:
-        return kpi["atomic_formula"]
+    json_d = {'Status': -1}
+
+    # Ottieni l'oggetto macchina dall'ontologia
+    machine_instance = onto.search_one(id=machine_id)
+    if not machine_instance:
+        return json_d
     
+    # Controlla se il KPI è nella lista dei KPI prodotti dalla macchina
+    produces_kpis = [kpi.name for kpi in machine_instance.producesKPI]
+    if kpi_id in produces_kpis:
+        kpi_tmp = get_kpi(kpi_id) # get KPI info
+        json_d["Status"] = 0
+        json_d["machine_id"] = machine_id
+        json_d["kpi_id"] = kpi_id
+        json_d["unit_measure"] = kpi_tmp["unit_measure"]
+        json_d["forecastable"] = kpi_tmp["forecastable"]
 
-def get_unit_measure(kpi_id):
-    """
-    Get the unit measure of a KPI by its ID.
-
-    Args:
-        kpi_id (str): The KPI ID.
-    """
-
-    kpi = get_kpi(kpi_id)
-    if kpi["Status"] == -1:
-        return None
-    else:
-        return kpi["unit_measure"]
-
-
-def get_all_kpi_unit():
-    """
-    Retrieve all KPIs and their unit measures as dict
-    """
- 
-    all_kpis = {}
-    for kpi in onto.KPI.instances():
-        kpi_id = str(kpi.id[0])
-        all_kpis[kpi_id] = kpi.unit_measure[0]
-
- 
-    all_kpis = []
-    for kpi in onto.KPI.instances():
-        kpi_entry = {
-            "kpi": str(kpi.id[0]),
-            "unit": kpi.unit_measure[0]
-        }
-        all_kpis.append(kpi_entry)
-
-    return all_kpis
-
-
-def get_all_machine_kpi():
-    """
-    Retrieve all machines and their KPIs as a list of dicts in the specified format.
-    """
-
-    all_machines = []
+    return json_d
     
-    # Itera su tutte le istanze di macchine nell'ontologia
-    for machine in onto.search(type=onto.Machine):
-        # Recupera l'ID della macchina
-        machine_id = machine.id[0] if machine.id else str(machine.name)
-        
-        # Recupera i KPI associati utilizzando la proprietà producesKPI
-        kpis = []
-        for kpi in machine.producesKPI:
-            kpis.append(kpi.name)  # Nome del KPI associato
-        
-        # Crea il dizionario per la macchina e i suoi KPI
-        machine_entry = {
-            "machine": machine_id,
-            "kpi": kpis
-        }
-        all_machines.append(machine_entry)
-    
-    return all_machines
-
 
 
 def is_valid(kpi_info):
@@ -192,6 +167,7 @@ def is_valid(kpi_info):
     return True
 
 
+# TODO: eliminare perchè non serve più
 def rdf_to_txt(onto, output_file):
     """
     Convert an ontology to a formatted TXT file.
@@ -274,6 +250,7 @@ def add_kpi(kpi_info):
     return True
 
 
+# TODO: E' da spostare??
 def charts_txt(input_file):
     """
     Convert a JSON file with chart descriptions to a formatted TXT file.
@@ -345,10 +322,10 @@ def read_root():
 # -------------------------------------------- Main --------------------------------------------
 
 if __name__ == "__main__":
-    """try:
-        sync_reasoner()
-        print("test reasoner")
+    try:
+        tmp = get_all_kpis()
+        print(tmp)
     except Exception as error:
-        print(error)"""
+        print(error)
     
-    uvicorn.run(app, port=8000, host="0.0.0.0")
+    #uvicorn.run(app, port=8000, host="0.0.0.0")
