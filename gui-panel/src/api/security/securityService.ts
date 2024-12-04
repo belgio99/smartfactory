@@ -19,7 +19,7 @@ export const hashPassword = async (password: string): Promise<string> => {
 };
 
 /**
- * Funzione per confrontare una password in chiaro con una criptata.
+ * Method used to verify password with hashed password.
  * @param password - Password needs to verify.
  * @param hashedPassword - HashPassword will be check with password.
  * @returns Promise returns true if password is correct, false otherwise.
