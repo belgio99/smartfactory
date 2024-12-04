@@ -55,7 +55,6 @@ const App = () => {
     // Method to handle the logout event
     const handleLogout = () => {
         setIsAuthenticated(false);
-        setUserId('');
         setUsername('');
         setToken(null);
         setRole('');

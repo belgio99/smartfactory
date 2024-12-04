@@ -12,7 +12,7 @@ import { login } from './../api/ApiService';
 import { hashPassword } from '../api/security/securityService';
 
 interface LoginFormProps {
-  onLogin: (userId: string, username: string, token: string, role: string, site: string) => void;  
+  onLogin: (username: string, token: string, role: string, site: string) => void;  
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
