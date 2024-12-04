@@ -69,3 +69,6 @@ SMTP_SERVER=host.docker.internal
 SMTP_PORT=1025
 SMTP_EMAIL=noreply@smartfactory.com
 SMTP_PASSWORD=SmartAppPassword123
+
+RAG_API_ENDPOINT = 'http://rag:8000/agent/chat'
+API_KEY = '06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7'
