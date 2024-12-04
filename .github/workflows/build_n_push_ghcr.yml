@@ -1,60 +1,16 @@
-name: Build and Test Docker Services
+name: Build and Test Docker Compose Services
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches-ignore:
       - main
 
 jobs:
-  detect-changes:
+  build-test-containers:
     runs-on: ubuntu-latest
-    outputs:
-      services: ${{ steps.detect.outputs.services }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Detect modified services
-        id: detect
-        run: |
-          # Trova il commit base comune tra il branch corrente e main
-          git fetch origin main
-          BASE_REF=$(git merge-base HEAD origin/main)
-          echo "Base reference: $BASE_REF"
-
-          # Trova le directory modificate rispetto al commit base
-          CHANGED_DIRS=$(git diff --name-only $BASE_REF HEAD | awk -F'/' '{print $1}' | sort -u)
-          echo "Changed directories: $CHANGED_DIRS"
-
-          # Filtra solo i servizi con Dockerfile
-          SERVICES=$(echo "$CHANGED_DIRS" | grep -E 'kb|data-processing|api|rag|gui-panel|kpi-engine' || true)
-          echo "Changed services: $SERVICES"
-
-          # Se non ci sono servizi modificati, imposta un'uscita vuota
-          if [ -z "$SERVICES" ]; then
-            echo "No relevant services changed"
-            echo "::set-output name=services::[]"
-            exit 0
-          fi
-
-          # Imposta i servizi modificati come output
-          echo "::set-output name=services::[$(echo $SERVICES | tr ' ' ',')]"
-
-      - name: Output modified services
-        run: |
-          echo 'Modified services: ${{ steps.detect.outputs.services }}'
-
-  build-and-test:
-    needs: detect-changes
-    runs-on: ubuntu-latest
-    if: ${{ needs.detect-changes.outputs.services != '[]' }}  # Corretto il riferimento
     strategy:
-      fail-fast: false
       matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Replace with your actual service names
 
     steps:
       - name: Checkout code
@@ -63,8 +19,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Create .env file for RAG
-        if: ${{ matrix.service == 'rag' }}
+      - name: Create .env file from secret
         run: echo "${{ secrets.RAG_ENV }}" >> rag/.env
 
       - name: Log in to GitHub Container Registry
@@ -74,34 +29,37 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build and cache Docker images
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:latest
-          push: ${{ github.ref == 'refs/heads/main' }}
-          load: true
+          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest
+          push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Run Docker container
-        run: docker compose up -d --no-build --no-deps --pull never ${{ matrix.service }}
+      - name: Start services with Docker Compose
+        run: docker-compose up -d
 
-      - name: Wait for container to initialize
+      - name: Wait for services to initialize
         run: sleep 60
 
-      - name: Test running container
+      - name: Test running services
         run: |
-          CONTAINER_ID=$(docker ps -q --filter "status=running")
-          if [ -z "$CONTAINER_ID" ]; then
-            echo "No running container found for service ${{ matrix.service }}"
-            exit 1
-          fi
-          echo "Service ${{ matrix.service }} is running successfully."
+          SERVICES=$(docker-compose config --services)
+          for SERVICE in $SERVICES; do
+            CONTAINER_ID=$(docker ps -qf "name=${SERVICE}")
+            STATUS=$(docker inspect -f '{{.State.Status}}' $CONTAINER_ID)
+            if [ "$STATUS" != "running" ]; then
+              echo "Service $SERVICE failed to run!"
+              docker logs $CONTAINER_ID
+              docker-compose down
+              exit 1
+            else
+              echo "Service $SERVICE is running successfully."
+            fi
+          done
 
-      - name: Stop and remove container
-        run: |
-          CONTAINER_ID=$(docker ps -q --filter "name=${{ matrix.service }}")
-          docker stop $CONTAINER_ID
-          docker rm $CONTAINER_ID
+      - name: Stop and remove services
+        run: docker-compose down
