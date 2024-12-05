@@ -16,7 +16,7 @@ from model.task import *
 from contextlib import asynccontextmanager
 import asyncio
 import requests
-from api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
+from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
 
 from model.user import *
 from model.report import Report
