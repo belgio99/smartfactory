@@ -322,6 +322,34 @@ def is_valid(kpi_info):
             file.write("\n")'''
 
 
+def reduce_formula(formula):
+    '''
+    Reduce a formula to its simplest form (with only atomic KPIs).
+
+    Args:
+        formula (str): The formula to reduce.
+    
+    Returns:
+        str: The reduced formula. None if a KPI in the formula is not found.
+    '''
+
+    formula = sympy.sympify(formula)
+
+    symbols_in_formula = formula.free_symbols
+
+    for symbol in symbols_in_formula:
+        str_symbol = str(symbol)
+        kpi = get_kpi(str_symbol)
+
+        if kpi["Status"] == -1:
+            return None
+        
+        if kpi["atomic"] == False: # if the KPI is not atomic substitute it with its formula
+            formula = formula.subs(symbol, sympy.sympify(kpi["atomic_formula"]))
+    
+    return str(formula)
+
+
 def add_kpi(kpi_info):
     """
     Add a KPI to the ontology.
@@ -345,9 +373,14 @@ def add_kpi(kpi_info):
     if not is_valid(kpi_info):
         return False
     
+    atomic_formula = reduce_formula(kpi_info["formula"])
+    
+    if atomic_formula is None:
+        return False
+    
     custom_class = onto.CustomKPItmp
     new_kpi = custom_class(kpi_info['id'][0], id=kpi_info['id'], description=kpi_info['description'], 
-                           atomic_formula=kpi_info['atomic_formula'], formula=kpi_info['formula'], 
+                           atomic_formula=atomic_formula, formula=kpi_info['formula'], 
                            unit_measure=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'])
     
     with onto:
@@ -448,7 +481,7 @@ def read_root():
 # -------------------------------------------- Main --------------------------------------------
 
 if __name__ == "__main__":
-    try:
+    '''try:
         tmp = get_kpi_hierarchy()
         with open("kpi_hierarchy.json", "w") as file:
             json.dump(tmp, file, indent=4)
@@ -459,6 +492,10 @@ if __name__ == "__main__":
             print(kpi[0])
   
     except Exception as error:
-        print(error)
+        print(error)'''
+    
+    formula = 'operative_time + cycle_sum'
+
+    print(reduce_formula(formula))
     
     #uvicorn.run(app, port=8000, host="0.0.0.0")
