@@ -68,6 +68,7 @@ const App = () => {
     // Method to handle the logout event
     const handleLogout = () => {
         setIsAuthenticated(false);
+        setUserId('');
         setUsername('');
         setToken(null);
         setRole('');
@@ -143,7 +144,7 @@ const App = () => {
                         {/* Rotta principale per la dashboard */}
                         <Route
                             path="/*"
-                            element={<Home username={username} role="Floor Factory Manager" token={token || ''} site={site}/>}
+                            element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}/>}
                         />
                         {/* Reindirizza qualsiasi rotta non valida */}
                         <Route path="*" element={<Navigate to="/"/>}/>

@@ -47,7 +47,7 @@ const NotificationBanner: React.FC = () => {
     );
 };
 
-const SmartFactory: React.FC<UserProps> = ({username, token, role, site, userAvatar}) => {
+const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, userAvatar}) => {
     const location = useLocation();
     const {addNotification} = useNotification();
 
