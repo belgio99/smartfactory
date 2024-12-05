@@ -1,4 +1,5 @@
 import httpx
+import json
 
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
@@ -314,7 +315,9 @@ async def ask_predictor_engine(url):
 
 async def handle_predictions(url):
     response = await ask_predictor_engine(url)
-    return response['data']
+    # from list of json to string
+    response = ",".join(json.dumps(obj) for obj in response['data'])
+    return response
 
 async def handle_new_kpi(question: Question, llm, graph, history):
     kpi_generation = KPIGenerationChain(llm, graph, history)
@@ -324,7 +327,10 @@ async def handle_new_kpi(question: Question, llm, graph, history):
 async def handle_report(url):
     predictor_response = await ask_predictor_engine(url)
     kpi_response = await ask_kpi_engine(url)
-    return "PRED_CONTEXT:" + predictor_response['data'] + "\nENG_CONTEXT:" + kpi_response['data']
+    # from list of json to string
+    predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
+    kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
+    return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
 
 async def handle_dashboard(question: Question, llm, graph, history):
     with open("docs/gui_elements.txt", "r") as f:
@@ -335,7 +341,8 @@ async def handle_dashboard(question: Question, llm, graph, history):
 
 async def handle_kpi_calc(url):
     response = await ask_kpi_engine(url)
-    return response['data']
+    response = ",".join(json.dumps(obj) for obj in response['data'])
+    return response
 
 async def handle_kb_q(question: Question, llm, graph, history):
     general_qa = GeneralQAChain(llm, graph, history)
