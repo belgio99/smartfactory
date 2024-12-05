@@ -271,6 +271,9 @@ services:
       - kpi-engine
     env_file:
       - kpi-engine/.env
+    depends_on:
+      router:
+        condition: service_healthy
 
 
 

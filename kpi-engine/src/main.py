@@ -17,17 +17,19 @@ env_path = Path(__file__).resolve().parent.parent / ".env"
 print(env_path)
 load_dotenv(dotenv_path=env_path)
 
+'''
+# Only for testing purposes
 with open("../smart_app_data.pkl", "rb") as file:
     df = pd.read_pickle(file)
-
 '''
+
 headers = {
     "Content-Type": "application/json",
     "x-kpi-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234"
 }
 druid_url = "http://router:8888/druid/v2/sql"
 query_body = {
-        "query": "SELECT * FROM timeseries"
+        "query": "SELECT * \"FROM timeseries\""
     }
 try:
     response = requests.post(druid_url, headers=headers, json=query_body)
@@ -37,7 +39,7 @@ except requests.exceptions.RequestException as e:
     print(f"An error occurred: {e}")
     exit()
 df = pd.DataFrame.from_dict(df, orient='columns')
-'''
+
 app = FastAPI()
 
 app.add_middleware(
