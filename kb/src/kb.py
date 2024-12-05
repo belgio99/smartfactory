@@ -345,7 +345,6 @@ def reduce_formula(formula):
             return None
         
         if kpi["atomic"] == False: # if the KPI is not atomic substitute it with its formula
-            print(kpi["atomic_formula"])
             formula = formula.subs(symbol, sympy.sympify(kpi["atomic_formula"]))
     
     return str(formula)
@@ -434,7 +433,7 @@ def charts_txt(input_file):
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 
-@app.get("/kb/{kpi_id}/get_kpi") 
+@app.get("/kb/{kpi_id}/get_kpi") #TODO: restituire solo id, descrizione e formula (non atomica)
 async def get_kpi_endpoint(kpi_id: str):
     """
     Get KPI data by its ID via GET request.
@@ -453,7 +452,7 @@ async def get_kpi_endpoint(kpi_id: str):
     return kpi_data
 
 
-@app.get("/kb/retrieve")
+@app.get("/kb/retrieveAll") #TODO: restituire solo id, descrizione e formula (non atomica)
 async def get_kpi_endpoint():
     """
     Get KPI data by its ID via GET request.
@@ -475,7 +474,7 @@ async def get_kpi_endpoint():
 def read_root():
     return {"Hello": "World"}
 
-
+# TODO: API insert
 
 
 
