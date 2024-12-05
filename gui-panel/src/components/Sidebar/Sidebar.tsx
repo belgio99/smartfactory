@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import SidebarSection from './SidebarSection';
 import {DashboardFolder, DashboardLayout} from "../../api/DataStructures";
 import {SidebarItemProps} from "./SidebarItem";
-import {getDashboardList} from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 export const pointIcon: string = 'https://cdn.builder.io/api/v1/image/assets/TEMP/e4f31bc08d7f9cce9aa4820b2adc97643d3b0c001526273b80178ee6bf890b69?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130';
 export const folderIcon: string = "/icons/folder.svg";
@@ -96,7 +96,7 @@ const DashboardSidebar: React.FC = () => {
                 // const data = await response.json();
 
                 // Decode the JSON into DashboardFolder instances
-                const folderData = getDashboardList();
+                const folderData = PersistentDataManager.getInstance().getDashboards();
 
                 // Format the data for the sidebar
                 const formattedDashboards = formatDashboards(folderData);

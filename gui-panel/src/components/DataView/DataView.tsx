@@ -2,14 +2,14 @@ import React, {useState} from 'react';
 import KpiSelector from '../KpiSelector/KpiSelector';
 import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
-import {getKpiList} from "../../api/PersistentDataManager";
 import {simulateChartData} from "../../api/QuerySimulator";
 import {Filter} from "../KpiSelector/FilterOptions";
 import {TimeFrame} from "../KpiSelector/TimeSelector"
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 const DataView: React.FC = () => {
-
-    const [kpi, setKpi] = useState<KPI>(getKpiList()[0]);
+    const dataManager = PersistentDataManager.getInstance();
+    const [kpi, setKpi] = useState<KPI>(dataManager.getKpiList()[0]);
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: "hour"});
     const [graphType, setGraphType] = useState('pie');
     const [filters, setFilters] = useState<Filter>(new Filter('All', []));
