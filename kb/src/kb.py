@@ -383,16 +383,16 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
         dict: The status of the pair. {Status: 0} and the info of the pair if the pair exists, {Status: -1} otherwise.
     """
 
+    query = f'*{machine_id}'
+    result = onto.search_one(iri = query)
     json_d = {'Status': -1} # default status
 
-    # Ottieni l'oggetto macchina dall'ontologia
-    machine_instance = onto.search_one(id=machine_id)
-    if not machine_instance:
+    if not result: # machine not found
         return json_d
     
-    # Controlla se il KPI è nella lista dei KPI prodotti dalla macchina
-    produces_kpis = [kpi.name for kpi in machine_instance.producesKPI]
-    if kpi_id in produces_kpis:
+    # Check if the KPI is in the list of KPIs produced by the machine
+    produces_kpis = [kpi.name for kpi in result.producesKPI]
+    if kpi_id in produces_kpis: # kpi found
         kpi_tmp = get_kpi(kpi_id)
         json_d["Status"] = 0 # success status
         json_d["machine_id"] = machine_id
@@ -618,10 +618,8 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
 
 if __name__ == "__main__":
     """try:
-        tmp = get_kpi_hierarchy()
-        with open("kpis.json", "w") as file:
-            json.dump(tmp, file, indent=4)
-  
+        tmp = is_pair_machine_kpi_exist("assembly_machine_1", "oee")
+        print(tmp)
     except Exception as error:
         print(error)"""
     
