@@ -18,8 +18,10 @@ import ReportSchedules from "./Reports/ReportSchedules";
 import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
 import AIDashboard from "./Dashboard/AIDashboard";
+import { userInfo } from 'os';
 
 interface UserProps {
+    userId: string;
     username: string;
     token: string;
     role: string;
@@ -45,7 +47,7 @@ const NotificationBanner: React.FC = () => {
     );
 };
 
-const SmartFactory: React.FC<UserProps> = ({username, token, role, site, userAvatar}) => {
+const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, userAvatar}) => {
     const location = useLocation();
     const {addNotification} = useNotification();
 
@@ -119,7 +121,7 @@ const SmartFactory: React.FC<UserProps> = ({username, token, role, site, userAva
                         <Route path="kpis" element={<KpiViewer/>}/>
                         <Route path="forecasts" element={<Forecasting/>}/>
                         <Route path="production-lines" element={<ProductionLineManager/>}/>
-                        <Route path="reports" element={<ReportArchive/>}/>
+                        <Route path="reports" element={<ReportArchive userId={userId} username={username} token={token} role={role} site={site} />}/>
                         <Route path="reports/schedules" element={<ReportSchedules/>}/>
                         <Route path="*" element={<Navigate to="/home" replace/>}/>
                     </Routes>
