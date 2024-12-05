@@ -121,7 +121,7 @@ def prompt_classifier(input: Question):
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-
+        
         esempi = [
             {"testo": "Predict for tomorrow the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on last week data", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, weeks=1, days=1" },
             {"testo": "Predict the future Power Consumption Efficiency for Riveting Machine 2 over the next 5 days","data": f"Power Consumption Efficiency, Riveting Machine 2, NULL, days=5"},
