@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   detect-changes:
@@ -33,11 +34,16 @@ jobs:
           # Lista delle cartelle dei servizi
           services="database kb data-processing api rag gui-panel kpi-engine"
           changed_services=""
-          for service in $services; do
-            if [[ "${{ steps.detect.outputs.all_changed_files }}" == *"$service/"* ]]; then
-              changed_services="$changed_services $service"
-            fi
-          done
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Se il trigger è workflow_dispatch, ricostruisci tutti i servizi
+            changed_services="$services"
+          else
+            for service in $services; do
+              if [[ "${{ steps.detect.outputs.all_changed_files }}" == *"$service/"* ]]; then
+                changed_services="$changed_services $service"
+              fi
+            done
+          fi
           echo "Changed services: $changed_services"
           echo "::set-output name=changed::$changed_services"
 
