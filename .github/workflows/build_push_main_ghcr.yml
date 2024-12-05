@@ -1,4 +1,4 @@
-name: Build and Test Docker Compose Services
+name: Build Docker Compose Services
 
 on:
   push:
@@ -6,7 +6,52 @@ on:
       - main
 
 jobs:
-  build-db-init:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-services: ${{ steps.parse-changes.outputs.changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Detect changed files
+        id: detect
+        uses: tj-actions/changed-files@v45.0.4
+        with:
+          files: |
+            database/**
+            kb/**
+            data-processing/**
+            api/**
+            rag/**
+            gui-panel/**
+            kpi-engine/**
+
+      - name: Parse changed services
+        id: parse-changes
+        run: |
+          # Lista delle cartelle dei servizi
+          services="database kb data-processing api rag gui-panel kpi-engine"
+          changed_services=""
+          for service in $services; do
+            if [[ "${{ steps.detect.outputs.all_changed_files }}" == *"$service/"* ]]; then
+              changed_services="$changed_services $service"
+            fi
+          done
+          echo "Changed services: $changed_services"
+          echo "::set-output name=changed::$changed_services"
+
+  print-changed-containers:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print changed containers
+        run: |
+          echo "Containers to be rebuilt: ${{ needs.detect-changes.outputs.changed-services }}"
+
+  build-database:
+    needs: detect-changes
+    if: contains(needs.detect-changes.outputs.changed-services, 'database')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,8 +66,8 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
-  
-      - name: Build and cache Docker image
+
+      - name: Build and push database container
         uses: docker/build-push-action@v3
         with:
           context: ./database
@@ -33,11 +78,12 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
-  build-topic-containers:
+  build-containers:
+    needs: detect-changes
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Replace with your actual service names
+        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]
 
     steps:
       - name: Checkout code
@@ -53,7 +99,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and cache Docker images
+      - name: Build and push Docker image
+        if: contains(needs.detect-changes.outputs.changed-services, matrix.service)
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
@@ -63,3 +110,4 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+
