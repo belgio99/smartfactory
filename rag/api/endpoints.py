@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from schemas.promptmanager import PromptManager
 from chains.ontology_rag import DashboardGenerationChain, GeneralQAChain, KPIGenerationChain
 from schemas.models import Question, Answer
+from schemas.XAI_rag import RagExplainer
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
@@ -323,14 +324,14 @@ async def handle_new_kpi(question: Question, llm, graph, history):
 async def handle_report(url):
     predictor_response = await ask_predictor_engine(url)
     kpi_response = await ask_kpi_engine(url)
-    return predictor_response['data'] + kpi_response['data']
+    return "PRED_CONTEXT:" + predictor_response['data'] + "\nENG_CONTEXT:" + kpi_response['data']
 
 async def handle_dashboard(question: Question, llm, graph, history):
     with open("docs/gui_elements.txt", "r") as f:
         gui_elements = f.read()
     dashboard_generation = DashboardGenerationChain(llm, graph, history)
     response = dashboard_generation.chain.invoke(question.userInput)
-    return response['result'] + '\n' + gui_elements
+    return 'KB_CONTEXT:' + response['result'] + '\n GUI_CONTEXT:' + gui_elements
 
 async def handle_kpi_calc(url):
     response = await ask_kpi_engine(url)
@@ -377,16 +378,45 @@ async def ask_question(question: Question):
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
-        # Format the history
+        # Prepare the history context from previous chat
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-        prompt = prompt_manager.get_prompt(label)
-        formatted_prompt = prompt.format(_HISTORY_=history_context, _CONTEXT_=context, _USER_QUERY_=question.userInput)
-        llm_result = llm.invoke(formatted_prompt)
-
-        # Update the history
+        # Prepare the prompt and invoke the LLM
+        prompt = prompt_manager.get_prompt(label).format(
+            _HISTORY_=history_context,
+            _CONTEXT_=context,
+            _USER_QUERY_=question.userInput
+        )
+        llm_result = llm.invoke(prompt)
         history.append({'question': question.userInput, 'answer': llm_result.content})
 
-        return Answer(textResponse=llm_result.content, textExplanation='', data='report' if label == 'report' else 'query')
+        explainer = RagExplainer()
 
+        if label == 'predictions':
+            # Response: Chat response, Explanation: TODO, Data: No data to send            
+            explainer.add_to_context([("Predictor", context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data='')
+
+        if label == 'kpi_calc':
+            # Response: Chat response, Explanation: TODO, Data: No data to send            
+            explainer.add_to_context([("KPI Engine", context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data='')
+
+        if label == 'new_kpi':
+            # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
+            explainer.add_to_context([("Knowledge Base", context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data=context)
+
+        if label == 'report':
+            # Response: No chat response, Explanation: TODO, Data: Report in str format
+            pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
+            explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data=llm_result.content)
+
+        if label == 'dashboard':
+            # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
+            # TODO: separare il chat response dal binding nel prompt
+            kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
+            explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data=llm_result.content)
