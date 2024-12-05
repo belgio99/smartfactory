@@ -49,7 +49,7 @@ jobs:
         run: |
           echo "Containers to be rebuilt: ${{ needs.detect-changes.outputs.changed-services }}"
 
-  build-database:
+  build-db-init:
     needs: detect-changes
     if: contains(needs.detect-changes.outputs.changed-services, 'database')
     runs-on: ubuntu-latest
@@ -67,12 +67,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build and push database container
         uses: docker/build-push-action@v3
         with:
           context: ./database
           file: ./database/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/smartfactory/db-init:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/smartfactory/db-init:latest
+            ghcr.io/${{ github.repository_owner }}/smartfactory/db-init:${{ steps.vars.outputs.sha_short }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -99,15 +105,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
+      - name: Set outputs
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         if: contains(needs.detect-changes.outputs.changed-services, matrix.service)
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:latest
+            ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:${{ steps.vars.outputs.sha_short }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-
