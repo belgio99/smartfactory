@@ -1,0 +1,74 @@
+[
+  {
+    "category": "Energy",
+    "subcategory": "Consumption",
+    "unit": "kWh",
+    "metrics": [
+      { "id": "consumption_avg", "name": "avg", "description": "Energy consumption (average).", "forecastable": true },
+      { "id": "consumption_min", "name": "min", "description": "Energy consumption (minimum).", "forecastable": true },
+      { "id": "consumption_max", "name": "max", "description": "Energy consumption (maximum).", "forecastable": true },
+      { "id": "consumption_sum", "name": "sum", "description": "Total energy consumption.", "forecastable": true }
+    ]
+  },
+  {
+    "category": "Energy",
+    "subcategory": "Cost",
+    "unit": "euro per kWh",
+    "metrics": [
+      { "id": "cost_avg", "name": "avg", "description": "Electricity cost (average).", "forecastable": true },
+      { "id": "cost_min", "name": "min", "description": "Electricity cost (minimum).", "forecastable": true },
+      { "id": "cost_max", "name": "max", "description": "Electricity cost (maximum).", "forecastable": true },
+      { "id": "cost_sum", "name": "sum", "description": "Total electricity cost.", "forecastable": true }
+    ]
+  },
+  {
+    "category": "Production",
+    "subcategory": "Cycles",
+    "unit": "#",
+    "metrics": [
+      { "id": "good_cycles_avg", "name": "good (avg)", "description": "Good production cycles (average).", "forecastable": true },
+      { "id": "good_cycles_sum", "name": "good (sum)", "description": "Total good production cycles.", "forecastable": true },
+      { "id": "bad_cycles_avg", "name": "bad (avg)", "description": "Bad production cycles (average).", "forecastable": true },
+      { "id": "bad_cycles_sum", "name": "bad (sum)", "description": "Total bad production cycles.", "forecastable": true },
+      { "id": "cycles_avg", "name": "avg", "description": "Total production cycles (average).", "forecastable": true },
+      { "id": "cycles_sum", "name": "sum", "description": "Total production cycles.", "forecastable": true }
+    ]
+  },
+  {
+    "category": "Machine Usage",
+    "subcategory": "Time",
+    "unit": "s",
+    "metrics": [
+      { "id": "idle_time_avg", "name": "idle (avg)", "description": "Idle time (average).", "forecastable": true },
+      { "id": "idle_time_sum", "name": "idle (sum)", "description": "Total idle time.", "forecastable": true },
+      { "id": "working_time_avg", "name": "working (avg)", "description": "Working time (average).", "forecastable": true },
+      { "id": "working_time_sum", "name": "working (sum)", "description": "Total working time.", "forecastable": true }
+    ]
+  },
+  {
+    "category": "Machine Usage",
+    "subcategory": "Utilization",
+    "unit": "%",
+    "metrics": [
+      { "id": "machine_utilization_rate", "name": "utilization rate", "description": "Machine utilization rate.", "forecastable": true },
+      { "id": "availability", "name": "availability", "description": "Machine availability.", "forecastable": true }
+    ]
+  },
+  {
+    "category": "Quality",
+    "subcategory": "Output",
+    "unit": "%",
+    "metrics": [
+      { "id": "quality", "name": "quality", "description": "Quality of production output.", "forecastable": true },
+      { "id": "oee", "name": "overall equipment effectiveness", "description": "Overall Equipment Effectiveness.", "forecastable": true }
+    ]
+  },
+  {
+    "category": "Environmental",
+    "subcategory": "Carbon Footprint",
+    "unit": "tCO2e",
+    "metrics": [
+      { "id": "carbon_footprint", "name": "footprint", "description": "Total greenhouse gas emissions.", "forecastable": false }
+    ]
+  }
+]

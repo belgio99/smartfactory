@@ -34,7 +34,7 @@ const KpiSelect: React.FC<KPISelectProps> = ({
                     value={value.id} // Use `id` as the value to track the selected KPI
                     onChange={(e) => {
                         //console.log(e.target.value);
-                        const selectedKpi = options.find((kpi) => kpi.id === Number(e.target.value));
+                        const selectedKpi = options.find((kpi) => kpi.id === e.target.value);
                         if (selectedKpi) {
                             //console.log("Found %s",e.target.value);
                             //console.log(selectedKpi);
