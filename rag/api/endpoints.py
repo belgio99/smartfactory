@@ -389,6 +389,14 @@ async def ask_question(question: Question):
             _USER_QUERY_=question.userInput
         )
         llm_result = llm.invoke(prompt)
+
+        prompt = prompt_manager.get_prompt('translate').format(
+            _HISTORY_='',
+            _CONTEXT_=llm_result.content,
+            _USER_QUERY_=question.userInput
+        )
+        llm_result = llm.invoke(prompt)
+
         history.append({'question': question.userInput, 'answer': llm_result.content})
 
         explainer = RagExplainer()
