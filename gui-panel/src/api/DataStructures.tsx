@@ -75,82 +75,55 @@ export class KPI {
         return new KPI(json.id, json.type, json.name, json.description, json.unit);
     }
 
+    // Decode a group of KPIs into an array of KPI objects
+    static decodeGroups(groups: Record<string, Record<string, any>>): KPI[] {
+        const kpis: KPI[] = [];
+
+        Object.entries(groups).forEach(([groupName, metrics]) => {
+            Object.entries(metrics).forEach(([metricName, metricData]) => {
+                if (
+                    typeof metricData.id !== "string" ||
+                    typeof metricData.description !== "string" ||
+                    typeof metricData.unit_measure !== "string" ||
+                    typeof metricData.type !== "string" // Ensure type exists in metricData
+                ) {
+                    throw new Error(`Invalid KPI structure in group ${groupName}, metric ${metricName}`);
+                }
+
+                // reformat kpi name with regex
+                // if followed by _avg, _min, _max, _sum, _med change it to (Avg), (Min), (Max), (Sum), (Med)
+                // replace _ with space and capitalize first letter of each word
+
+                metricName = metricName.replace(/_avg/g, " (Avg)")
+                    .replace(/_min/g, " (Min)")
+                    .replace(/_max/g, " (Max)")
+                    .replace(/_sum/g, " (Sum)")
+                    .replace(/_med/g, " (Med)")
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+                // metric type reformatted to have the "KPI" suffix divided by a space
+                // EnergyKPI -> Energy KPI
+                metricData.type = metricData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+
+
+                // Create a KPI instance for each metric
+                const kpi = new KPI(
+                    metricData.id,
+                    metricData.type, // The type is now directly provided in the JSON
+                    metricName, // Metric name as the display name
+                    metricData.description,
+                    metricData.unit_measure // Use unit_measure for unit
+                );
+                kpis.push(kpi);
+            });
+        });
+
+        return kpis;
+    }
+
 }
-
-export class KPIGroup {
-    category: string; // Top-level category (e.g., Energy)
-    subcategory: string; // Subcategory name (e.g., Consumption)
-    unit: string; // Unit of measurement for this group
-    metrics: KPIOptions[]; // Array of detailed metric options
-
-    constructor(category: string, subcategory: string, unit: string, metrics: KPIOptions[]) {
-        this.category = category;
-        this.subcategory = subcategory;
-        this.unit = unit;
-        this.metrics = metrics;
-    }
-
-    static encode(instance: KPIGroup): Record<string, any> {
-        return {
-            category: instance.category,
-            subcategory: instance.subcategory,
-            unit: instance.unit,
-            metrics: instance.metrics.map(KPIOptions.encode),
-        };
-    }
-
-    static decode(json: Record<string, any>): KPIGroup {
-        if (
-            typeof json.category !== "string" ||
-            typeof json.subcategory !== "string" ||
-            typeof json.unit !== "string" ||
-            !Array.isArray(json.metrics)
-        ) {
-            throw new Error("Invalid JSON structure for KPIGroup");
-        }
-
-        const metrics = json.metrics.map(KPIOptions.decode);
-        return new KPIGroup(json.category, json.subcategory, json.unit, metrics);
-    }
-
-}
-
-export class KPIOptions {
-    id: string; // Unique identifier for the metric
-    name: string; // Metric name (e.g., avg, min, max)
-    description: string; // Detailed description of the metric
-    forecastable: boolean; // Indicates if the metric is forecastable
-
-    constructor(id: string, name: string, description: string, forecastable: boolean) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.forecastable = forecastable;
-    }
-
-    static encode(instance: KPIOptions): Record<string, any> {
-        return {
-            id: instance.id,
-            name: instance.name,
-            description: instance.description,
-            forecastable: instance.forecastable,
-        };
-    }
-
-    static decode(json: Record<string, any>): KPIOptions {
-        if (
-            typeof json.id !== "string" ||
-            typeof json.name !== "string" ||
-            typeof json.description !== "string" ||
-            typeof json.forecastable !== "boolean"
-        ) {
-            throw new Error("Invalid JSON structure for KPIOptions");
-        }
-
-        return new KPIOptions(json.id, json.name, json.description, json.forecastable);
-    }
-}
-
 
 export class Schedule {
     id: number;

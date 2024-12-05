@@ -4,6 +4,8 @@ import Chart from "../Chart/Chart";
 import {simulateChartData} from "../../api/QuerySimulator";
 import FutureTimeFrameSelector from "./FutureTimeSelector";
 import {TimeFrame} from "../KpiSelector/TimeSelector";
+import KpiSelect from "../KpiSelector/KpiSelect";
+import {KPI} from "../../api/DataStructures";
 
 type ForecastData = {
     date: string;
@@ -13,7 +15,7 @@ type ForecastData = {
 const ForecastingPage: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
     const [loading, setLoading] = useState(false);
-    const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
+    const [selectedKpi, setSelectedKpi] = useState<KPI | undefined>(); // Update to store the entire KPI object
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
     const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame } | null>(null);
 
@@ -23,37 +25,19 @@ const ForecastingPage: React.FC = () => {
     }, [timeFrame]);
 
     const fetchForecastData = async () => {
-        if (selectedKpi !== null && timeFrame !== null) {
+        if (selectedKpi && timeFrame !== null) {
             setLoading(true);
-            const kpi = dataManager.getKpiList().find((k) => k.id === selectedKpi);
-            if (!kpi) {
-                console.error(`KPI with ID ${selectedKpi} not found.`);
-                setLoading(false);
-                return;
-            }
 
-            const pastData = await simulateChartData(kpi, timeFrame.past, "line");
-            const futureData = await simulateChartData(kpi, timeFrame.future, "line");
+            const pastData = await simulateChartData(selectedKpi, timeFrame.past, "line");
+            const futureData = await simulateChartData(selectedKpi, timeFrame.future, "line");
 
             setForecastData([...pastData, ...futureData]);
             setLoading(false);
-        }
+        }else setForecastData([])
     };
-
-    const handleKpiChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const kpiId = e.target.value;
-
-        if (kpiId.length !== 0) {
-            setSelectedKpi(kpiId);
-        } else {
-            setSelectedKpi(null);
-            setForecastData([]);
-        }
-    };
-
     useEffect(() => {
         fetchForecastData();
-    }, [selectedKpi]); // Recompute data when selected KPI changes.
+    }, [selectedKpi]);
 
     const formatDate = (date: Date) => date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
 
@@ -63,21 +47,13 @@ const ForecastingPage: React.FC = () => {
             <h1 className="text-2xl font-bold mb-4 text-gray-800">KPI Forecasting</h1>
             <div className="flex items-center space-x-4 mb-6">
                 <div className="w-1/2">
-                    <label className="block text-gray-700 font-medium mb-2" htmlFor="kpi-select">
-                        Select a KPI
-                    </label>
-                    <select
-                        id="kpi-select"
-                        className="w-full font-normal  p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onChange={handleKpiChange}
-                    >
-                        <option value="">-- Select KPI --</option>
-                        {kpis.map((kpi) => (
-                            <option key={kpi.id} value={kpi.id}>
-                                {kpi.name}
-                            </option>
-                        ))}
-                    </select>
+                    <KpiSelect
+                        label="Select a KPI"
+                        description="Choose a KPI from the list"
+                        value={selectedKpi || ({} as KPI)} // Pass the selected KPI, or an empty object if null
+                        options={kpis}
+                        onChange={setSelectedKpi}
+                    />
                 </div>
 
                 <div className="w-1/2">
@@ -92,14 +68,14 @@ const ForecastingPage: React.FC = () => {
                     <div>
                         <p className="text-sm text-gray-700 mb-4">
                             Forecasting data
-                            about <strong> {kpis.find((kpi) => kpi.id === selectedKpi)?.name}</strong> from {formatDate(timeFrame.future.from)}
+                            about <strong> {selectedKpi?.name}</strong> from {formatDate(timeFrame.future.from)}
                             {' '} to {formatDate(timeFrame.future.to)},
                             using data from {formatDate(timeFrame.past.from)}
                             {' '} to {formatDate(timeFrame.past.to)}.
                         </p>
                         <Chart data={forecastData}
                                graphType="line"
-                               kpi={kpis.find((kpi) => kpi.id === selectedKpi)}
+                               kpi={selectedKpi}
                                timeUnit={timeFrame.past.aggregation}
                                timeThreshold={true}
                         />
