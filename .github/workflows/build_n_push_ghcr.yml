@@ -43,6 +43,7 @@ jobs:
         run: docker-compose up -d
 
       - name: Wait for services to initialize
+
         run: sleep 60
 
       - name: Test running services
