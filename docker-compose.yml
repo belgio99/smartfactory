@@ -156,6 +156,7 @@ services:
   minio:
     container_name: minio
     image: quay.io/minio/minio:latest
+    platform: linux/amd64
     volumes:
       - minio_data:/data
     ports:
@@ -169,6 +170,7 @@ services:
 
   db-init:
     image: ghcr.io/belgio99/smartfactory/db-init:latest
+    platform: linux/amd64
     build:
       context: ./database
       dockerfile: Dockerfile
@@ -188,6 +190,7 @@ services:
       context: ./kb
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
+    platform: linux/amd64
     ports: 
       - "10010:8000"
     profiles:
@@ -198,6 +201,7 @@ services:
       context: ./data-processing
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
+    platform: linux/amd64
     ports: 
       - "10030:8000"
     profiles:
@@ -205,6 +209,7 @@ services:
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
+    platform: linux/amd64
     build:
       context: ./api
       dockerfile: Dockerfile
@@ -232,6 +237,7 @@ services:
     
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
+    platform: linux/amd64
     build:
       context: ./rag
       dockerfile: Dockerfile
@@ -244,6 +250,7 @@ services:
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
+    platform: linux/amd64
     build:
       context: ./gui-panel
       dockerfile: Dockerfile
@@ -254,6 +261,7 @@ services:
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
+    platform: linux/amd64
     build:
       context: ./kpi-engine
       dockerfile: Dockerfile
