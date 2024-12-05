@@ -344,7 +344,7 @@ def add_kpi(kpi_info):
 
 # -------------------------------------------- API Endpoints --------------------------------------------
 
-@app.get("/kb/{kpi_id}/get_kpi") #TODO: restituire solo id, descrizione e formula (non atomica)
+@app.get("/kb/{kpi_id}/get_kpi") 
 async def get_kpi_endpoint(kpi_id: str):
     """
     Get KPI data by its ID via GET request.
@@ -363,8 +363,8 @@ async def get_kpi_endpoint(kpi_id: str):
     return kpi_data
 
 
-@app.get("/kb/retrieveAll") #TODO: restituire solo id, descrizione e formula (non atomica)
-async def get_kpi_endpoint():
+@app.get("/kb/retrieveKPIs")
+async def get_all_kpis_endpoint():
     """
     Get KPI data by its ID via GET request.
 
@@ -376,16 +376,60 @@ async def get_kpi_endpoint():
     """
 
     kpi_data = get_all_kpis()
-    if not kpi_data:
-        return {"error": "KPI not found"}
     return kpi_data
+
+
+@app.get("/kb/retrieveMachines")
+async def get_all_machines_endpoint():
+    """
+    Get all machines and their information via GET request.
+
+    Returns:
+        dict: The machines and their information.
+    """
+
+    machines_data = get_all_machines()
+    return machines_data
+
+
+@app.get("/kb/{kpi_info}/insert")
+async def add_kpi_endpoint(kpi_info: dict):
+    """
+    Add a KPI to the ontology via GET request.
+
+    Args:
+        kpi_info (dict): The information of the KPI to add.
+
+    Returns:
+        dict: The result of the operation.
+    """
+
+    result = add_kpi(kpi_info)
+    if not result:
+        return {"error": "KPI not added"}
+    return {"message": "KPI added"}
+
+
+@app.get("/kb/{machine_id}/{kpi_id}/check")
+async def is_pair_machine_kpi_exist_endpoint(machine_id: str, kpi_id: str):
+    """
+    Check if a pair of machine and KPI exists via GET request.
+
+    Args:
+        machine_id (str): The machine ID.
+        kpi_id (str): The KPI ID.
+
+    Returns:
+        dict: The status of the pair.
+    """
+
+    pair_status = is_pair_machine_kpi_exist(machine_id, kpi_id)
+    return pair_status
 
 
 @app.get("/kb")
 def read_root():
     return {"Hello": "World"}
-
-# TODO: API insert
 
 
 
