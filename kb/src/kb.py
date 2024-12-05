@@ -6,6 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI
 import json
 
+from pydantic import BaseModel
+
+
 app = FastAPI()
 
 app.add_middleware(
@@ -17,8 +20,8 @@ app.add_middleware(
 )
 
 
-ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
-TMP_ONTOLOGY_PATH = "../Ontology/tmp_ontology.rdf"
+ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
+TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 
@@ -31,6 +34,9 @@ def get_kpi(kpi_id):
 
     Args:
         kpi_id (str): The unique identifier of the machine.
+
+    Globals:
+        onto (Ontology): The global ontology object is used to extract KPIs.
 
     Returns:
         dict: A dictionary containing the KPI data. The structure includes:
@@ -65,6 +71,9 @@ def get_machine(machine_id):
     Args:
         machine_id (str): The unique identifier of the machine.
 
+    Globals:
+        onto (Ontology): The global ontology object is used to extract machines.
+
     Returns:
         dict: A dictionary containing the machine data. The structure includes:
             - "Status" (int): 0 if successful, -1 if no machine data is found.
@@ -92,6 +101,9 @@ def get_all_kpis():
     """
     Retrieve all KPIs and their information as dict
 
+    Globals:
+        onto (Ontology): The global ontology object is used to extract KPIs.
+
     Returns:
         dict: The KPIs and their information.
     """
@@ -109,6 +121,9 @@ def get_all_machines():
     """
     Retrieve all machines and their information as dict
 
+    Globals:
+        onto (Ontology): The global ontology object is used to extract machines.
+
     Returns:
         dict: The machines and their information.
     """
@@ -125,6 +140,9 @@ def get_all_machines():
 def get_classes_hierarchy():
     """
     Organizes the classes in the ontology in a hierarchical structure.
+
+    Globals:
+        onto (Ontology): The global ontology object is used to extract classes.
 
     Returns:
         dict: The classes hierarchy.
@@ -167,24 +185,165 @@ def get_classes_hierarchy():
 
 def get_kpi_hierarchy():
     """
-    Organizes the KPIs in the ontology in a hierarchical structure.
+    Organizes the KPIs directly under the main classes of the ontology, removes empty classes, 
+    and updates the 'type' of each KPI to match its main class.
 
     Returns:
-        dict: The KPI hierarchy.
+        dict: The list of KPIs, grouped under the main classes of the ontology.
     """
-    
-    # from get_classes_hierarchy, get only the element inside "KPI"
-    kpi_hierarchy = get_classes_hierarchy()["KPI"]
+
+    def find_main_class_for_kpi(main_class_hierarchy, kpi_type):
+        """
+        Recursively finds if a KPI type exists in the hierarchy of a main class.
+
+        Args:
+            main_class_hierarchy (dict): The hierarchy of the main class.
+            kpi_type (str): The type of the KPI.
+
+        Returns:
+            bool: True if the KPI type is found, False otherwise.
+        """
+        for key, value in main_class_hierarchy.items():
+            if key == kpi_type:
+                return True
+            if isinstance(value, dict):  # Recursively check sub-hierarchy
+                if find_main_class_for_kpi(value, kpi_type):
+                    return True
+        return False
+
+    def remove_empty_classes(hierarchy):
+        """
+        Recursively removes empty classes from the hierarchy.
+
+        Args:
+            hierarchy (dict): The hierarchy to clean.
+
+        Returns:
+            dict: The cleaned hierarchy without empty classes.
+        """
+        cleaned_hierarchy = {}
+        for key, value in hierarchy.items():
+            if isinstance(value, dict):
+                # Recursively clean sub-hierarchy
+                nested = remove_empty_classes(value)
+                if nested:  # Only include non-empty classes
+                    cleaned_hierarchy[key] = nested
+            elif value:  # Include non-dict non-empty values
+                cleaned_hierarchy[key] = value
+        return cleaned_hierarchy
+
+    # Retrieve the initial hierarchy and the list of KPIs
+    full_hierarchy = get_classes_hierarchy().get("KPI", {})
+    main_classes = list(full_hierarchy.keys())  # Extract only the main classes
     kpis = get_all_kpis()
 
-    # for each kpi, add the information to the hierarchy (using the type as key)
+    # Create a simplified hierarchy initialized with the main classes
+    simplified_hierarchy = {main_class: {} for main_class in main_classes}
+
+    # Insert each KPI under the corresponding main class
     for kpi_id, kpi_info in kpis.items():
         kpi_type = kpi_info["type"]
-        if kpi_type not in kpi_hierarchy:
-            kpi_hierarchy[kpi_type] = {}
-        kpi_hierarchy[kpi_type][kpi_id] = kpi_info
 
-    return kpi_hierarchy
+        # Check if the KPI type matches exactly a main class
+        if kpi_type in main_classes:
+            kpi_info["type"] = kpi_type  # Update type to the main class name
+            simplified_hierarchy[kpi_type][kpi_id] = kpi_info
+            continue
+
+        # Find the main class that contains the KPI type
+        for main_class in main_classes:
+            if find_main_class_for_kpi(full_hierarchy[main_class], kpi_type):
+                kpi_info["type"] = main_class  # Update type to the main class name
+                simplified_hierarchy[main_class][kpi_id] = kpi_info
+                break
+        else:
+            # If the type is not associated with any main class, raise an error
+            raise ValueError(f"Unable to classify KPI {kpi_id} with type {kpi_type} under any main class.")
+
+    # Remove empty classes from the hierarchy
+    return remove_empty_classes(simplified_hierarchy)
+
+
+def get_machine_hierarchy():
+    """
+    Organizes the machines directly under the main classes of the ontology, removes empty classes,
+    and updates the 'type' of each machine to match its main class.
+
+    Returns:
+        dict: The list of machines, grouped under the main classes of the ontology.
+    """
+
+    def find_main_class_for_machine(main_class_hierarchy, machine_type):
+        """
+        Recursively finds if a machine type exists in the hierarchy of a main class.
+
+        Args:
+            main_class_hierarchy (dict): The hierarchy of the main class.
+            machine_type (str): The type of the machine.
+
+        Returns:
+            bool: True if the machine type is found, False otherwise.
+        """
+        for key, value in main_class_hierarchy.items():
+            if key == machine_type:
+                return True
+            if isinstance(value, dict):  # Recursively check sub-hierarchy
+                if find_main_class_for_machine(value, machine_type):
+                    return True
+        return False
+
+    def remove_empty_classes(hierarchy):
+        """
+        Recursively removes empty classes from the hierarchy.
+
+        Args:
+            hierarchy (dict): The hierarchy to clean.
+
+        Returns:
+            dict: The cleaned hierarchy without empty classes.
+        """
+        cleaned_hierarchy = {}
+        for key, value in hierarchy.items():
+            if isinstance(value, dict):
+                # Recursively clean sub-hierarchy
+                nested = remove_empty_classes(value)
+                if nested:  # Only include non-empty classes
+                    cleaned_hierarchy[key] = nested
+            elif value:  # Include non-dict non-empty values
+                cleaned_hierarchy[key] = value
+        return cleaned_hierarchy
+
+    # Retrieve the initial hierarchy and the list of machines
+    full_hierarchy = get_classes_hierarchy().get("Machine", {})
+    main_classes = list(full_hierarchy.keys())  # Extract only the main classes
+    machines = get_all_machines()
+
+    # Create a simplified hierarchy initialized with the main classes
+    simplified_hierarchy = {main_class: {} for main_class in main_classes}
+
+    # Insert each machine under the corresponding main class
+    for machine_id, machine_info in machines.items():
+        machine_type = machine_info["type"]
+
+        # Check if the machine type matches exactly a main class
+        if machine_type in main_classes:
+            machine_info["type"] = machine_type  # Update type to the main class name
+            simplified_hierarchy[machine_type][machine_id] = machine_info
+            continue
+
+        # Find the main class that contains the machine type
+        for main_class in main_classes:
+            if find_main_class_for_machine(full_hierarchy[main_class], machine_type):
+                machine_info["type"] = main_class  # Update type to the main class name
+                simplified_hierarchy[main_class][machine_id] = machine_info
+                break
+        else:
+            # If the type is not associated with any main class, raise an error
+            raise ValueError(f"Unable to classify machine {machine_id} with type {machine_type} under any main class.")
+
+    # Remove empty classes from the hierarchy
+    return remove_empty_classes(simplified_hierarchy)
+
 
 
 def extract_datatype_properties(instance):
@@ -193,6 +352,9 @@ def extract_datatype_properties(instance):
 
     Args:
         instance (Instance): The instance to extract properties from.
+
+    Globals:
+        onto (Ontology): The global ontology object is used to extract properties.
 
     Returns:
         dict: The datatype properties and their values.
@@ -213,6 +375,9 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
     Args:
         machine_id (str): The machine ID.
         kpi_id (str): The KPI ID.
+
+    Globals:
+        onto (Ontology): The global ontology object is used to check the pair.
 
     Returns:
         dict: The status of the pair. {Status: 0} and the info of the pair if the pair exists, {Status: -1} otherwise.
@@ -245,11 +410,24 @@ def is_valid(kpi_info):
     Args:
         kpi_info (dict): The KPI information.
 
+    Globals:
+        onto (Ontology): The global ontology object is used to check the KPIs.
+
     Returns:
         bool: True if there is at least 1 KPI with the same atomic_formula, False otherwise.
     """
 
     def is_equal(formula1, formula2):
+        """
+        Check if two formulas are equal.
+
+        Args:
+            formula1 (str): The first formula.
+            formula2 (str): The second formula.
+
+        Returns:
+            bool: True if the formulas are equal, False otherwise
+        """
         formula1 = sympy.simplify(sympy.sympify(formula1))
         formula2 = sympy.simplify(sympy.sympify(formula2))
 
@@ -270,7 +448,7 @@ def reduce_formula(formula):
     Reduce a formula to its simplest form (with only atomic KPIs).
 
     Args:
-        formula (str): The formula to reduce.
+        formula (str): The formula to reduce.    
     
     Returns:
         str: The reduced formula. None if a KPI in the formula is not found.
@@ -312,6 +490,7 @@ def add_kpi(kpi_info):
     Raises:
         ValueError: If the Hermit reasoner finds problems with the KPI.
     """
+
     with onto:
         try:
             atomic_formula = reduce_formula(kpi_info["formula"][0])
@@ -342,6 +521,9 @@ def add_kpi(kpi_info):
         return True
 
 
+
+
+
 # -------------------------------------------- API Endpoints --------------------------------------------
 
 @app.get("/kb/{kpi_id}/get_kpi") 
@@ -357,57 +539,33 @@ async def get_kpi_endpoint(kpi_id: str):
     """
 
     kpi_data = get_kpi(kpi_id)
-    if kpi_data["Status"] == -1:
-        return {"error": "KPI not found"}
-
     return kpi_data
 
 
 @app.get("/kb/retrieveKPIs")
 async def get_all_kpis_endpoint():
     """
-    Get KPI data by its ID via GET request.
-
-    Args:
-        kpi_id (str): The KPI ID.
+    Get all KPIs, grouped under the main classes of the ontology
 
     Returns:
-        dict: The KPI data.
+        dict: The KPIs and their information.
     """
 
-    kpi_data = get_all_kpis()
+    kpi_data = get_kpi_hierarchy()
     return kpi_data
 
 
 @app.get("/kb/retrieveMachines")
 async def get_all_machines_endpoint():
     """
-    Get all machines and their information via GET request.
+    Get all machines, grouped under the main classes of the ontology
 
     Returns:
         dict: The machines and their information.
     """
 
-    machines_data = get_all_machines()
+    machines_data = get_machine_hierarchy()
     return machines_data
-
-
-@app.get("/kb/{kpi_info}/insert")
-async def add_kpi_endpoint(kpi_info: dict):
-    """
-    Add a KPI to the ontology via GET request.
-
-    Args:
-        kpi_info (dict): The information of the KPI to add.
-
-    Returns:
-        dict: The result of the operation.
-    """
-
-    result = add_kpi(kpi_info)
-    if not result:
-        return {"error": "KPI not added"}
-    return {"message": "KPI added"}
 
 
 @app.get("/kb/{machine_id}/{kpi_id}/check")
@@ -420,36 +578,54 @@ async def is_pair_machine_kpi_exist_endpoint(machine_id: str, kpi_id: str):
         kpi_id (str): The KPI ID.
 
     Returns:
-        dict: The status of the pair.
+        dict: The status of the pair, and the info of the pair if the pair exists.
     """
 
     pair_status = is_pair_machine_kpi_exist(machine_id, kpi_id)
     return pair_status
 
 
-@app.get("/kb")
-def read_root():
-    return {"Hello": "World"}
+class KPI_Info(BaseModel):
+    id: str
+    description: str
+    formula: str
+    unit_measure: str
+    forecastable: bool
+    atomic: bool
+
+@app.post("/kb/insert")
+async def add_kpi_endpoint(kpi_info: KPI_Info):
+    """
+    Add a KPI to the ontology
+
+    Args:
+        kpi_info (KPI_Info): The information of the KPI to add.
+
+    Returns:
+        dict: The status of the operation.
+    """
+
+    result = add_kpi(kpi_info)
+    if not result:
+        return {"Status": -1, "message": "KPI not added"}
+    return {"Status": 0, "message": "KPI added"}
+
+
 
 
 
 # -------------------------------------------- Main --------------------------------------------
 
 if __name__ == "__main__":
-    '''try:
+    """try:
         tmp = get_kpi_hierarchy()
-        with open("kpi_hierarchy.json", "w") as file:
+        with open("kpis.json", "w") as file:
             json.dump(tmp, file, indent=4)
-        
-        tmp = get_all_kpis()
-        for kpi in tmp.items():
-            # print index
-            print(kpi[0])
   
     except Exception as error:
-        print(error)'''
+        print(error)"""
     
-    kpi_info = {
+    """info = {
         "id": ["kpi_prova"],
         "description": ["KPI description"],
         "formula": ["operative_time + power_sum"],
@@ -457,7 +633,7 @@ if __name__ == "__main__":
         "forecastable": [True],
         "atomic": [False],
     }
-
-    print(add_kpi(kpi_info))
+    kpi_info = KPI_Info(**info)
+    print(add_kpi(kpi_info))"""
     
-    #uvicorn.run(app, port=8000, host="0.0.0.0")
+    uvicorn.run(app, port=8000, host="0.0.0.0")
