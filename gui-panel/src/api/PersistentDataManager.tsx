@@ -34,7 +34,6 @@ export async function loadFromLocal<T>(filePath: string, decoder: (json: Record<
         if (!response.ok) {
             throw new Error(`Failed to load file: ${filePath}`);
         }
-
         // Parse the JSON content
         const jsonData: Record<string, any>[] = await response.json();
         // Decode the JSON into instances of T
@@ -76,7 +75,13 @@ class DataManager {
                 }
             );
 
-            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decode);
+            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
+                kpiToUnwrap => kpiToUnwrap[0] || [],
+                error => {
+                    console.error("Error loading kpis:", error);
+                    return [];
+                }
+            );
 
             this.dashboards = await loadFromLocal('/mockData/dashboards.json', DashboardFolder.decode).then(
                 dashboards => dashboards[0]?.children || [],

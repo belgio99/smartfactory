@@ -5,8 +5,9 @@ export class Machine {
     line?: string;
     site?: string;
     type: string;
+    description?: string;
 
-    constructor(machineId: string, type: string, site?: string, line?: string) {
+    constructor(machineId: string, type: string, description: string, site?: string, line?: string) {
         this.machineId = machineId;
         if (line) this.site = site;
         if (line) this.line = line;
@@ -17,24 +18,50 @@ export class Machine {
         return {
             machineId: instance.machineId,
             type: instance.type,
-            site: instance?.site,
-            productionLine: instance?.line,
+            description: instance.description,
         };
     }
 
     static decode(json: Record<string, any>): Machine {
         if (
-            typeof json.machineId !== "string" ||
-            (json.site && typeof json.site !== "string") ||
+            typeof json.id !== "string" ||
             typeof json.type !== "string" ||
-            (json.productionLine && typeof json.productionLine !== "string")
+            typeof json.description !== "string"
         ) {
             console.log(json);
             throw new Error("Invalid JSON structure for Machine");
         }
-        return new Machine(json.machineId, json.type, json.site, json.productionLine);
+        return new Machine(json.id, json.type, json.description);
     }
 
+    static decodeGroups(groups: Record<string, Record<string, any>>): Machine[] {
+        const machines: Machine[] = [];
+
+        Object.entries(groups).forEach(([groupName, machinesInGroup]) => {
+            Object.entries(machinesInGroup).forEach(([machineName, machineData]) => {
+                if (
+                    typeof machineData.id !== "string" ||
+                    typeof machineData.type !== "string" ||
+                    typeof machineData.description !== "string"
+                ) {
+                    throw new Error(`Invalid machine structure in group ${groupName}, machine ${machineName}`);
+                }
+
+                // Reformat machine name with regex
+                // Split by Machine, for example "MachineA" -> "Machine A"
+                const machineType: string = machineData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+                // Add machine object to the result array
+                machines.push({
+                    machineId: machineData.id,
+                    type: machineType, // Type is directly provided in the new format
+                    description: machineData.description
+                });
+            });
+        });
+
+        return machines;
+    }
 }
 
 
@@ -105,7 +132,6 @@ export class KPI {
                 // metric type reformatted to have the "KPI" suffix divided by a space
                 // EnergyKPI -> Energy KPI
                 metricData.type = metricData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
-
 
 
                 // Create a KPI instance for each metric
