@@ -3861,11 +3861,11 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
-        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
-        <sa-ontology:atomic_formula>oee=(working_time_sum/(working_time_sum+idle_time_sum))*(cycles_sum/working_time_sum)*(good_cycles_sum/cycles_sum)</sa-ontology:atomic_formula>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
+        <sa-ontology:atomic_formula>(working_time_sum/(working_time_sum+idle_time_sum))*(cycles_sum/working_time_sum)*(good_cycles_sum/cycles_sum)</sa-ontology:atomic_formula>
         <sa-ontology:description>Plant&apos;s productivity level calculated as a combination of three factors that represent how efficient the plant is during the manufacturing process.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
-        <sa-ontology:formula>oee=availability*performance*quality</sa-ontology:formula>
+        <sa-ontology:formula>availability*performance*quality</sa-ontology:formula>
         <sa-ontology:id>oee</sa-ontology:id>
         <sa-ontology:unit_measure>%</sa-ontology:unit_measure>
     </owl:NamedIndividual>
