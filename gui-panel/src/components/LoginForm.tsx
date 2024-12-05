@@ -7,7 +7,7 @@ import { login } from './../api/ApiService';
 import { hashPassword } from '../api/security/securityService';
 
 interface LoginFormProps {
-  onLogin: (username: string, token: string, role: string, site: string) => void;  
+  onLogin: (userId: string, username: string, token: string, role: string, site: string) => void;  
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
@@ -38,7 +38,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         if(loginResponse.access_token){
                 // Call the onLogin function
                 // Pass the user information to the parent component
-                onLogin(loginResponse.username,      // Username
+                onLogin(loginResponse.userId,
+                        loginResponse.username,      // Username
                         loginResponse.access_token,  // Token
                         loginResponse.role,          // Role
                         loginResponse.site);         // Site
