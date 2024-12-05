@@ -24,13 +24,18 @@ onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 def get_kpi(kpi_id):
     """
-    Get KPI data by its ID.
-    
+    Retrieve KPI data by its ID.
+
+    This function queries an ontology to retrieve KPI data using the given KPI ID.
+    If no data is found, it returns a default response with "Status" set to -1.
+
     Args:
-        kpi_id (str): The KPI ID.
+        kpi_id (str): The unique identifier of the machine.
 
     Returns:
-        dict: The KPI data.
+        dict: A dictionary containing the KPI data. The structure includes:
+            - "Status" (int): 0 if successful, -1 if no machine data is found.
+            - Additional keys corresponding to the KPI's data properties.
     """
 
     query = f'*{kpi_id}'
@@ -52,13 +57,18 @@ def get_kpi(kpi_id):
 
 def get_machine(machine_id):
     """
-    Get machine data by its ID.
-    
+    Retrieve machine data by its ID.
+
+    This function queries an ontology to retrieve machine data using the given machine ID.
+    If no data is found, it returns a default response with "Status" set to -1.
+
     Args:
-        machine_id (str): The machine ID.
+        machine_id (str): The unique identifier of the machine.
 
     Returns:
-        dict: The machine data.
+        dict: A dictionary containing the machine data. The structure includes:
+            - "Status" (int): 0 if successful, -1 if no machine data is found.
+            - Additional keys corresponding to the machine's data properties.
     """
 
     query = f'*{machine_id}'
@@ -230,13 +240,13 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
 
 def is_valid(kpi_info):
     """
-    Check if the KPI information is valid.
+    Check if the KPI has the same formula of other KPIs.
 
     Args:
         kpi_info (dict): The KPI information.
 
     Returns:
-        bool: True if the KPI information is valid, False otherwise.
+        bool: True if there is at least 1 KPI with the same atomic_formula, False otherwise.
     """
 
     def is_equal(formula1, formula2):
@@ -256,7 +266,7 @@ def is_valid(kpi_info):
 
 
 # TODO: eliminare perchè non serve più
-def rdf_to_txt(onto, output_file):
+'''def rdf_to_txt(onto, output_file):
     """
     Convert an ontology to a formatted TXT file.
 
@@ -309,18 +319,27 @@ def rdf_to_txt(onto, output_file):
                         file.write(f"  {prop.name}: {value.name}\n")
                     else: 
                         file.write(f"  {prop.name}: {value}\n")
-            file.write("\n")
+            file.write("\n")'''
 
 
 def add_kpi(kpi_info):
     """
-    Add a new KPI to the ontology.
+    Add a KPI to the ontology.
+
+    This function modifies the global ontology state by adding a new KPI (Key Performance Indicator) 
+    to the relevant entities.
 
     Args:
-        kpi_info (dict): The KPI information.
+        kpi_info (dict): The information of the KPI to add.
+
+    Globals:
+        onto (Ontology): The global ontology object is modified to include the new KPI.
 
     Returns:
-        bool: True if the KPI was added successfully, False otherwise.
+        bool: True if the KPI was successfully added, False otherwise.
+
+    Raises:
+        ValueError: If the input arguments are invalid.
     """
 
     if not is_valid(kpi_info):
