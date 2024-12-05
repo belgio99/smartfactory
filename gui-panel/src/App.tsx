@@ -79,6 +79,7 @@ const App = () => {
             console.log("Data initialization completed.");
             console.log("KPI List:", dataManager.getKpiList());
             console.log("Machine List:", dataManager.getMachineList());
+            console.log("Dashboards:", dataManager.getDashboards());
         } catch (error) {
             console.error("Error during initialization:", error);
         } finally {
@@ -129,24 +130,13 @@ const App = () => {
     return (
         <Router>
             <div className="flex flex-col justify-center text-center min-h-screen bg-gray-200 font-bold">
-                {isAuthenticated ? (
-                    <Routes>
-                        {/* Rotta principale per la dashboard */}
-                        <Route
-                            path="/*"
-                            element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}/>}
-                        />
-                        {/* Reindirizza qualsiasi rotta non valida */}
-                        <Route path="*" element={<Navigate to="/"/>}/>
-                    </Routes>
-                ) : (
-                    <Routes>
-                        {/* Rotta per il login */}
-                        <Route path="/" element={<LoginForm onLogin={handleLogin}/>}/>
-                        {/* Reindirizza qualsiasi rotta non valida */}
-                        <Route path="*" element={<Navigate to="/"/>}/>
-                    </Routes>
-                )}
+                <Routes>
+                    <Route
+                        path="/*"
+                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site} />}
+                    />
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
             </div>
         </Router>
     );

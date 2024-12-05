@@ -126,6 +126,7 @@ export class KPI {
                     .replace(/_max/g, " (Max)")
                     .replace(/_sum/g, " (Sum)")
                     .replace(/_med/g, " (Med)")
+                    .replace(/_std/g, " (Std)")
                     .replace(/_/g, " ")
                     .replace(/\b\w/g, (char) => char.toUpperCase());
 

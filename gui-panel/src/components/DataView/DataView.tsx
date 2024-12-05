@@ -14,11 +14,18 @@ const DataView: React.FC = () => {
     const [graphType, setGraphType] = useState('pie');
     const [filters, setFilters] = useState<Filter>(new Filter('All', []));
     const [chartData, setChartData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
     // Function to fetch chart data with applied filters
 
     const fetchChartData = async () => {
-        const data = await simulateChartData(kpi, timeFrame, graphType, filters);
-        setChartData(data);
+        try {
+            setLoading(true);
+            const data = await simulateChartData(kpi, timeFrame, graphType, filters);
+            setChartData(data);
+        } catch (e) {
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -34,12 +41,16 @@ const DataView: React.FC = () => {
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={fetchChartData} // Fetch chart data when "Generate" button is clicked
+                dataManager={dataManager}
             />
 
             {/* Chart Section */}
-            <div className={` shadow-md p-5 bg-white flex w-auto`}>
-                <Chart data={chartData} graphType={graphType} kpi={kpi} timeUnit={timeFrame.aggregation}/>
-            </div>
+
+            {loading ? <p>Loading...</p> :
+                <div className={` shadow-md p-5 bg-white flex w-auto`}>
+                    <Chart data={chartData} graphType={graphType} kpi={kpi} timeUnit={timeFrame.aggregation}/>
+                </div>
+            }
         </div>
     );
 };
