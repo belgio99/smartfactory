@@ -21,6 +21,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   zookeeper:
     container_name: zookeeper
@@ -33,6 +34,7 @@ services:
       #- ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
     profiles:
       - database
+      - not-db-init
 
   coordinator:
     image: apache/druid:31.0.0
@@ -53,6 +55,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   broker:
     image: apache/druid:31.0.0
@@ -72,6 +75,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   historical:
     image: apache/druid:31.0.0
@@ -92,6 +96,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -114,6 +119,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   router:
     image: apache/druid:31.0.0
@@ -133,6 +139,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://router:8888/status/health"]
       interval: 10s
@@ -152,6 +159,7 @@ services:
       - db:/var/lib/postgresql/data
     profiles:
       - database
+      - not-db-init
 
   minio:
     container_name: minio
@@ -167,6 +175,7 @@ services:
     command: minio server /data
     profiles:
       - database
+      - not-db-init
 
   db-init:
     image: ghcr.io/belgio99/smartfactory/db-init:latest
@@ -195,6 +204,7 @@ services:
       - "10010:8000"
     profiles:
       - kb
+      - not-db-init
     
   data-processing:
     build:
@@ -206,6 +216,7 @@ services:
       - "10030:8000"
     profiles:
       - data-processing
+      - not-db-init
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
@@ -244,6 +255,7 @@ services:
       - "10050:8000"
     profiles:
       - rag
+      - not-db-init
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
@@ -255,6 +267,7 @@ services:
       - "10060:8000"
     profiles:
       - gui-panel
+      - not-db-init
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
@@ -266,6 +279,7 @@ services:
       - "10080:8000"
     profiles:
       - kpi-engine
+      - not-db-init
     env_file:
       - kpi-engine/.env
     depends_on:
