@@ -31,7 +31,6 @@ services:
   postgres:
     container_name: postgres
     image: postgres:latest
-    platform: linux/amd64
     volumes:
       - metadata_data:/var/lib/postgresql/data
 #   environment:
@@ -164,7 +163,6 @@ services:
     env_file:
       - database/.env
     image: postgres:latest
-    platform: linux/amd64
     ports:
       - "15432:5432"
 #    environment:
@@ -189,7 +187,6 @@ services:
       - database
 
   db-init:
-    platform: linux/amd64
     build:
       context: ./database
       dockerfile: Dockerfile
@@ -209,7 +206,6 @@ services:
       context: ./kb
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
-    platform: linux/amd64
     ports: 
       - "10010:8000"
     profiles:
@@ -220,7 +216,6 @@ services:
       context: ./data-processing
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
-    platform: linux/amd64
     ports: 
       - "10030:8000"
     profiles:
@@ -231,7 +226,6 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
-    platform: linux/amd64
     ports: 
       - "10040:8000"
     env_file:
@@ -261,7 +255,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - rag/.env
-    platform: linux/amd64
     ports: 
       - "10050:8000"
     profiles:
@@ -272,7 +265,6 @@ services:
     build:
       context: ./gui-panel
       dockerfile: Dockerfile
-    platform: linux/amd64
     ports: 
       - "10060:8000"
     profiles:
@@ -283,7 +275,6 @@ services:
     build:
       context: ./kpi-engine
       dockerfile: Dockerfile
-    platform: linux/amd64
     ports: 
       - "10080:8000"
     profiles:
