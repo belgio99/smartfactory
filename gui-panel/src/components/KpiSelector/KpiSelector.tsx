@@ -19,11 +19,11 @@ const KpiSelector: React.FC<{
     filters: Filter;
     setFilters: (filters: Filter) => void;
     onGenerate: () => void;
-}> = ({kpi, setKpi, timeFrame, setTimeFrame, graphType, setGraphType, filters, setFilters, onGenerate}) => {
+    dataManager: PersistentDataManager;
+}> = ({kpi, setKpi, timeFrame, setTimeFrame, graphType, setGraphType, filters, setFilters, onGenerate, dataManager}) => {
     useEffect(() => {
         onGenerate();
     }, [kpi, timeFrame, graphType, filters]); // Dependencies to listen for changes
-    const dataManager = PersistentDataManager.getInstance();
     return (
         <section className="p-6 mx-auto space-y-10 bg-white shadow-md rounded-lg">
             {/* KPI, Time Frame and Graph Type Selectors in one line */}
