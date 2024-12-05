@@ -127,7 +127,7 @@ const SmartFactory: React.FC<UserProps> = ({username, token, role, site, userAva
             </main>
 
             {/* Chat Assistant */}
-            <ChatAssistant/>
+            <ChatAssistant username={username} />
         </div>
     );
 };
