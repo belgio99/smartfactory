@@ -10,24 +10,17 @@ import {
     Line,
     LineChart,
     Pie,
-    PieChart, ReferenceLine,
-    ResponsiveContainer, Scatter, ScatterChart,
+    PieChart,
+    ResponsiveContainer,
+    Scatter,
+    ScatterChart,
     Tooltip,
     XAxis,
     YAxis,
 } from 'recharts';
 import {KPI} from "../../api/DataStructures";
 import Trend from "./Trend";
-
-const getColor = (value: number, min: number, max: number) => {
-    // Define a simple color gradient from blue to red based on value
-    const ratio = (value - min) / (max - min);
-    const r = Math.round(255 * ratio);
-    const g = Math.round(255 * (1 - ratio));
-    const b = 255 - r;
-
-    return `rgb(${r},${g},${b})`;
-};
+import {formatTimeFrame, getColor, COLORS} from "../../utils/chartUtil";
 
 interface ChartProps {
     data: any[],
@@ -36,29 +29,6 @@ interface ChartProps {
     timeUnit?: string
     timeThreshold?: boolean
 }
-
-//various colors for the charts
-const COLORS = ['#8884d8', '#83a6ed', '#8dd1e1', '#82ca9d',
-    '#a4de6c', '#d0ed57', '#ffc658', '#ffc658',
-    '#ff9e58', '#ff6058', '#ff58b2', 'rgba(193,8,253,0.87)'];
-
-// Helper function to format date as 'HH:mm' for hours, 'DD' for days, 'MMM' for months
-const formatTimeFrame = (timestamp: string, timeUnit?: string): string => {
-    const date = new Date(timestamp);
-
-    switch (timeUnit) {
-        case 'hour':
-            return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`; // HH:mm
-        case 'day':
-            return `${String(date.getDate()).padStart(2, '0')}`; // DD (day of the month plus month name)
-        case 'week':
-            return `${date.toLocaleString('default', {month: 'short'})} ${date.getDate()}`; // MMM DD
-        case 'month':
-            return `${date.toLocaleString('default', {month: 'short'})}`; // MMM (Month abbreviation)
-        default:
-            return date.toLocaleString(); // fallback
-    }
-};
 
 const DrillDownTooltip = ({active, payload, label, kpi}: any) => {
     if (active && payload && payload.length) {
@@ -147,7 +117,7 @@ const LineTooltip = ({active, payload, label, kpi}: any) => {
     return null;
 };
 
-const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day', timeThreshold}) => {
+const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) => {
     if (!data || data.length === 0) {
         return (
             <p style={{textAlign: 'center', marginTop: '20px', color: '#555'}}>
@@ -194,8 +164,6 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day', ti
                         />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<LineTooltip kpi={kpi}/>} trigger={"hover"}/>
-                        {timeThreshold && data.length > 0 && <ReferenceLine x={data[Math.floor(data.length / 2)].timestamp} stroke="red"
-                                                         label="Today"/>}
                         <Legend/>
                         {Object.keys(data[0] || {})
                             .filter((key) => key !== 'timestamp') // Exclude the timestamp key

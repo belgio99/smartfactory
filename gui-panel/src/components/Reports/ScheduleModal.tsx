@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
-import FilterOptions from "../KpiSelector/FilterOptions";
+import FilterOptions from "../Selectors/FilterOptions";
 import PersistentDataManager from "../../api/PersistentDataManager";
 import {KPI} from "../../api/DataStructures";
 
