@@ -29,7 +29,7 @@ headers = {
 }
 druid_url = "http://router:8888/druid/v2/sql"
 query_body = {
-        "query": "SELECT * \"FROM timeseries\""
+        "query": "SELECT * FROM \"timeseries\""
     }
 try:
     response = requests.post(druid_url, headers=headers, json=query_body)
@@ -39,6 +39,7 @@ except requests.exceptions.RequestException as e:
     print(f"An error occurred: {e}")
     exit()
 df = pd.DataFrame.from_dict(df, orient='columns')
+df.rename(columns={"__time": "time"}, inplace=True)
 
 app = FastAPI()
 
@@ -65,8 +66,7 @@ async def read_root():
     return {"message": "Welcome to the KPI Calculation Engine!"}
 
 @app.post("/kpi/calculate")
-# api_key: str = Depends(get_verify_api_key(["gui", "data"]))
-async def calculate(request: List[KPIRequest]): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify_api_key(["gui", "data"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     ''' print(f"Received request: {request.json()}") '''
 
     # A list of all static KPI method calculation names is compiled for later use
@@ -111,4 +111,4 @@ async def calculate(request: List[KPIRequest]): # to add or modify the services 
     return response
 
 if __name__ == "__main__":
-    uvicorn.run(app, host=os.getenv("KB_HOST"), port=int(os.getenv("KB_PORT", 8000)))
+    uvicorn.run(app, host=os.getenv("KB_HOST"), port=int(os.getenv("KB_PORT")))
