@@ -106,7 +106,7 @@ class forecastExplainer:
                     prediction = self.model(input_tensor).cpu().numpy().flatten()
                     predictions.append(prediction[0])
         else:
-            # For other models, we cannot estimate uncertainty meaningfully
+            # For other models, uncertainty estimation might not be applicable
             prediction = self.predict(input_data)
             predictions = np.array([prediction[0]] * n_samples)
 
@@ -168,6 +168,36 @@ class forecastExplainer:
             self.plot_lime_explanation(exp)
 
         return exp
+
+    def predict_and_explain(
+        self,
+        input_data: Union[np.ndarray, torch.Tensor],
+        n_samples: int = 100,
+        confidence: float = 0.95,
+        num_features: int = 10,
+        verbose: bool = False
+    ):
+        """
+        Combines prediction with uncertainty estimation and explanation.
+
+        Parameters:
+        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length, input_size).
+        - n_samples (int): Number of forward passes for uncertainty estimation.
+        - confidence (float): Confidence level for the interval.
+        - num_features (int): Number of features to include in the explanation.
+        - verbose (bool): If True, displays the LIME explanation plot.
+
+        Returns:
+        - mean_pred (float): Mean prediction.
+        - lower_bound (float): Lower bound of the confidence interval.
+        - upper_bound (float): Upper bound of the confidence interval.
+        - exp: LIME explanation object.
+        """
+        mean_pred, lower_bound, upper_bound = self.predict_with_uncertainty(
+            input_data, n_samples=n_samples, confidence=confidence)
+        exp = self.explain_prediction(
+            input_data, num_features=num_features, verbose=verbose)
+        return mean_pred, lower_bound, upper_bound, exp
 
     @staticmethod
     def plot_lime_explanation(exp, title: str = "LIME Explanation"):
@@ -269,15 +299,14 @@ def main():
     x_test = np.array([np.sin(freq * t + phase) for freq, phase in zip(freqs, phases)]).T
     x_test += np.random.normal(0, 0.1, x_test.shape)
 
-    # Make prediction with confidence interval
-    mean_pred, lower_bound, upper_bound = explainer.predict_with_uncertainty(x_test, n_samples=100, confidence=0.95)
+    # Use the combined method to get prediction, confidence interval, and explanation
+    mean_pred, lower_bound, upper_bound, exp = explainer.predict_and_explain(
+        x_test, n_samples=100, confidence=0.95, num_features=10, verbose=True)
+
+    # Print the results
     print(f"Prediction: {mean_pred:.4f}")
     print(f"95% Confidence Interval: [{lower_bound:.4f}, {upper_bound:.4f}]")
 
-    # Explain the prediction
-    exp = explainer.explain_prediction(x_test, verbose=True)
-
-    # Print the explanation
     print("\nExplanation:")
     for feature, importance in exp.as_list():
         print(f"{feature}: {importance:.4f}")
