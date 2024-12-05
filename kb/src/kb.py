@@ -18,7 +18,7 @@ app.add_middleware(
 
 
 ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
-TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
+TMP_ONTOLOGY_PATH = "../Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 
@@ -265,63 +265,6 @@ def is_valid(kpi_info):
     return True
 
 
-# TODO: eliminare perchè non serve più
-'''def rdf_to_txt(onto, output_file):
-    """
-    Convert an ontology to a formatted TXT file.
-
-    Args:
-        onto (Ontology): The ontology to convert.
-        output_file (str): The path of the output TXT file.
-    """
-
-    def write_class_hierarchy(file, cls, indent=0):
-        """
-        Funzione ricorsiva per scrivere la gerarchia delle classi, comprese le sottoclassi.
-        """
-        file.write("  " * indent + f"Class: {cls.name}\n")
-        
-        for subclass in cls.subclasses():
-            write_class_hierarchy(file, subclass, indent + 1)
-    
-    with open(output_file, "w", encoding="utf-8") as file:
-        file.write("Classes:\n")
-        for cls in onto.classes():
-            if cls != Thing:
-                write_class_hierarchy(file, cls)
-
-        file.write("\nProperties:\n")
-        for prop in onto.properties():
-            file.write(f"Property: {prop.name}\n")
-            
-            if isinstance(prop, ObjectPropertyClass):
-                domain = prop.domain
-                range_ = prop.range
-                file.write(f"  Type: ObjectProperty\n")
-                file.write(f"  Domain: {domain[0].name}\n")
-                file.write(f"  Range: {range_[0].name}\n")
-            elif isinstance(prop, DataPropertyClass):
-                data_type = prop.range
-                file.write(f"  Type: DataProperty\n")
-                file.write(f"  Data Type: {data_type[0].__name__}\n")
-            elif isinstance(prop, AnnotationPropertyClass):
-                file.write("  Type: AnnotationProperty\n")
-
-        file.write("\nIndividuals:\n")
-        for individual in onto.individuals():
-            file.write(f"Individual: {individual.name}\n")
-            
-            for prop in individual.get_properties():
-                values = prop[individual]
-                for value in values:
-                   
-                    if isinstance(value, Thing): 
-                        file.write(f"  {prop.name}: {value.name}\n")
-                    else: 
-                        file.write(f"  {prop.name}: {value}\n")
-            file.write("\n")'''
-
-
 def reduce_formula(formula):
     '''
     Reduce a formula to its simplest form (with only atomic KPIs).
@@ -367,68 +310,36 @@ def add_kpi(kpi_info):
         bool: True if the KPI was successfully added, False otherwise.
 
     Raises:
-        ValueError: If the input arguments are invalid.
+        ValueError: If the Hermit reasoner finds problems with the KPI.
     """
-
-    if not is_valid(kpi_info):
-        return False
-    
-    atomic_formula = reduce_formula(kpi_info["formula"])
-    
-    if atomic_formula is None:
-        return False
-    
-    custom_class = onto.CustomKPItmp
-    new_kpi = custom_class(kpi_info['id'][0], id=kpi_info['id'], description=kpi_info['description'], 
-                           atomic_formula=atomic_formula, formula=kpi_info['formula'], 
-                           unit_measure=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'])
-    
     with onto:
         try:
+            atomic_formula = reduce_formula(kpi_info["formula"][0])
+            kpi_info["atomic_formula"] = [atomic_formula]
+
+            if not is_valid(kpi_info):
+                return False
+            
+            if atomic_formula is None:
+                return False
+            
+            custom_class = onto.CustomKPItmp
+            machines = onto.Machine.instances()
+            new_kpi = custom_class(kpi_info['id'][0], id=kpi_info['id'], description=kpi_info['description'], 
+                                atomic_formula=kpi_info['atomic_formula'], formula=kpi_info['formula'], 
+                                unit_measure=kpi_info['unit_measure'], forecastable=kpi_info['forecastable'], atomic=kpi_info['atomic'], isProducedBy=machines)
+            
+            for machine in onto.Machine.instances():  # Iterates over all instances of 'Machine'
+                # Here you might want to apply a condition to select which machines should produce this KPI
+                machine.producesKPI.append(new_kpi)
+
             sync_reasoner()
             onto.save(file = TMP_ONTOLOGY_PATH, format = "rdfxml")
         except Exception as error:
+            print(error)
             return False
-    
-    return True
-
-
-# TODO: E' da spostare??
-def charts_txt(input_file):
-    """
-    Convert a JSON file with chart descriptions to a formatted TXT file.
-
-    Args:
-        input_file (str): Il percorso del file JSON di input.
-        output_file (str): Il percorso del file TXT di output.
-
-    Returns:
-    """
-    
-    # Load the JSON file
-    with open(input_file, 'r', encoding='utf-8') as file:
-        data = json.load(file)
-    
-    """# Convert the JSON to the required format and write to the output file
-    with open(output_file, 'w', encoding='utf-8') as output:
-        for entry in data:
-            output.write(f"chart: {entry['chart']}\n")
-            output.write(f"description: {entry['description']}\n\n")
-
-    print(f"Conversion completed")"""
-
-    # Convert the JSON to the required format and return it as a string
-    result = ""
-    for entry in data:
-        result += f"chart: {entry['chart']}\n"
-        result += f"description: {entry['description']}\n\n"
-
-    print(f"Conversion completed")
-    
-    return result
-
-
-
+        
+        return True
 
 
 # -------------------------------------------- API Endpoints --------------------------------------------
@@ -494,8 +405,15 @@ if __name__ == "__main__":
     except Exception as error:
         print(error)'''
     
-    formula = 'machine_utilization_rate + oee'
+    kpi_info = {
+        "id": ["kpi_prova"],
+        "description": ["KPI description"],
+        "formula": ["operative_time + power_sum"],
+        "unit_measure": ["unit"],
+        "forecastable": [True],
+        "atomic": [False],
+    }
 
-    print(reduce_formula(formula))
+    print(add_kpi(kpi_info))
     
     #uvicorn.run(app, port=8000, host="0.0.0.0")
