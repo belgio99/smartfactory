@@ -7,7 +7,7 @@ import { login } from './../api/ApiService';
 import { hashPassword } from '../api/security/securityService';
 
 interface LoginFormProps {
-  onLogin: (username: string, token: string, role: string, site: string) => void;  
+  onLogin: (userId: string, username: string, token: string, role: string, site: string) => void;  
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
@@ -30,24 +30,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       const isEmail = username.includes('@'); // Determina se l'input è un'email
       // Call the login API
       // Pass the username, isEmail and hashed password
-      const loginResponse = await login(username, isEmail, await hashPassword(password));
+      //const loginResponse = await login(username, isEmail, await hashPassword(password));
+      const loginResponse = await login(username, isEmail, password);
+      console.log(loginResponse);
       // If the login is successful, call the onLogin function
-      if (loginResponse.outcome) {
-        if(loginResponse.userInfo != null){
-          if (loginResponse.userInfo.username && loginResponse.userInfo.access_token && 
-              loginResponse.userInfo.role && loginResponse.userInfo.site) {
+      if (loginResponse) {
+        if(loginResponse.access_token){
                 // Call the onLogin function
                 // Pass the user information to the parent component
-                onLogin(loginResponse.userInfo.username,      // Username
-                        loginResponse.userInfo.access_token,  // Token
-                        loginResponse.userInfo.role,          // Role
-                        loginResponse.userInfo.site);         // Site
-          } else {
-            setError('User information is incomplete.');
-          }
+                onLogin(loginResponse.userId,
+                        loginResponse.username,      // Username
+                        loginResponse.access_token,  // Token
+                        loginResponse.role,          // Role
+                        loginResponse.site);         // Site
+        } else {
+          setError('Invalid credentials!');
         }
       } else {
-        setError('Invalid credentials');
+        setError('Invalid credentials!');
       }
     } catch (err) {
       setError('Error during login. Please try again.');

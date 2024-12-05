@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import classNames from 'classnames';
 import { useNavigate } from 'react-router-dom';
+import { interactWithAgent } from '../../api/ApiService';
 
 export interface Message {
   id: number;
@@ -12,11 +13,16 @@ export interface Message {
   };
 }
 
-const ChatAssistant: React.FC = () => {
+export interface ChatAssistantProps {
+  username: string;
+}
+
+const ChatAssistant: React.FC<ChatAssistantProps> = ({ username }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const navigate = useNavigate();
+  const [isTyping, setIsTyping] = useState(false);
 
   const toggleChat = () => setIsChatOpen((prev) => !prev);
 
@@ -26,19 +32,35 @@ const ChatAssistant: React.FC = () => {
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
-
+    //Build message to send on RAG
     const userMessage: Message = { id: messages.length + 1, sender: 'user', content: newMessage };
+    // 
     setMessages((prev) => [...prev, userMessage]);
     setNewMessage('');
+    // Send message to assistant
+    setIsTyping(true);
+    interactWithAgent(userMessage.content).then((response) => {
+      const assistantMessage: Message = {
+      id: messages.length + 2,
+      sender: 'assistant',
+      content: response.textResponse,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setIsTyping(false);
+    }).catch((error) => {
+      console.error('Too fast...', error);
+      setIsTyping(false);
+    });
+  
 
-    setTimeout(() => {
+    /*setTimeout(() => {
       const assistantMessage: Message = {
         id: messages.length + 2,
         sender: 'assistant',
         content: `This is a placeholder response for: "${newMessage}"`,
       };
       setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
+    }, 1000);*/
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
