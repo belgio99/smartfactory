@@ -66,7 +66,7 @@ async def read_root():
     return {"message": "Welcome to the KPI Calculation Engine!"}
 
 @app.post("/kpi/calculate")
-async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify_api_key(["gui", "data"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify_api_key(["ai-agent", "api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     ''' print(f"Received request: {request.json()}") '''
 
     # A list of all static KPI method calculation names is compiled for later use
