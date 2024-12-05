@@ -17,7 +17,7 @@ app.add_middleware(
 )
 
 
-ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
+ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
 TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
@@ -345,6 +345,7 @@ def reduce_formula(formula):
             return None
         
         if kpi["atomic"] == False: # if the KPI is not atomic substitute it with its formula
+            print(kpi["atomic_formula"])
             formula = formula.subs(symbol, sympy.sympify(kpi["atomic_formula"]))
     
     return str(formula)
@@ -494,7 +495,7 @@ if __name__ == "__main__":
     except Exception as error:
         print(error)'''
     
-    formula = 'operative_time + cycle_sum'
+    formula = 'machine_utilization_rate + oee'
 
     print(reduce_formula(formula))
     
