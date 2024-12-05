@@ -5,8 +5,14 @@ import Home from "./components/Home";
 import LoginForm from "./components/LoginForm";
 
 const App = () => {
+<<<<<<< HEAD
     // User authentication state
     const [isAuthenticated, setIsAuthenticated] = useState(true);
+=======
+    // User authentication state ---  set to true for development purposes
+    const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
+    const [userId, setUserId] = useState('');
+>>>>>>> ebe76ee (Use new format for machine data structures)
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('');
@@ -72,7 +78,7 @@ const App = () => {
     }, []); // Empty dependency array means this will run only once on mount
 
     // Show loading screen while data is being initialized or user is not authenticated
-    if (loading || !isAuthenticated) {
+    if (loading && !isAuthenticated) {
         return (
             <div className="loading-screen">
                 <h1>Loading...</h1>
