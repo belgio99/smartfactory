@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Home from './components/Home';
-import LoginForm from './components/LoginForm';
 import DataManager from "./api/PersistentDataManager";
+import Home from "./components/Home";
+import LoginForm from "./components/LoginForm";
 
 const App = () => {
     // User authentication state
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [username, setUsername] = useState('');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('');
     const [site, setSite] = useState('');
+
+    // Loading state to track if data is still being initialized
+    const [loading, setLoading] = useState(true);
 
     // Method to handle the login event
     const handleLogin = (username: string, token: string, role: string, site: string) => {
@@ -28,31 +31,40 @@ const App = () => {
         setToken(null);
         setRole('');
         setSite('');
-    }
+    };
 
+    // Initialize data and set loading to false once done
     async function initializeData() {
         try {
             const dataManager = DataManager.getInstance();
             await dataManager.initialize();
+            console.log("Data initialization completed.");
+            console.log("KPI List:", dataManager.getKpiList());
+            console.log("Machine List:", dataManager.getMachineList());
         } catch (error) {
             console.error("Error during initialization:", error);
+        } finally {
+            setLoading(false);  // Ensure loading is false once data initialization is done
         }
     }
 
-    initializeData().then(
-        () => {
-            console.log("Data initialization completed.");
-            // log the kpi list and the machine list
-            const dataManager = DataManager.getInstance();
-            console.log("KPI List:", dataManager.getKpiList());
-            console.log("Machine List:", dataManager.getMachineList());
-        },
-        error => console.error("Error during data initialization:", error)
-    );
+    // Call initializeData on component mount
+    useEffect(() => {
+        initializeData();
+    }, []); // Empty dependency array means this will run only once on mount
+
+    // Show loading screen while data is being initialized or user is not authenticated
+    if (loading || !isAuthenticated) {
+        return (
+            <div className="loading-screen">
+                <h1>Loading...</h1>
+            </div>
+        );
+    }
 
     return (
         <Router>
-            <div className=" flex flex-col justify-center text-center min-h-screen bg-gray-200 font-bold">
+            <div className="flex flex-col justify-center text-center min-h-screen bg-gray-200 font-bold">
                 {isAuthenticated ? (
                     <Routes>
                         {/* Rotta principale per la dashboard */}
