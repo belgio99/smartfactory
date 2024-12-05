@@ -1,39 +1,56 @@
 import React, { useState } from 'react';
-import { login } from './../api/ApiService';
 import styles from '../styles/LoginForm.module.css';
+import { userInfo } from 'os';
+// API service
+import { login } from './../api/ApiService';
+// Security service
+import { hashPassword } from '../api/security/securityService';
 
 interface LoginFormProps {
-
-    onLogin: (username: string, token: string) => void;
-  
-  }
+  onLogin: (username: string, token: string, role: string, site: string) => void;  
+}
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
+  const [site, setSite] = useState('');
+  const [token, setToken] = useState('');
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      //let data = await secureLogin(username, password); // Chiamata all'API
-      //console.log('Risultato API:', data);
-      const data = {
-        success: true,
-        user: {
-          username: 'test',
-          token: '12345'
+      // Check if is an email
+      const isEmail = username.includes('@'); // Determina se l'input è un'email
+      // Call the login API
+      // Pass the username, isEmail and hashed password
+      const loginResponse = await login(username, isEmail, await hashPassword(password));
+      // If the login is successful, call the onLogin function
+      if (loginResponse.outcome) {
+        if(loginResponse.userInfo != null){
+          if (loginResponse.userInfo.username && loginResponse.userInfo.access_token && 
+              loginResponse.userInfo.role && loginResponse.userInfo.site) {
+                // Call the onLogin function
+                // Pass the user information to the parent component
+                onLogin(loginResponse.userInfo.username,      // Username
+                        loginResponse.userInfo.access_token,  // Token
+                        loginResponse.userInfo.role,          // Role
+                        loginResponse.userInfo.site);         // Site
+          } else {
+            setError('User information is incomplete.');
+          }
         }
-      };
-      if (data.success) {
-        onLogin(username, password); // Notifica il login riuscito
       } else {
-        alert('Credenziali non valide!');
+        setError('Invalid credentials');
       }
-    } catch (error) {
-      alert('Errore durante il login. Riprova.');
+    } catch (err) {
+      setError('Error during login. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -43,6 +60,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
     <div className={styles.loginContainer}>
       <form onSubmit={handleSubmit} className={styles.loginForm}>
         <h2 className={styles.title}>Login</h2>
+        {error && <div className={styles.errorMessage}>{error}</div>}
         <div className={styles.inputGroup}>
           <label>Username:</label>
           <input
