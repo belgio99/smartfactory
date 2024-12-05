@@ -55,7 +55,7 @@ class PromptManager:
         :param template_string: The string prompt to convert.
         """
         # Trova tutti i segnaposto nella stringa (es. {USER_QUERY}, {_CONTEXT_})
-        input_variables = re.findall(r"{(.*?)}", template_string)
+        input_variables = re.findall(r"{(_\w+?_)}", template_string)
 
         # Crea l'oggetto PromptTemplate
         prompt_template = PromptTemplate(
