@@ -1,49 +1,50 @@
-import React from 'react';
-import Select  from 'react-select';
-import { KPI } from "../../api/DataStructures";
+import React from "react";
+import {Machine} from "../../api/DataStructures";
+import Select from "react-select";
+const chevronDownIcon = "https://cdn.builder.io/api/v1/image/assets/TEMP/ee28ffec5ddc59d7906d5950c4861da7e441f40e4f9a912ad0c4390bc360c6bf?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130";
 
-interface KPISelectProps {
+interface MachineSelectProps {
     label: string;
     description?: string; // General description unrelated to the KPI selected
-    value: KPI; // Currently selected KPI
-    options: KPI[]; // Flat list of KPI options
+    value: Machine; // Currently selected KPI
+    options: Machine[]; // Flat list of KPI options
     iconSrc?: string;
-    onChange: (value: KPI) => void; // Change handler returns the selected KPI object
+    onChange: (value: Machine) => void; // Change handler returns the selected KPI object
 }
 
-const KpiSelect: React.FC<KPISelectProps> = ({
-                                                 label,
-                                                 description,
-                                                 value,
-                                                 options,
-                                                 iconSrc,
-                                                 onChange,
-                                             }) => {
+
+const MachineSelect: React.FC<MachineSelectProps> = ({
+                                                         label,
+                                                         description,
+                                                         value,
+                                                         options,
+                                                         onChange,
+                                                     }) => {
 
     // Define the type for grouped options
     type GroupedOption = {
         label: string;
         options: {
             label: string;
-            value: KPI;
+            value: Machine;
         }[];
     };
 
     // Transform options into grouped format
     const groupedOptions: GroupedOption[] = Object.entries(
-        options.reduce((groups, kpi) => {
-            if (!groups[kpi.type]) {
-                groups[kpi.type] = [];
+        options.reduce((groups, machine) => {
+            if (!groups[machine.type]) {
+                groups[machine.type] = [];
             }
-            groups[kpi.type].push({
-                label: kpi.name,
-                value: kpi,
+            groups[machine.type].push({
+                label: machine.machineId,
+                value: machine,
             });
             return groups;
-        }, {} as Record<string, { label: string; value: KPI }[]>)
-    ).map(([type, kpis]) => ({
+        }, {} as Record<string, { label: string; value: Machine }[]>)
+    ).map(([type, machines]) => ({
         label: type,
-        options: kpis,
+        options: machines,
     }));
 
     return (
@@ -58,18 +59,18 @@ const KpiSelect: React.FC<KPISelectProps> = ({
 
             {/* Select Component */}
             <div className="relative flex-wrap max-w-auto font-normal w-64">
-                {iconSrc && (
+
                     <img
                         loading="lazy"
-                        src={iconSrc}
+                        src={chevronDownIcon}
                         alt={label}
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 z-10 pointer-events-none"
                     />
-                )}
+
                 <Select
-                    id="kpi_selector"
+                    id="machines_selector"
                     options={groupedOptions}
-                    value={{ label: value.name, value }}
+                    value={{label: value.machineId, value}}
                     onChange={(selectedOption) => {
                         if (selectedOption?.value) {
                             onChange(selectedOption.value);
@@ -78,7 +79,7 @@ const KpiSelect: React.FC<KPISelectProps> = ({
                     styles={{
                         control: (base) => ({
                             ...base,
-                            paddingLeft: iconSrc ? "2rem" : "0.5rem", // Space for icon
+                            paddingLeft: "2rem", // Space for icon
                             borderRadius: '0.375rem', // Tailwind `rounded` equivalent
                             borderColor: '#d1d5db', // Tailwind `border-gray-300`
                         }),
@@ -99,7 +100,7 @@ const KpiSelect: React.FC<KPISelectProps> = ({
                 />
             </div>
 
-            {/* Selected KPI's Description */}
+            {/* Selected Machine's Description */}
             {value.description && (
                 <p
                     className="flex-wrap text-start text-sm text-gray-500 font-normal mt-2"
@@ -116,4 +117,4 @@ const KpiSelect: React.FC<KPISelectProps> = ({
     );
 };
 
-export default KpiSelect;
+export default MachineSelect;
