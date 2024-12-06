@@ -6,3 +6,4 @@ passlib==1.7.4
 python-jose==3.3.0
 minio
 langchain
+fpdf==1.7.2
