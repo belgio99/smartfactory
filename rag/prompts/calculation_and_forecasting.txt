@@ -1,3 +1,5 @@
+{_HISTORY_}
+
 USER QUERY: "{_USER_QUERY_}"
 
 INSTRUCTION: 
@@ -7,28 +9,25 @@ Your response must consider the provided context as correct without unnecessary 
 
 Context format for a computed KPI:
 
-{
-  "Machine_name": "Represents the name of the machine for which the KPI is being reported",
-  "KPI_name": "A unique identifier for the specific KPI",
-  "Value": "The result of the KPI calculation based on the given parameters, which may be a computed value or an error if the KPI name, machine, time period, or other specifications are invalid or not present in the dataset."
-  "Measure_unit": "The unit of measurement associated with the KPI (eg, percentage, seconds, units)",
-  "Date_start": "The start date for the KPI computation in the format DD/MM/YYYY If 'Date_finish' is 'NULL,' this indicates the KPI is computed for a single day (the 'Date_start')",
-  "Date_finish": "Either 'NULL' or a date in DD/MM/YYYY format If provided, it specifies the end date for the KPI computation, typically used for aggregated values over a range",
-  "Aggregator": "Indicates the function used for aggregation (eg, MIN, MAX, AVG) If the computation is not aggregated, this will be 'NULL'",
-  "Forecast": "Always set to false because the value represents a computed (non-forecasted) KPI"
-}
+- "Machine_name": "Represents the name of the machine for which the KPI is being reported",
+- "KPI_name": "A unique identifier for the specific KPI",
+- "Value": "The result of the KPI calculation based on the given parameters, which may be a computed value or an error if the KPI name, machine, time period, or other specifications are invalid or not present in the dataset."
+- "Measure_unit": "The unit of measurement associated with the KPI (eg, percentage, seconds, units)",
+- "Date_start": "The start date for the KPI computation in the format DD/MM/YYYY If 'Date_finish' is 'NULL,' this indicates the KPI is computed for a single day (the 'Date_start')",
+- "Date_finish": "Either 'NULL' or a date in DD/MM/YYYY format If provided, it specifies the end date for the KPI computation, typically used for aggregated values over a range",
+- "Aggregator": "Indicates the function used for aggregation (eg, MIN, MAX, AVG) If the computation is not aggregated, this will be 'NULL'",
+- "Forecast": "Always set to false because the value represents a computed (non-forecasted) KPI"
 
 
 Context format for a forecasted KPI:
 
-{
-  "Machine_name": "Represents the name of the machine for which the forecasted KPI is being reported",
-  "KPI_name": "A unique identifier for the specific KPI being forecasted",
-  "Predicted_value": "The predicted value of the KPI based on the forecast model, or an error if the KPI name, machine, time period, or other specifications are invalid, not present in the dataset, or if the KPI is not forecastable."
-  "Measure_unit": "The unit of measurement associated with the KPI (eg, percentage, seconds, units)",
-  "Date_prediction": "The date for which the KPI is predicted, in the format DD/MM/YYYY",
-  "Forecast": "Always set to true because the value represents a forecasted KPI"
-}
+- "Machine_name": "Represents the name of the machine for which the forecasted KPI is being reported",
+- "KPI_name": "A unique identifier for the specific KPI being forecasted",
+- "Predicted_value": "The predicted value of the KPI based on the forecast model, or an error if the KPI name, machine, time period, or other specifications are invalid, not present in the dataset, or if the KPI is not forecastable."
+- "Measure_unit": "The unit of measurement associated with the KPI (eg, percentage, seconds, units)",
+- "Date_prediction": "The date for which the KPI is predicted, in the format DD/MM/YYYY",
+- "Forecast": "Always set to true because the value represents a forecasted KPI"
+
 
 Note: 
 - never tells me things like "Here's a response to the user's query based on the provided context:" or similar

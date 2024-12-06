@@ -80,7 +80,7 @@ def toDate(data):
 
 # function which classify input prompt in one among six labels 
 # if label == "predictions" or label == "kpi_calc", it will also return the url to communicate
-def prompt_classifier(input):
+def prompt_classifier(input: Question):
 
     # Format the history
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
@@ -110,7 +110,7 @@ def prompt_classifier(input):
         suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
         input_variables=["history", "text_input"]
     )
-    prompt = few_shot_prompt.format(history=history_context, text_input=input.text)
+    prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
 
     # Query generation
@@ -121,7 +121,7 @@ def prompt_classifier(input):
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-
+        
         esempi = [
             {"testo": "Predict for tomorrow the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on last week data", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, weeks=1, days=1" },
             {"testo": "Predict the future Power Consumption Efficiency for Riveting Machine 2 over the next 5 days","data": f"Power Consumption Efficiency, Riveting Machine 2, NULL, days=5"},
@@ -145,7 +145,7 @@ def prompt_classifier(input):
             input_variables=["history", "text_input"]
         )
 
-        prompt = few_shot_prompt.format(history=history_context, text_input=input.text)
+        prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
 
         data = llm.invoke(prompt)
         data=data.content.strip("\n").split(": ")[1].split(", ")
@@ -315,9 +315,9 @@ async def handle_predictions(url):
     response = await ask_predictor_engine(url)
     return response['data']
 
-async def handle_new_kpi(question, llm, graph, history):
+async def handle_new_kpi(question: Question, llm, graph, history):
     kpi_generation = KPIGenerationChain(llm, graph, history)
-    response = kpi_generation.chain.invoke(question.text)
+    response = kpi_generation.chain.invoke(question.userInput)
     return response['result']
 
 async def handle_report(url):
@@ -325,23 +325,23 @@ async def handle_report(url):
     kpi_response = await ask_kpi_engine(url)
     return predictor_response['data'] + kpi_response['data']
 
-async def handle_dashboard(question, llm, graph, history):
+async def handle_dashboard(question: Question, llm, graph, history):
     with open("docs/gui_elements.txt", "r") as f:
         gui_elements = f.read()
     dashboard_generation = DashboardGenerationChain(llm, graph, history)
-    response = dashboard_generation.chain.invoke(question.text)
+    response = dashboard_generation.chain.invoke(question.userInput)
     return response['result'] + '\n' + gui_elements
 
 async def handle_kpi_calc(url):
     response = await ask_kpi_engine(url)
     return response['data']
 
-async def handle_kb_q(question, llm, graph, history):
+async def handle_kb_q(question: Question, llm, graph, history):
     general_qa = GeneralQAChain(llm, graph, history)
-    response = general_qa.chain.invoke(question.text)
+    response = general_qa.chain.invoke(question.userInput)
     return response['result']
 
-@router.post("/ask", response_model=Answer)
+@router.post("/chat", response_model=Answer)
 async def ask_question(question: Question):
     # Classify the question
     label, url = prompt_classifier(question)
@@ -362,18 +362,18 @@ async def ask_question(question: Question):
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-        llm_result = llm.invoke(history_context + "\n\n" + question.text)
+        llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
         # Update the history
-        history.append({'question': question.text, 'answer': llm_result.content})
-        return Answer(text=llm_result.content)
+        history.append({'question': question.userInput, 'answer': llm_result.content})
+        return Answer(textResponse=llm_result.content, textExplanation='', data='query')
 
     # Execute the handler
     context = await handlers[label]()
 
     if label == 'kb_q':
         # Update the history
-        history.append({'question': question.text, 'answer': context})
-        return Answer(text=context)
+        history.append({'question': question.userInput, 'answer': context})
+        return Answer(textResponse=context, textExplanation='', data='query')
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
@@ -382,11 +382,11 @@ async def ask_question(question: Question):
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
         prompt = prompt_manager.get_prompt(label)
-        formatted_prompt = prompt.format(_HISTORY_=history_context, _CONTEXT_=context, _USER_QUERY_=question.text)
+        formatted_prompt = prompt.format(_HISTORY_=history_context, _CONTEXT_=context, _USER_QUERY_=question.userInput)
         llm_result = llm.invoke(formatted_prompt)
 
         # Update the history
-        history.append({'question': question.text, 'answer': llm_result.content})
+        history.append({'question': question.userInput, 'answer': llm_result.content})
 
-        return Answer(text=llm_result.content)
+        return Answer(textResponse=llm_result.content, textExplanation='', data='report' if label == 'report' else 'query')
 

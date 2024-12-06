@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { getMachineList } from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 interface MachineFilterModalProps {
     isOpen: boolean;
@@ -15,9 +15,10 @@ const MachineFilterModal: React.FC<MachineFilterModalProps> = ({
                                                                    onSave,
                                                                    initialMachineIds,
                                                                }) => {
+    const dataManager = PersistentDataManager.getInstance();
     const [selectedMachines, setSelectedMachines] = useState<string[]>(initialMachineIds);
     const [selectedMachineType, setSelectedMachineType] = useState("All");
-    const machines = useMemo(() => getMachineList().filter((machine) =>
+    const machines = useMemo(() => dataManager.getMachineList().filter((machine) =>
         selectedMachineType === 'All' || machine.type === selectedMachineType
     ), [selectedMachineType]);
 
@@ -63,7 +64,7 @@ const MachineFilterModal: React.FC<MachineFilterModalProps> = ({
                             onChange={(e) => setSelectedMachineType(e.target.value)}
                         >
                             {/* Dynamically populate machine types */}
-                            {['All', ...new Set(getMachineList().map(machine => machine.type))].map((type) => (
+                            {['All', ...new Set(dataManager.getMachineList().map(machine => machine.type))].map((type) => (
                                 <option key={type} value={type}>
                                     {type}
                                 </option>

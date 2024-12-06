@@ -1,8 +1,9 @@
-import {getMachineList} from "./PersistentDataManager";
-import {KPI} from "./DataStructures";
-import {Filter} from "../components/KpiSelector/FilterOptions";
-import {TimeFrame} from "../components/KpiSelector/TimeSelector";
+import PersistentDataManager from "./PersistentDataManager";
+import {KPI, Machine} from "./DataStructures";
+import {Filter} from "../components/Selectors/FilterOptions";
+import {TimeFrame} from "../components/Selectors/TimeSelect";
 
+const dataManager = PersistentDataManager.getInstance();
 const smoothData = (data: number[], alpha: number = 0.3): number[] => {
     const ema = [];
     ema[0] = data[0]; // Start with the first data point
@@ -19,19 +20,19 @@ export const simulateChartData = async (
 ): Promise<any[]> => {
     console.log("Fetching data with:", {kpi, timeFrame, type, filters});
 
-    let filteredData = getMachineList();
-
+    const unfilteredData = dataManager.getMachineList();
+    let filteredData: Machine[];
     // Apply filters
     if (filters && filters.machineIds?.length) {
-        filteredData = filteredData.filter((data) =>
+        filteredData = unfilteredData.filter((data) =>
             filters.machineIds?.includes(data.machineId)
         );
     } else if (filters && filters.machineType !== "All") {
         // Filter by machineType only if no machineIds are provided
-        filteredData = filteredData.filter((data) => data.type === filters.machineType);
+        filteredData = unfilteredData.filter((data) => data.type === filters.machineType);
     } else {
         // Fetch all data when no filters are applied
-        filteredData = getMachineList();
+        filteredData = unfilteredData
     }
     const timePeriods: string[] = [];
 

@@ -1,18 +1,25 @@
 import React, {useEffect, useState} from "react";
-import {getKpiList} from "../../api/PersistentDataManager";
-import Chart from "../Chart/Chart";
+import PersistentDataManager from "../../api/PersistentDataManager";
 import {simulateChartData} from "../../api/QuerySimulator";
 import FutureTimeFrameSelector from "./FutureTimeSelector";
-import {TimeFrame} from "../KpiSelector/TimeSelector";
+import {TimeFrame} from "../Selectors/TimeSelect";
+import KpiSelect from "../Selectors/KpiSelect";
+import {KPI, Machine} from "../../api/DataStructures";
+import MachineSelect from "../Selectors/MachineSelect";
+import ForeChart from "../Chart/ForecastingChart";
+import {Filter} from "../Selectors/FilterOptions";
 
 type ForecastData = {
     date: string;
     value: number;
+    confidence: number;
 };
 
 const ForecastingPage: React.FC = () => {
+    const dataManager = PersistentDataManager.getInstance();
     const [loading, setLoading] = useState(false);
-    const [selectedKpi, setSelectedKpi] = useState<number | null>(null);
+    const [selectedKpi, setSelectedKpi] = useState<KPI>(new KPI("none", "None", "None Selected", "", "")); // Update to store the entire KPI object
+    const [selectedMachine, setSelectedMachine] = useState<Machine>(new Machine("None Selected", "None", "None ")); // Update to store the entire Machine object
     const [forecastData, setForecastData] = useState<ForecastData[]>([]);
     const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame } | null>(null);
 
@@ -20,67 +27,61 @@ const ForecastingPage: React.FC = () => {
         console.log("Timeframe changed:", timeFrame);
         fetchForecastData();
     }, [timeFrame]);
-
-    const fetchForecastData = async () => {
-        if (selectedKpi !== null && timeFrame !== null) {
-            setLoading(true);
-            const kpi = getKpiList().find((k) => k.id === selectedKpi);
-            if (!kpi) {
-                console.error(`KPI with ID ${selectedKpi} not found.`);
-                setLoading(false);
-                return;
-            }
-
-            const pastData = await simulateChartData(kpi, timeFrame.past, "line");
-            const futureData = await simulateChartData(kpi, timeFrame.future, "line");
-
-            setForecastData([...pastData, ...futureData]);
-            setLoading(false);
-        }
-    };
-
-    const handleKpiChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const kpiId = parseInt(e.target.value, 10);
-
-        if (!isNaN(kpiId)) {
-            setSelectedKpi(kpiId);
-        } else {
-            setSelectedKpi(null);
-            setForecastData([]);
-        }
-    };
-
     useEffect(() => {
         fetchForecastData();
-    }, [selectedKpi]); // Recompute data when selected KPI changes.
+    }, [selectedKpi]);
+    useEffect(() => {
+        fetchForecastData();
+    }, [selectedMachine]);
+
+
+    const fetchForecastData = async () => {
+        if (selectedKpi.id != "none" && timeFrame !== null && selectedMachine.machineId !== "None Selected") {
+            setLoading(true);
+            const machineFilter = new Filter(selectedMachine.type, [selectedMachine.machineId]);
+            const pastData = await simulateChartData(selectedKpi, timeFrame.past, "line", machineFilter);
+            const futureData = await simulateChartData(selectedKpi, timeFrame.future, "line", machineFilter);
+            // Add default confidence value to each data point
+            const combinedData = [...pastData, ...futureData].map(dataPoint => ({
+                ...dataPoint,
+                confidence: 80, // Default confidence value
+            }));
+            setForecastData(combinedData);
+            setLoading(false);
+        } else setForecastData([])
+    };
+
 
     const formatDate = (date: Date) => date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
 
-    const kpis = getKpiList();
+    const kpis = dataManager.getKpiList();
+    const machines = dataManager.getMachineList();
     return (
         <div className="ForecastingPage max-w-4xl mx-auto p-6 bg-gray-100">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">KPI Forecasting</h1>
-            <div className="flex items-center space-x-4 mb-6">
+            <div className="flex items-center text-start space-x-4 mb-6">
                 <div className="w-1/2">
-                    <label className="block text-gray-700 font-medium mb-2" htmlFor="kpi-select">
-                        Select a KPI
-                    </label>
-                    <select
-                        id="kpi-select"
-                        className="w-full font-normal  p-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        onChange={handleKpiChange}
-                    >
-                        <option value="">-- Select KPI --</option>
-                        {kpis.map((kpi) => (
-                            <option key={kpi.id} value={kpi.id}>
-                                {kpi.name}
-                            </option>
-                        ))}
-                    </select>
+                    <KpiSelect
+                        label="Select a KPI"
+                        description="Choose a KPI from the list"
+                        value={selectedKpi || ({} as KPI)} // Pass the selected KPI, or an empty object if null
+                        options={kpis}
+                        onChange={setSelectedKpi}
+                    />
                 </div>
 
                 <div className="w-1/2">
                     <FutureTimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame}/>
+                </div>
+
+                <div className="w-1/2">
+                    <MachineSelect
+                        label="Select a Machine"
+                        description="Choose a Machine from the list"
+                        value={selectedMachine || ({} as Machine)} // Pass the selected Machine, or an empty object if null
+                        options={machines}
+                        onChange={setSelectedMachine}
+                    />
                 </div>
             </div>
 
@@ -91,16 +92,15 @@ const ForecastingPage: React.FC = () => {
                     <div>
                         <p className="text-sm text-gray-700 mb-4">
                             Forecasting data
-                            about <strong> {kpis.find((kpi) => kpi.id === selectedKpi)?.name}</strong> from {formatDate(timeFrame.future.from)}
+                            about <strong> {selectedKpi?.name}</strong> from {formatDate(timeFrame.future.from)}
                             {' '} to {formatDate(timeFrame.future.to)},
                             using data from {formatDate(timeFrame.past.from)}
                             {' '} to {formatDate(timeFrame.past.to)}.
                         </p>
-                        <Chart data={forecastData}
-                               graphType="line"
-                               kpi={kpis.find((kpi) => kpi.id === selectedKpi)}
-                               timeUnit={timeFrame.past.aggregation}
-                               timeThreshold={true}
+                        <ForeChart data={forecastData}
+                                   kpi={selectedKpi}
+                                   timeUnit={timeFrame.past.aggregation}
+                                   explanationData={getDummyExplanationData(forecastData)}
                         />
                     </div>
                 ) : (
@@ -110,5 +110,20 @@ const ForecastingPage: React.FC = () => {
         </div>
     );
 };
+
+const getDummyExplanationData = (data: any[]) => {
+    return data.map((point, index) => {
+        // data can be positive or negative
+        return [
+            {feature: "Feature 1", importance: (Math.random() * 2 - 1).toFixed(2)},
+            {feature: "Feature 2", importance:  (Math.random() * 2 - 1).toFixed(2)},
+            {feature: "Feature 3", importance:  (Math.random() * 2 - 1).toFixed(2)},
+            {feature: "Feature 4", importance:  (Math.random() * 2 - 1).toFixed(2)},
+            {feature: "Feature 5", importance:  (Math.random() * 2 - 1).toFixed(2)},
+            {feature: "Feature 6", importance:  (Math.random() * 2 - 1).toFixed(2)},
+        ];
+    });
+
+}
 
 export default ForecastingPage;

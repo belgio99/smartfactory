@@ -1,140 +1,92 @@
-[
-  {
-    "machineId": "Machine 1",
-    "site": "Site 1",
-    "productionLine": "Line 1",
-    "type": "Cutting Machine"
+{
+  "AssemblyMachine": {
+    "Assembly Machine 1": {
+      "description": "A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors",
+      "id": "Assembly Machine 1",
+      "type": "AssemblyMachine"
+    },
+    "Assembly Machine 2": {
+      "description": "A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors",
+      "id": "Assembly Machine 2",
+      "type": "AssemblyMachine"
+    },
+    "Assembly Machine 3": {
+      "description": "A machine designed to assemble components or subassemblies into complete products. Commonly used in automated production lines to increase speed and reduce manual errors",
+      "id": "Assembly Machine 3",
+      "type": "AssemblyMachine"
+    }
   },
-  {
-    "machineId": "Machine 2",
-    "site": "Site 1",
-    "productionLine": "Line 1",
-    "type": "Pressing Machine"
+  "CuttingMachine": {
+    "Laser Cutter": {
+      "description": "A machine that uses a high-powered laser beam to cut materials with high precision. Ideal for shaping metals, plastics, wood, and other materials with complex details or tight tolerances",
+      "id": "Laser Cutter",
+      "type": "CuttingMachine"
+    },
+    "Large Capacity Cutting Machine 1": {
+      "description": "A machine ideal for heavy-duty cutting tasks on materials like thick steel, aluminum, or titanium. These machines are designed for large-scale industrial jobs and high productivity.",
+      "id": "Large Capacity Cutting Machine 1",
+      "type": "CuttingMachine"
+    },
+    "Large Capacity Cutting Machine 2": {
+      "description": "A machine ideal for heavy-duty cutting tasks on materials like thick steel, aluminum, or titanium. These machines are designed for large-scale industrial jobs and high productivity.",
+      "id": "Large Capacity Cutting Machine 2",
+      "type": "CuttingMachine"
+    },
+    "Low Capacity Cutting Machine 1": {
+      "description": "Designed for light-duty operations, this machine is suitable for thin materials or applications requiring precision on a small scale. Commonly used for prototypes or small production batches.",
+      "id": "Low Capacity Cutting Machine 1",
+      "type": "CuttingMachine"
+    },
+    "Medium Capacity Cutting Machine 1": {
+      "description": "A versatile machine for medium-intensity cutting operations. It can handle thicker or denser materials, making it applicable across various industrial sectors.",
+      "id": "Medium Capacity Cutting Machine 1",
+      "type": "CuttingMachine"
+    },
+    "Medium Capacity Cutting Machine 2": {
+      "description": "A versatile machine for medium-intensity cutting operations. It can handle thicker or denser materials, making it applicable across various industrial sectors.",
+      "id": "Medium Capacity Cutting Machine 2",
+      "type": "CuttingMachine"
+    },
+    "Medium Capacity Cutting Machine 3": {
+      "description": "A versatile machine for medium-intensity cutting operations. It can handle thicker or denser materials, making it applicable across various industrial sectors.",
+      "id": "Medium Capacity Cutting Machine 3",
+      "type": "CuttingMachine"
+    }
   },
-  {
-    "machineId": "Machine 3",
-    "site": "Site 1",
-    "productionLine": "Line 2",
-    "type": "Welding Machine"
+  "LaserWeldingMachine": {
+    "Laser Welding Machine 1": {
+      "description": "A machine that uses a laser beam to weld metallic components. It offers high precision and minimal heat-affected zones, making it ideal for delicate applications such as electronics and mechanical components.",
+      "id": "Laser Welding Machine 1",
+      "type": "LaserWeldingMachine"
+    },
+    "Laser Welding Machine 2": {
+      "description": "A machine that uses a laser beam to weld metallic components. It offers high precision and minimal heat-affected zones, making it ideal for delicate applications such as electronics and mechanical components.",
+      "id": "Laser Welding Machine 2",
+      "type": "LaserWeldingMachine"
+    }
   },
-  {
-    "machineId": "Machine 4",
-    "site": "Site 2",
-    "productionLine": "Line 3",
-    "type": "Drilling Machine"
+  "RivetingMachine": {
+    "Riveting Machine": {
+      "description": "A machine designed to join two or more components using rivets. Widely used in the aerospace, automotive, and metal structure construction industries.",
+      "id": "Riveting Machine",
+      "type": "RivetingMachine"
+    }
   },
-  {
-    "machineId": "Machine 5",
-    "site": "Site 2",
-    "productionLine": "Line 3",
-    "type": "Cutting Machine"
-  },
-  {
-    "machineId": "Machine 6",
-    "site": "Site 2",
-    "productionLine": "Line 4",
-    "type": "Lathe Machine"
-  },
-  {
-    "machineId": "Machine 7",
-    "site": "Site 1",
-    "productionLine": "Line 1",
-    "type": "Grinding Machine"
-  },
-  {
-    "machineId": "Machine 8",
-    "site": "Site 1",
-    "productionLine": "Line 2",
-    "type": "Pressing Machine"
-  },
-  {
-    "machineId": "Machine 9",
-    "site": "Site 1",
-    "productionLine": "Line 2",
-    "type": "Cutting Machine"
-  },
-  {
-    "machineId": "Machine 10",
-    "site": "Site 2",
-    "productionLine": "Line 3",
-    "type": "Welding Machine"
-  },
-  {
-    "machineId": "Machine 11",
-    "site": "Site 2",
-    "productionLine": "Line 3",
-    "type": "Drilling Machine"
-  },
-  {
-    "machineId": "Machine 12",
-    "site": "Site 2",
-    "productionLine": "Line 4",
-    "type": "Grinding Machine"
-  },
-  {
-    "machineId": "Machine 13",
-    "site": "Site 1",
-    "productionLine": "Line 1",
-    "type": "Lathe Machine"
-  },
-  {
-    "machineId": "Machine 14",
-    "site": "Site 1",
-    "productionLine": "Line 1",
-    "type": "Cutting Machine"
-  },
-  {
-    "machineId": "Machine 15",
-    "site": "Site 1",
-    "productionLine": "Line 2",
-    "type": "Welding Machine"
-  },
-  {
-    "machineId": "Machine 16",
-    "site": "Site 2",
-    "productionLine": "Line 3",
-    "type": "Lathe Machine"
-  },
-  {
-    "machineId": "Machine 17",
-    "site": "Site 2",
-    "productionLine": "Line 4",
-    "type": "Cutting Machine"
-  },
-  {
-    "machineId": "Machine 18",
-    "site": "Site 2",
-    "productionLine": "Line 4",
-    "type": "Pressing Machine"
-  },
-  {
-    "machineId": "Machine 19",
-    "site": "Site 1",
-    "productionLine": "Line 1",
-    "type": "Drilling Machine"
-  },
-  {
-    "machineId": "Machine 20",
-    "site": "Site 1",
-    "productionLine": "Line 2",
-    "type": "Welding Machine"
-  },
-  {
-    "machineId": "Machine 21",
-    "site": "Site 1",
-    "productionLine": "Line 2",
-    "type": "Grinding Machine"
-  },
-  {
-    "machineId": "Machine 22",
-    "site": "Site 2",
-    "productionLine": "Line 4",
-    "type": "Lathe Machine"
-  },
-  {
-    "machineId": "Machine 23",
-    "site": "Site 2",
-    "productionLine": "Line 4",
-    "type": "Drilling Machine"
+  "TestingMachine": {
+    "Testing Machine 1": {
+      "description": "A machine used for testing components or final products. It can perform mechanical, electrical, or functional checks to ensure quality and compliance with design specifications.",
+      "id": "Testing Machine 1",
+      "type": "TestingMachine"
+    },
+    "Testing Machine 2": {
+      "description": "A machine used for testing components or final products. It can perform mechanical, electrical, or functional checks to ensure quality and compliance with design specifications.",
+      "id": "Testing Machine 2",
+      "type": "TestingMachine"
+    },
+    "Testing Machine 3": {
+      "description": "A machine used for testing components or final products. It can perform mechanical, electrical, or functional checks to ensure quality and compliance with design specifications.",
+      "id": "Testing Machine 3",
+      "type": "TestingMachine"
+    }
   }
-]
+}

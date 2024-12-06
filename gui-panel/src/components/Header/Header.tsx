@@ -1,12 +1,5 @@
 import React from 'react';
 import { Link } from "react-router-dom";
-import { mockDashboards } from '../Home';
-
-// Helper function to find a name from the mock data based on a segment
-const resolveName = (segment: string): string => {
-    const matched = mockDashboards.find(d => d.id === segment);
-    return matched ? matched.name : formatPath(segment); // Fallback to formatPath if not found
-};
 
 // Format path segments
 const formatPath = (path: string): string => {
@@ -42,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ path, userAvatar, userName, role }) => 
                 <ol className="flex list-none space-x-2 text-sm text-gray-700">
                     {/* Loop through path segments */}
                     {pathSegments.map((segment, index) => {
-                        const segmentName = resolveName(segment); // Resolve name dynamically
+                        const segmentName = formatPath(segment); // Resolve name dynamically
                         return (
                             <React.Fragment key={index}>
                                 <li>

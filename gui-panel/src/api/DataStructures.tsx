@@ -5,8 +5,9 @@ export class Machine {
     line?: string;
     site?: string;
     type: string;
+    description?: string;
 
-    constructor(machineId: string, type: string, site?: string, line?: string) {
+    constructor(machineId: string, type: string, description: string, site?: string, line?: string) {
         this.machineId = machineId;
         if (line) this.site = site;
         if (line) this.line = line;
@@ -17,35 +18,61 @@ export class Machine {
         return {
             machineId: instance.machineId,
             type: instance.type,
-            site: instance?.site,
-            productionLine: instance?.line,
+            description: instance.description,
         };
     }
 
     static decode(json: Record<string, any>): Machine {
         if (
-            typeof json.machineId !== "string" ||
-            (json.site && typeof json.site !== "string") ||
+            typeof json.id !== "string" ||
             typeof json.type !== "string" ||
-            (json.productionLine && typeof json.productionLine !== "string")
+            typeof json.description !== "string"
         ) {
             console.log(json);
             throw new Error("Invalid JSON structure for Machine");
         }
-        return new Machine(json.machineId, json.type, json.site, json.productionLine);
+        return new Machine(json.id, json.type, json.description);
     }
 
+    static decodeGroups(groups: Record<string, Record<string, any>>): Machine[] {
+        const machines: Machine[] = [];
+
+        Object.entries(groups).forEach(([groupName, machinesInGroup]) => {
+            Object.entries(machinesInGroup).forEach(([machineName, machineData]) => {
+                if (
+                    typeof machineData.id !== "string" ||
+                    typeof machineData.type !== "string" ||
+                    typeof machineData.description !== "string"
+                ) {
+                    throw new Error(`Invalid machine structure in group ${groupName}, machine ${machineName}`);
+                }
+
+                // Reformat machine name with regex
+                // Split by Machine, for example "MachineA" -> "Machine A"
+                const machineType: string = machineData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+                // Add machine object to the result array
+                machines.push({
+                    machineId: machineData.id,
+                    type: machineType, // Type is directly provided in the new format
+                    description: machineData.description
+                });
+            });
+        });
+
+        return machines;
+    }
 }
 
 
 export class KPI {
-    id: number; // internal id
+    id: string; // internal id
     type: string; // category
     name: string; // displayed name
     description: string; // description
     unit: string;
 
-    constructor(id: number, type: string, name: string, value: string, unit: string) {
+    constructor(id: string, type: string, name: string, value: string, unit: string) {
         this.id = id;
         this.type = type;
         this.name = name;
@@ -64,7 +91,7 @@ export class KPI {
 
     static decode(json: Record<string, any>): KPI {
         if (
-            typeof json.id !== "number" ||
+            typeof json.id !== "string" ||
             typeof json.type !== "string" ||
             typeof json.name !== "string" ||
             typeof json.description !== "string" ||
@@ -73,6 +100,54 @@ export class KPI {
             throw new Error("Invalid JSON structure for KPI");
         }
         return new KPI(json.id, json.type, json.name, json.description, json.unit);
+    }
+
+    // Decode a group of KPIs into an array of KPI objects
+    static decodeGroups(groups: Record<string, Record<string, any>>): KPI[] {
+        const kpis: KPI[] = [];
+
+        Object.entries(groups).forEach(([groupName, metrics]) => {
+            Object.entries(metrics).forEach(([metricName, metricData]) => {
+                if (
+                    typeof metricData.id !== "string" ||
+                    typeof metricData.description !== "string" ||
+                    typeof metricData.unit_measure !== "string" ||
+                    typeof metricData.type !== "string" // Ensure type exists in metricData
+                ) {
+                    throw new Error(`Invalid KPI structure in group ${groupName}, metric ${metricName}`);
+                }
+
+                // reformat kpi name with regex
+                // if followed by _avg, _min, _max, _sum, _med change it to (Avg), (Min), (Max), (Sum), (Med)
+                // replace _ with space and capitalize first letter of each word
+
+                metricName = metricName.replace(/_avg/g, " (Avg)")
+                    .replace(/_min/g, " (Min)")
+                    .replace(/_max/g, " (Max)")
+                    .replace(/_sum/g, " (Sum)")
+                    .replace(/_med/g, " (Med)")
+                    .replace(/_std/g, " (Std)")
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+                // metric type reformatted to have the "KPI" suffix divided by a space
+                // EnergyKPI -> Energy KPI
+                metricData.type = metricData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+
+                // Create a KPI instance for each metric
+                const kpi = new KPI(
+                    metricData.id,
+                    metricData.type, // The type is now directly provided in the JSON
+                    metricName, // Metric name as the display name
+                    metricData.description,
+                    metricData.unit_measure // Use unit_measure for unit
+                );
+                kpis.push(kpi);
+            });
+        });
+
+        return kpis;
     }
 
 }
@@ -153,10 +228,10 @@ export class Schedule {
 const supportedGraphTypes = ["line", "area", "barv", "barh", "pie", "donut", "scatter", "hist", "stacked_bar"];
 
 export class DashboardEntry {
-    kpi: number;
+    kpi: string;
     graph_type: string;
 
-    constructor(kpi: number, graph_type: string) {
+    constructor(kpi: string, graph_type: string) {
         this.kpi = kpi;
         this.graph_type = graph_type;
     }
@@ -169,7 +244,7 @@ export class DashboardEntry {
     }
 
     static decode(json: Record<string, any>): DashboardEntry {
-        if (
+        if (typeof json.kpi !== "string" ||
             typeof json.graph_type !== "string") {
             throw new Error("Invalid JSON structure for DashboardEntry");
         }
@@ -219,40 +294,12 @@ export class DashboardLayout {
 
 }
 
-export class DashboardPointer {
-    id: string; // id for the internal path
-    name: string; //displayed name in breadcrumb
-
-    constructor(id: string, name: string) {
-        this.id = id;
-        this.name = name;
-    }
-
-    static encode(instance: DashboardPointer): Record<string, any> {
-        return {
-            id: instance.id,
-            name: instance.name,
-        };
-    }
-
-    static decode(json: Record<string, any>): DashboardPointer {
-        if (
-            typeof json.id !== "string" ||
-            typeof json.name !== "string"
-        ) {
-            console.log(json);
-            throw new Error("Invalid JSON structure for DashboardPointer");
-        }
-        return new DashboardPointer(json.id, json.name);
-    }
-}
-
 export class DashboardFolder {
     id: string; // id for the internal path
     name: string; //displayed name in breadcrumb
-    children: (DashboardFolder | DashboardPointer)[] //another folder or the pointer to the layout to load
+    children: (DashboardFolder | DashboardLayout)[] //another folder or the pointer to the layout to load
 
-    constructor(id: string, name: string, children: (DashboardFolder | DashboardPointer)[]) {
+    constructor(id: string, name: string, children: (DashboardFolder | DashboardLayout)[]) {
         this.id = id;
         this.name = name;
         this.children = children;
@@ -267,7 +314,7 @@ export class DashboardFolder {
                 if (child instanceof DashboardFolder) {
                     return DashboardFolder.encode(child); // Encode DashboardFolder
                 } else {
-                    return DashboardPointer.encode(child); // Encode DashboardLayout id
+                    return DashboardLayout.encode(child); // Encode DashboardLayout id
                 }
             }),
         };
@@ -287,7 +334,7 @@ export class DashboardFolder {
         // Decode each child in the children array
         const children = json.children.map((childJson) => {
             if (!childJson.children) {
-                return DashboardPointer.decode(childJson); // Decode DashboardPointer
+                return DashboardLayout.decode(childJson); // Decode DashboardPointer
             } else {
                 return DashboardFolder.decode(childJson); // Decode DashboardFolder
             }
