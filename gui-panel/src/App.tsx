@@ -8,9 +8,9 @@ const App = () => {
     // User authentication state ---  set to true for development purposes
     const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
     const [userId, setUserId] = useState('');
-    const [username, setUsername] = useState('');
+    const [username, setUsername] = useState('Test User');
     const [token, setToken] = useState<string | null>(null);
-    const [role, setRole] = useState('');
+    const [role, setRole] = useState('Tester');
     const [site, setSite] = useState('');
 
     // Loading state to track if data is still being initialized
