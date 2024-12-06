@@ -28,7 +28,7 @@
         "name": "Testboard #1",
         "views": [
           {
-            "kpi": "carbon_footprint",
+            "kpi": "energy_cost_per_unit",
             "graph_type": "hist"
           },
           {
@@ -60,7 +60,7 @@
         "name": "Testboard #3",
         "views": [
           {
-            "kpi": "mean_time_between_failures",
+            "kpi": "machine_utilization_rate",
             "graph_type": "barh"
           },
           {
