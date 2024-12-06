@@ -1,10 +1,9 @@
 from typing import List, Dict, Any, Tuple
 import numpy as np
+import json
 from rapidfuzz import process, fuzz
 import nltk
 from nltk.tokenize import sent_tokenize
-nltk.download('punkt_tab')
-
 
 # Ensure NLTK 'punkt' tokenizer is downloaded upon module import
 try:
@@ -21,10 +20,10 @@ class RagExplainer:
     def __init__(
         self,
         context: List[Tuple[str, str]] = [],
-        threshold: float = 60.0,
+        threshold: float = 50.0,
         verbose: bool = False,
         tokenize_context: bool = True,
-        use_embeddings: bool = False
+        use_embeddings: bool = True
     ):
         """
         Initializes the RagExplainer object with the given parameters.
@@ -47,7 +46,11 @@ class RagExplainer:
         self.context_embeddings = None     # Embeddings for context sentences (used if use_embeddings=True)
 
         # Initialize embedding model if needed
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2') if self.use_embeddings else None
+        # Changed to a multilingual model:
+        if self.use_embeddings:
+            self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+        else:
+            self.embedding_model = None
 
         # Process initial context (if any)
         self.add_to_context(context)
@@ -118,6 +121,56 @@ class RagExplainer:
             # No punctuation at the end; add the reference number at the end
             return response_segment + f'[{ref_num}]'
 
+    def _parse_json_context(self, ctx: str) -> List[str]:
+        """
+        Parses a JSON string context into a list of "sentences."
+
+        If the JSON is a list of objects, each object becomes one sentence.
+        If the JSON is a single object, it becomes one sentence.
+        Otherwise, returns an empty list if parsing fails.
+
+        Returns:
+        - A list of context sentences.
+        """
+        try:
+            data = json.loads(ctx)
+        except json.JSONDecodeError:
+            # Not valid JSON
+            return []
+
+        # Helper function to format a single object
+        def format_object(obj: dict) -> str:
+            # Convert a dict into a multiline string of key-value pairs
+            lines = []
+            for k, v in obj.items():
+                lines.append(f'"{k}": "{v}"')
+            # Join lines with newline and indent
+            return "\n   " + "\n   ".join(lines)
+
+        if isinstance(data, list):
+            # Each item in the list is treated as a separate context sentence
+            sentences = []
+            for item in data:
+                if isinstance(item, dict):
+                    # Format the dict as multiline
+                    formatted = format_object(item)
+                    if len(formatted.strip()) >= 10:
+                        sentences.append(formatted)
+                else:
+                    if len(str(item).strip()) >= 10:
+                        sentences.append(str(item))
+            return sentences
+        elif isinstance(data, dict):
+            # Single dict object
+            formatted = format_object(data)
+            if len(formatted.strip()) >= 10:
+                return [formatted]
+            else:
+                return []
+        else:
+            # If data is something else (like a string or number), return empty
+            return []
+
     def _process_context(self, context: List[Tuple[str, str]]):
         """
         Processes the context by tokenizing (if applicable) and adding to the internal data structures.
@@ -128,12 +181,27 @@ class RagExplainer:
         new_context_sentences = []  # To store new context sentences added in this call
 
         for idx, (source_name, ctx) in enumerate(context):
-            # Tokenize context string into sentences if tokenize_context is True
-            ctx_strings = sent_tokenize(ctx) if self.tokenize_context else [ctx]
+            # Check if the context might be JSON
+            json_sentences = self._parse_json_context(ctx)
+
+            if json_sentences:
+                # If JSON parsed successfully, use json_sentences as the context sentences
+                ctx_strings = json_sentences
+            else:
+                # If not JSON, then use normal text tokenization
+                if self.tokenize_context:
+                    ctx_strings = sent_tokenize(ctx)
+                else:
+                    ctx_strings = [ctx]
+
             if not ctx_strings:
-                raise ValueError(f"The context at index {idx} is empty after tokenization.")
+                raise ValueError(f"The context at index {idx} is empty after tokenization or JSON parsing.")
 
             for string in ctx_strings:
+                # Only add if length of the string is at least 10 characters
+                if len(string.strip()) < 10:
+                    continue
+
                 if string not in self.sentence_info:
                     # Add the new sentence to the list and mapping
                     self.context_sentences.append(string)
@@ -142,9 +210,6 @@ class RagExplainer:
                         'original_context': ctx
                     }
                     new_context_sentences.append(string)
-                else:
-                    # Sentence already exists; skip to avoid duplicates
-                    pass
 
         # If embeddings are used, generate embeddings for new context sentences
         if self.use_embeddings and new_context_sentences:
@@ -365,61 +430,54 @@ class RagExplainer:
 
 if __name__ == "__main__":
     # Example usage
-    # Initialize RagExplainer with use_embeddings=True
+    # Now we turn use_embeddings to True to leverage the multilingual model.
     explainer = RagExplainer(
-        threshold=55.0,
+        threshold=40.0,
         verbose=False,
         tokenize_context=True,
         use_embeddings=True
     )
 
-    # Add initial context
-    context = [
-        ("Astronomy Book", "The solar system consists of the Sun and the celestial objects that are gravitationally bound to it."),
-        ("Astronomy Book", "This includes eight planets, their moons, dwarf planets, and countless asteroids and comets."),
-        ("Astronomy Book", "The Sun, a G-type main-sequence star, accounts for 99.86% of the solar system's mass."),
-        ("Astronomy Book", "It is the central body around which all planets orbit."),
-        ("Astronomy Book", "The inner planets, Mercury, Venus, Earth, and Mars, are terrestrial planets with rocky surfaces."),
-        ("Astronomy Book", "The outer planets, Jupiter, Saturn, Uranus, and Neptune, are gas and ice giants."),
-        ("Earth Science Book", "The Earth's atmosphere is composed of 78% nitrogen, 21% oxygen, and trace amounts of other gases such as argon and carbon dioxide."),
-        ("Earth Science Book", "It provides the air we breathe and protects us from harmful solar radiation."),
-        ("Earth Science Book", "The ozone layer, part of the Earth's stratosphere, absorbs the majority of the Sun's ultraviolet radiation."),
-        ("Earth Science Book", "Earth's surface is mostly covered by water. It is the only known planet to support life."),
-        ("Earth Science Book", "Its magnetic field shields it from the solar wind, preserving its atmosphere and enabling diverse ecosystems."),
-        ("AI Article", "Artificial intelligence (AI) has rapidly advanced in recent years."),
-        ("AI Article", "It is impacting various industries including healthcare, finance, and transportation."),
-        ("AI Article", "Machine learning, a subset of AI, focuses on developing algorithms that allow computers to learn from data without being explicitly programmed."),
-        ("AI Article", "Deep learning, a specialized form of machine learning, utilizes artificial neural networks to process complex data and achieve remarkable results."),
-        ("AI Article", "It excels in fields like natural language processing and image recognition."),
-        ("AI Article", "Ethical considerations in AI development, such as bias and privacy, remain critical concerns."),
-        ("History Book", "The history of human civilization spans thousands of years."),
-        ("History Book", "It is marked by the development of writing, agriculture, and industry."),
-        ("History Book", "Ancient civilizations like Mesopotamia, Egypt, and the Indus Valley contributed to the foundations of modern society."),
-        ("History Book", "They introduced systems of governance, trade, and cultural exchange."),
-        ("History Book", "The Industrial Revolution, beginning in the late 18th century, transformed economies and societies."),
-        ("History Book", "It ushered in an era of rapid technological progress. Today, globalization connects the world more than ever."),
-        ("History Book", "It enables unprecedented collaboration and exchange.")
+    # Add English context
+    text_context = [
+        ("English Book", "The solar system consists of the Sun and objects bound to it."),
+        ("English Book", "This includes eight planets, their moons, and smaller objects.")
     ]
+    explainer.add_to_context(text_context)
 
-    explainer.add_to_context(context)
-
-    # Add extra context
-    extra_context = [
-        ("New Source", "Mars is known as the Red Planet."),
-        ("New Source", "It is the fourth planet from the Sun."),
+    # Add Spanish context
+    # Example: Short explanation about the sun in Spanish
+    spanish_context = [
+        ("Spanish Article", "El Sol es la estrella en el centro del sistema solar.")
     ]
+    explainer.add_to_context(spanish_context)
 
-    explainer.add_to_context(extra_context)
+    # Add French context
+    # Example: A statement about the importance of the atmosphere in French
+    french_context = [
+        ("French Article", "L'atmosphère terrestre est cruciale pour la vie sur Terre.")
+    ]
+    explainer.add_to_context(french_context)
 
+    # Add German context
+    german_context = [
+        ("German Article", "Die industrielle Revolution veränderte Gesellschaften radikal.")
+    ]
+    explainer.add_to_context(german_context)
+
+    # Add JSON context with multilingual content
+    json_multilingual = [
+        ("Json Data", '[{"Machine_name": "Machine_A", "KPI_name": "Temperatura", "Predicted_value": "22", "Measure_unit": "Celsius", "Date_prediction": "12/12/2024", "Forecast": true}, {"Machine_name": "Machine_B", "KPI_name": "Pression", "Predicted_value": "1012", "Measure_unit": "hPa", "Date_prediction": "13/12/2024", "Forecast": true}]')
+    ]
+    explainer.add_to_context(json_multilingual)
+
+    # Multilingual response referencing various languages and machine data
     response = (
-        "Artificial intelligence has revolutionized industries by improving processes in fields like transportation and healthcare. "
-        "For instance, machine learning allows systems to adapt and learn without being explicitly programmed. "
-        "The Earth's atmosphere is vital for life, with nitrogen and oxygen making up its majority. "
-        "The Sun, central to our solar system, has a mass that constitutes the majority of the system. "
-        "Planets like Jupiter and Saturn are gas giants, while Earth supports life due to its unique atmosphere and magnetic field. "
-        "Historical events such as the Industrial Revolution reshaped human societies, laying the groundwork for today's interconnected world. "
-        "My name is Alex, and I'm fascinated by these topics. "
-        "The Sun, central to our solar system, has a mass that constitutes the majority of the system."
+        "The solar system is centered on the Sun. "
+        "El Sol es la estrella central del sistema solar. "
+        "L'atmosphère terrestre est essentielle. "
+        "Die industrielle Revolution hat die Gesellschaft verändert. "
+        "Machine_A ha un Temperatura di 22 Gradi Celsius."
     )
 
     # Call the attribute_response_to_context method
