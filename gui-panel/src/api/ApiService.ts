@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { userInfo } from 'os';
 
 const BASE_URL = 'http://0.0.0.0:10040'; // API URL
 const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
@@ -203,6 +204,39 @@ export const register = async (
   } catch (error: any) {
     console.error('Register API error:', error);
     throw new Error(error.response?.data?.message || 'Registration failed');
+  }
+};
+
+/**
+ * API POST used to change the password of the user
+ * @param userId string - The user ID
+ * @param oldPassword string - The old password of the user
+ * @param newPassword string - The new password of the user
+ * @returns UserInfo - The user information
+ */
+export const changePassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<UserInfo> => { 
+  try {
+    const response = await axios.put<UserInfo>(
+      `${BASE_URL}/smartfactory/user/${userId}`,
+      {
+        old_password: oldPassword,
+        new_password: newPassword
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        }
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Change Password API error:', error);
+    throw new Error(error.response?.data?.message || 'Change Password failed');
   }
 };
 

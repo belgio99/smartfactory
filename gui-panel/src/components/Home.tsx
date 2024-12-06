@@ -25,7 +25,8 @@ interface UserProps {
     username: string;
     token: string;
     role: string;
-    site: string
+    site: string;
+    email: string;
     // User Avatar
     userAvatar?: string;
 }
@@ -47,7 +48,7 @@ const NotificationBanner: React.FC = () => {
     );
 };
 
-const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, userAvatar}) => {
+const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, email, userAvatar}) => {
     const location = useLocation();
     const {addNotification} = useNotification();
 
@@ -115,7 +116,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                         <Route path="dashboards/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/:dashboardPath/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/new" element={<AIDashboard/>}/>
-                        <Route path="user-settings" element={<UserSettings/>}/>
+                        <Route path="user-settings" element={<UserSettings userId={userId} username={username} token={token} role={role} site={site} email={email}/>}/>
                         <Route path="data-view" element={<DataView/>}/>
                         <Route path="log" element={<LogPage/>}/>
                         <Route path="kpis" element={<KpiViewer/>}/>
