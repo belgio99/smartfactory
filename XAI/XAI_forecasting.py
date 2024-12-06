@@ -313,3 +313,29 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    
+    # from statsmodels.tsa.statespace.sarimax import SARIMAX
+    model = any
+    training_data: Union[np.ndarray, torch.Tensor]
+    explainer = forecastExplainer(model, training_data)
+    input_data: Union[np.ndarray, torch.Tensor]
+    n_predictions: int
+    input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD'] 
+    Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
+    # Model MUST be able to do prediction = model.predict(input_data)
+
+    '''
+    out_dict = {
+        'Machine_name': 'MACHINENAME :(',
+        'KPI_name': 'KPINAME :)',
+        'Predicted_value': [0,1,2,3,4,5,6,7,8,9,10],
+        'Lower_bound':[1,1,1,1,1,1,1,1,1,1], #from XAI
+        'Upper_bound':[0,0,0,0,0,0,0,0,0,0], #from XAI
+        'Confidence_score':[9,8,7,6,5,4,3,2,1,0], #from XAI
+        'Lime_explaination': list(('string',2.1),("2",2),("s",1)), #from XAI
+        'Measure_unit': 'Kbps',
+        'Date_prediction': [d,d,d,d,d,d,d,d,d,d],
+        'Forecast': True
+    }
+    '''
