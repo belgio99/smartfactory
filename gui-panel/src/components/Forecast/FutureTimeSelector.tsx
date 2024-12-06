@@ -2,8 +2,8 @@ import {TimeFrame} from "../Selectors/TimeSelect";
 import React from "react";
 
 export interface FutureTimeFrameSelectorProps {
-    timeFrame: { past: TimeFrame; future: TimeFrame } | null;
-    setTimeFrame: ({past, future}: { past: TimeFrame; future: TimeFrame }) => void;
+    timeFrame: { past: TimeFrame; future: TimeFrame; key: string } | null;
+    setTimeFrame: ({past, future}: { past: TimeFrame; future: TimeFrame; key: string }) => void;
 }
 
 const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFrame, setTimeFrame}) => {
@@ -53,15 +53,26 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
         return {from, to, aggregation: 'month'};
     };
 
+    const getFiveDaysBefore = (): TimeFrame => {
+
+        const to = new Date();
+
+        // 5 days before
+        const from = new Date;
+        from.setDate(from.getDate() - 5);
+
+        return {from, to, aggregation: 'days'}
+    }
+
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
 
         if (value === "nextWeek") {
-            setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureWeekTimeFrame()});
+            setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureWeekTimeFrame(), key: value});
         } else if (value === "nextMonth") {
-            setTimeFrame({past: getPastMonthTimeFrame(), future: getFutureMonthTimeFrame()});
+            setTimeFrame({past: getPastMonthTimeFrame(), future: getFutureMonthTimeFrame(), key: value});
         } else if (value === "nextYear") {
-            setTimeFrame({past: getPastYearTimeFrame(), future: getFutureYearTimeFrame()});
+            setTimeFrame({past: getPastYearTimeFrame(), future: getFutureYearTimeFrame(), key: value});
         }
     };
 
@@ -81,8 +92,7 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
                 <select
                     className="block w-full h-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
                     onChange={handleChange}
-                    value={timeFrame ? timeFrame.past.aggregation === 'day' ? 'nextWeek' :
-                        timeFrame.past.aggregation === 'week' ? 'nextMonth' : 'nextYear' : 'none'}
+                    value={timeFrame ? timeFrame.key : 'none'}
                 >
                     {!timeFrame && <option value="none">-- Select --</option>}
                     <option value="nextWeek">Next Week</option>

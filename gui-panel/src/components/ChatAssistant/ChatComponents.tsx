@@ -4,20 +4,36 @@ import {Message} from "./ChatAssistant";
 
 export class XAISources {
     // base it off the explanation interface
-    response_segment: string;
+    response_segment: number;
     context?: string;
     source_name?: string;
-    similarity_score?: number;
     original_context?: string;
 
-    constructor(response_segment: string, context?: string, source_name?: string, similarity_score?: number, original_context?: string) {
+    constructor(response_segment: number, context?: string, source_name?: string, original_context?: string) {
         this.response_segment = response_segment;
         this.context = context;
         this.source_name = source_name;
-        this.similarity_score = similarity_score;
         this.original_context = original_context;
     }
 
+    static decode(json: Record<string, any>): XAISources {
+        //typechecks
+        if (typeof json.reference_number !== "number") {
+            console.log(json.reference_number);
+            throw new Error("Invalid type for reference_number");
+        }
+        if (json.context && typeof json.context !== "string") {
+            throw new Error("Invalid type for context");
+        }
+        if (json.source_name && typeof json.source_name !== "string") {
+            throw new Error("Invalid type for source_name");
+        }
+        if (json.original_context && typeof json.original_context !== "string") {
+            throw new Error("Invalid type for original_context");
+        }
+
+        return new XAISources(json.reference_number, json.context, json.source_name, json.original_context);
+    }
 }
 
 interface MessageProps {
@@ -58,31 +74,11 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
     const toggleExplanation = () => setIsExplanationOpen((prev) => !prev);
 
     const metadata = extraData.dashboardData;
-
     const [activeSource, setActiveSource] = useState<string | null>(null);
-
     const openSourceInModal = (source: string | undefined) => {
         if (source) setActiveSource(source);
     };
-
     const closeModal = () => setActiveSource(null);
-
-    // Utility function to group explanations
-    function groupExplanations(explanations: XAISources[]): Record<string, XAISources[]> {
-        const grouped: Record<string, XAISources[]> = {};
-
-        explanations.forEach((source) => {
-            const key = `${source.context || ''}-${source.source_name || ''}`;
-            if (!grouped[key]) {
-                grouped[key] = [];
-            }
-            grouped[key].push(source);
-        });
-
-        return grouped;
-    }
-
-    const groupedExplanations = groupExplanations(extraData.explanation ? extraData.explanation : []);
 
     return (
         <div className="mt-2 space-y-2">
@@ -108,8 +104,6 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                                         ×
                                     </button>
                                 </div>
-
-                                {/* Loop through the explanation segments */}
                                 <div>
                                     {activeSource && (
                                         <div
@@ -140,30 +134,25 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                                             </div>
                                         </div>
                                     )}
-                                    {Object.entries(groupedExplanations).map(([key, sources], index) => (
-                                        <div key={index} className="mb-4">
-                                            <div
-                                                className="font-semibold text-lg">{"Reference [" + (index + 1) + "]"}</div>
-                                            {sources[0].context && (
-                                                <pre
-                                                    className="italic text-gray-700 mb-2">Context: {sources[0].context}
-                                                </pre>
-                                            )}
-                                            {sources[0].source_name && (
-                                                <div
-                                                    className="text-blue-600 mb-2 cursor-pointer"
-                                                    onClick={() => {
-                                                        console.log(sources[0].original_context);
-                                                        openSourceInModal(sources[0].original_context)
-                                                    }}
-                                                >
-                                                    Source: {sources[0].source_name}
-                                                </div>
-                                            )}
-
-                                        </div>
-                                    ))}
                                 </div>
+                                {/* Loop through the explanation segments */}
+                                {extraData.explanation.map((segment, index) => (
+                                    <div key={index} className="mb-4">
+                                        <div
+                                            className="font-semibold text-lg">{"[" + segment.response_segment + "]"}</div>
+                                        {segment.context && (
+                                            <pre
+                                                className="italic text-wrap text-gray-700 mb-2">Context: {segment.context}</pre>
+                                        )}
+                                        {segment.source_name && (
+                                            <pre className="text-blue-600 mb-2 cursor-pointer"
+                                                 onClick={() => openSourceInModal(segment?.original_context)}>
+                                                Source: {segment.source_name}
+                                            </pre>
+                                        )}
+                                    </div>
+                                ))}
+
                                 <div className="mt-4 text-right">
                                     <button
                                         onClick={toggleExplanation}
