@@ -6,6 +6,7 @@ from sklearn.preprocessing import StandardScaler
 import itertools
 from tqdm import notebook
 from statsmodels.tsa.statespace.sarimax import SARIMAX
+import xgboost as xgb
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import json
@@ -31,11 +32,38 @@ import datetime
 # historical data
 models_path = 'models/'
 
+def execute_druid_query(body):
+    """
+    Executes a SQL query on a Druid instance.
+    
+    :param url: The Druid SQL endpoint.
+    :param body: A dictionary containing the query body.
+    :return: The response from the Druid server.
+    """
+    headers = {
+        "Content-Type": "application/json"
+    }
+    url = "http://router:8888/druid/v2/sql"
+    try:
+        response = requests.post(url, headers=headers, json=body)
+        response.raise_for_status()  # Raise an error for bad status codes
+        return response.json()  # Return the JSON response
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        return None
+
 def data_load(machine,kpi):
+  
+  query_body = {
+      "query": f"SELECT * FROM timeseries" # WHERE Machine_name = {machine} AND KPI_name = {KPI}
+  }
+  # Execute the query
+  response = execute_druid_query(query_body)
+  
   # time series should be loaded from the dataset,
   # right now they can be read directly from the pickle file
   # kpi_data = df.loc[df['name'] == machine].loc[df['kpi'] == kpi]
-  return 0# kpi_data['time'].values, kpi_data['avg'].values
+  return response# kpi_data['time'].values, kpi_data['avg'].values
 
 def data_extract_trends(ts):
   trends = {
@@ -164,10 +192,6 @@ def characterize_KPI(machine, kpi):
                                                           #2- [NOT IMPLEMENTED YET] if we have other ts look for
                                                           #   correlation of holes with other trends and report them
 
-  # OUTLIER DETECTION
-  # Outliers are not detected here, as we only focus on finding them on upcoming new data points
-
-
   # STATIONARITY CHECK
   orig_statistic, orig_p_value = perform_adfuller(data['Value'])
 
@@ -208,28 +232,43 @@ def characterize_KPI(machine, kpi):
   # ###########################
   # ### 3. Model definition ###
   # ###########################
+  model_selected = 'xgboost'
+  if model_selected == 'ARIMA':
+    # Set up the p and q ranges
+    # p = range(0, 10,1)  # You can adjust the range as needed
+    # q = range(0, 20,1)  # You can adjust the range as needed
+    p = range(2, 4,1)  # You can adjust the range as needed
+    q = range(2, 4,1)  # You can adjust the range as needed
+    order_list = list(itertools.product(p, q))
 
-  # Set up the p and q ranges
-  # p = range(0, 10,1)  # You can adjust the range as needed
-  # q = range(0, 20,1)  # You can adjust the range as needed
-  p = range(2, 4,1)  # You can adjust the range as needed
-  q = range(2, 4,1)  # You can adjust the range as needed
-  order_list = list(itertools.product(p, q))
+    # Differencing parameter
+    d = 1  # Assumed based on standard practice. Adjust if necessary.
 
-  # Differencing parameter
-  d = 1  # Assumed based on standard practice. Adjust if necessary.
+    # Create an empty list to store optimization results
+    best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
+    pq_tuple = best_arima.iloc[0].iloc[0]
+    p = pq_tuple[0]
+    q = pq_tuple[1]
+    print(p,q)
+    a_dict['model'] = {
+        'name': 'ARIMA',
+        'p': p,
+        'q': q
+    }
+  elif model_selected == 'xgboost':
+    # parameter selection for xgboost
+    model = 0 #create xgboost model 
+    model_bytes = model.save_raw()
+    a_dict['model'] = {
+       'name': 'xgboost',
+       'xgb_bytes': model_bytes
+    }
+    # loaded_model = xgb.XGBRegressor()
+    # loaded_model.load_model(my_big_dict["model_bytes"])
 
-  # Create an empty list to store optimization results
-  best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
-  pq_tuple = best_arima.iloc[0].iloc[0]
-  p = pq_tuple[0]
-  q = pq_tuple[1]
-  print(p,q)
-  a_dict['model'] = {
-      'name': 'ARIMA',
-      'p': p,
-      'q': q
-  }
+    # # Use the loaded model for predictions
+    # predictions = loaded_model.predict(X_test)
+     
 
   # ############################
   # ### 4. Meta-Data storage ###
@@ -282,52 +321,63 @@ def make_prediction(machine, kpi, length):
   data = data_clean_missing_values(timeseries)
 
   avg_values1 = data['Value'].values
-  # Split into train and test sets
-  train_len = int(len(avg_values1) * 0.85)
-  train, test = avg_values1[:train_len], avg_values1[train_len:]
+  # TODO: perform differencing first
+  if a_dict['model']['name'] == 'ARIMA':
+    
+    # Split into train and test sets
+    train_len = int(len(avg_values1) * 0.85)
+    train, test = avg_values1[:train_len], avg_values1[train_len:]
 
-  window = 1
-  horizon = length
+    window = 1
+    horizon = length
 
-  # model = any
-  # training_data: Union[np.ndarray, torch.Tensor]
-  # explainer = forecastExplainer(model, training_data)
-  # input_data: Union[np.ndarray, torch.Tensor]
-  # n_predictions: int
-  # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD'] 
-  # Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
-  # Model MUST be able to do prediction = model.predict(input_data) <- predict should return a single value
-
-
+    # model = any
+    # training_data: Union[np.ndarray, torch.Tensor]
+    # explainer = forecastExplainer(model, training_data)
+    # input_data: Union[np.ndarray, torch.Tensor]
+    # n_predictions: int
+    # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD'] 
+    # Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
+    # Model MUST be able to do prediction = model.predict(input_data) <- predict should return a single value
 
 
-  pred_ARIMA = rolling_forecast(
-      avg_values1,
-      train_len=train_len,
-      horizon=horizon,
-      window=window,
-      p=a_dict['model']['p'],
-      q=a_dict['model']['q'],
-      d=a_dict['stationarity']['Differencing']
-  )
 
-  # Evaluate predictions
-  if len(test) > 0:
-      test_length = min(len(test), horizon)
-      rmse = np.sqrt(mean_squared_error(test[:test_length], pred_ARIMA[:test_length]))
-      mae = mean_absolute_error(test[:test_length], pred_ARIMA[:test_length])
-      print(f"Evaluation Metrics for {machine} - {kpi}:")
-      print(f"  RMSE: {rmse:.3f}")
-      print(f"  MAE: {mae:.3f}")
-  else:
-      print(f"No test data available for evaluation for {machine} - {kpi}")
+
+    pred_ARIMA = rolling_forecast(
+        avg_values1,
+        train_len=train_len,
+        horizon=horizon,
+        window=window,
+        p=a_dict['model']['p'],
+        q=a_dict['model']['q'],
+        d=a_dict['stationarity']['Differencing']
+    )
+
+    # Evaluate predictions
+    if len(test) > 0:
+        test_length = min(len(test), horizon)
+        rmse = np.sqrt(mean_squared_error(test[:test_length], pred_ARIMA[:test_length]))
+        mae = mean_absolute_error(test[:test_length], pred_ARIMA[:test_length])
+        print(f"Evaluation Metrics for {machine} - {kpi}:")
+        print(f"  RMSE: {rmse:.3f}")
+        print(f"  MAE: {mae:.3f}")
+    else:
+        print(f"No test data available for evaluation for {machine} - {kpi}")
+
+  elif a_dict['model']['name'] == 'xgboost':
+    # TODO: perform differentiation here
+    loaded_model = xgb.XGBRegressor()
+    loaded_model.load_model(a_dict['model']['xgb_bytes'])
+    # Use the loaded model for predictions
+    predictions = loaded_model.predict(X_test)
 
   return 0,pred_ARIMA
 
-def kpi_exists(machine, KPI):
+def kpi_exists(machine, KPI, host_url, host_port):
 
-  url = "http://service2:5000/api/resource" #get_kpi
-  Kpi_info = requests.post(url, json=data)
+  url_KB = f"http://{host_url}:{host_port}/kb/{machine}/{KPI}/check"
+  Kpi_info = requests.post(url_KB)
+  return Kpi_info
 
 ###########################################
 #####=================================#####

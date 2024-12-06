@@ -22,6 +22,11 @@ API_key = '12d326d6-8895-49b9-8e1b-a760462ac13f'
 host_url = 'TBD'
 host_port = 'TBD'
 
+@app.get("/data-processing/test")
+def test():
+    print(f_dataprocessing.data_load('',''))
+    
+
 #http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
 @app.get("/data-processing/predict")
 def predict(JSONS):
@@ -48,54 +53,48 @@ def predict(JSONS):
             'Machine_name': machine,
             'KPI_name': KPI_name,
             'Predicted_value': '',
+            'Lower_bound':[], #from XAI
+            'Upper_bound':[], #from XAI
+            'Confidence_score':[], #from XAI
+            'Lime_explaination': [], #from XAI
             'Measure_unit': '',
             'Date_prediction': '',
             'Forecast': True
         }
-        # stabilire connessione diretta con 
-        is_working = 0
-        if is_working:
-
-            url_kb_KPI = f"http://{host_url}:{host_port}/kb/{KPI_name}/get_kpi?kpi_id={KPI_name}" 
-            url_kb_machine = f"/kb/{machine}/get_kpi" 
-
-            
-
-            if 1:#kpi_exists(machine, KPI): & is it usable?
-                req_date = json_in['Date_prediction']
+        KPI_data = f_dataprocessing.kpi_exists(machine_id,kpi_id,host_url,host_port)
+        if KPI_data['Status'] == 0:
+            if KPI_data['forecastable'] == True:
+                req_date = json_in['Date_prediction'] #TODO check date format
                 today = datetime.datetime.now().date()
                 delta = req_date - today
                 horizon = delta.days() 
                 if horizon > 0:
-                    if not 1:#json_exists():
+                    query_body = {
+                        "query": f"SELECT * FROM JSONS WHERE MACHINE = MACHINE AND KPI = KPI" #TODO TODO
+                    }
+                    response = f_dataprocessing.execute_druid_query(query_body)
+                    if not 1:#json_exists(): TODO, update with cmpleted query
                         f_dataprocessing.characterize_KPI(machine,KPI_name)
                     result_dates, result_values = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
                     out_dict['Predicted_value'] = result_values
-                    out_dict['Measure_unit'] = 1#recover_unit(machine,KPI)
+                    out_dict['Measure_unit'] = KPI_data["unit_measure"]
                     out_dict['Date_prediction'] = result_dates
                 else:
                     out_dict['Predicted_value'] = 'Errore, la data inserita è precedente alla data odierna'
-                    return 'ERROR, invalid date'
             else:
                 out_dict['Predicted_value'] = 'Errore, il KPI inserito non esiste'
-                return 'ERROR, KPI ... does not exist'
             out_dicts.append(out_dict)
-    else:
-        d = datetime.datetime.today().date()
-        out_dict = {
-            'Machine_name': machine,
-            'KPI_name': KPI_name,
-            'Predicted_value': [0,1,2,3,4,5,6,7,8,9,10],
-            'Measure_unit': 'Kbps',
-            'Date_prediction': [d,d,d,d,d,d,d,d,d,d],
-            'Forecast': True
-        }
     return {"result": out_dict.tolist()}  # Convert numpy array to list for JSON serialization
 
 # TODO: This function should be called once a day and retreive all the models 
 def new_data_polling():
-   availableModels = []
-   for m in availableModels:
+    query_body = {
+        "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
+    }
+    response = f_dataprocessing.execute_druid_query(query_body)
+    #TODO: link response to available models
+    availableModels = []
+    for m in availableModels:
         f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
  
 if __name__ == "__main__":
