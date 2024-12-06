@@ -8,9 +8,9 @@ const App = () => {
     // User authentication state ---  set to true for development purposes
     const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
     const [userId, setUserId] = useState('');
-    const [username, setUsername] = useState('');
+    const [username, setUsername] = useState('Test User');
     const [token, setToken] = useState<string | null>(null);
-    const [role, setRole] = useState('');
+    const [role, setRole] = useState('Tester');
     const [site, setSite] = useState('');
 
     // Loading state to track if data is still being initialized
@@ -44,6 +44,7 @@ const App = () => {
             console.log("Data initialization completed.");
             console.log("KPI List:", dataManager.getKpiList());
             console.log("Machine List:", dataManager.getMachineList());
+            console.log("Dashboards:", dataManager.getDashboards());
         } catch (error) {
             console.error("Error during initialization:", error);
         } finally {
@@ -57,7 +58,7 @@ const App = () => {
     }, []); // Empty dependency array means this will run only once on mount
 
     // Show loading screen while data is being initialized or user is not authenticated
-    if (loading && !isAuthenticated) {
+    if (loading) {
         return (
             <div className="loading-screen">
                 <h1>Loading...</h1>
@@ -65,27 +66,29 @@ const App = () => {
         );
     }
 
+    // Show login page if not authenticated
+    if (!isAuthenticated) {
+        return (
+            <Router>
+                <Routes>
+                    <Route path="/" element={<LoginForm onLogin={handleLogin} />} />
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+            </Router>
+        );
+    }
+
+    // Show the home page (with the sidebar) once authenticated and data is initialized
     return (
         <Router>
             <div className="flex flex-col justify-center text-center min-h-screen bg-gray-200 font-bold">
-                {isAuthenticated ? (
-                    <Routes>
-                        {/* Rotta principale per la dashboard */}
-                        <Route
-                            path="/*"
-                            element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}/>}
-                        />
-                        {/* Reindirizza qualsiasi rotta non valida */}
-                        <Route path="*" element={<Navigate to="/"/>}/>
-                    </Routes>
-                ) : (
-                    <Routes>
-                        {/* Rotta per il login */}
-                        <Route path="/" element={<LoginForm onLogin={handleLogin}/>}/>
-                        {/* Reindirizza qualsiasi rotta non valida */}
-                        <Route path="*" element={<Navigate to="/"/>}/>
-                    </Routes>
-                )}
+                <Routes>
+                    <Route
+                        path="/*"
+                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site} />}
+                    />
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
             </div>
         </Router>
     );
