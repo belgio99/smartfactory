@@ -434,6 +434,7 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
         if not response:
             logging.error("User not found")
             raise HTTPException(status_code=404, detail="User not found")
+        userId = response[0][0]
         prompt = PromptTemplate(
             input_variables=["period", "kpi", "machines"],
             template=(
