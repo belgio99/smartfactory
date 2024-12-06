@@ -36,7 +36,7 @@ const ForecastingPage: React.FC = () => {
 
 
     const fetchForecastData = async () => {
-        if (selectedKpi.id != "none" && timeFrame !== null && selectedMachine.machineId !== "None Selected") {
+        if (selectedKpi.id !== "none" && timeFrame !== null && selectedMachine.machineId !== "None Selected") {
             setLoading(true);
             const machineFilter = new Filter(selectedMachine.type, [selectedMachine.machineId]);
             const pastData = await simulateChartData(selectedKpi, timeFrame.past, "line", machineFilter);

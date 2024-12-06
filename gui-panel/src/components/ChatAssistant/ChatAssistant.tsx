@@ -55,9 +55,155 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
                         content: 'This is an example dashboard.',
                         extraData: {
                             explanation: [
-                                new XAISources("This is a sample dashboard that shows some key metrics.", "context", "source_name", 0.9, "original_context"),
-                                new XAISources("You can click on the 'View Dashboard' button to see more details.", "context", "source_name", 0.9, "original_context"),
-                                new XAISources("You can also click on the 'View Explanation' button to see an explanation of the data.", "context", "source_name", 0.9, "original_context"),
+                                new XAISources("\"Machine_name\": \"Machine_A\",\n" +
+                                    "    \"KPI_name\": \"Efficiency\",\n" +
+                                    "    \"Value\": \"85\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false", "Dashboards show key metrics", "source_name", 0.9, "{\n" +
+                                    "    \"Machine_name\": \"Machine_A\",\n" +
+                                    "    \"KPI_name\": \"Efficiency\",\n" +
+                                    "    \"Value\": \"85\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_B\",\n" +
+                                    "    \"KPI_name\": \"Production_Rate\",\n" +
+                                    "    \"Value\": \"500\",\n" +
+                                    "    \"Measure_unit\": \"units\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"30/11/2024\",\n" +
+                                    "    \"Aggregator\": \"AVG\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_C\",\n" +
+                                    "    \"KPI_name\": \"Downtime\",\n" +
+                                    "    \"Value\": \"12\",\n" +
+                                    "    \"Measure_unit\": \"hours\",\n" +
+                                    "    \"Date_start\": \"15/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_D\",\n" +
+                                    "    \"KPI_name\": \"Energy_Consumption\",\n" +
+                                    "    \"Value\": \"Error: Time period not present in the dataset\",\n" +
+                                    "    \"Measure_unit\": \"kWh\",\n" +
+                                    "    \"Date_start\": \"01/10/2023\",\n" +
+                                    "    \"Date_finish\": \"31/10/2023\",\n" +
+                                    "    \"Aggregator\": \"SUM\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_A\",\n" +
+                                    "    \"KPI_name\": \"Maintenance_Cost\",\n" +
+                                    "    \"Value\": \"Error: KPI name not found\",\n" +
+                                    "    \"Measure_unit\": \"USD\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_E\",\n" +
+                                    "    \"KPI_name\": \"Output_Quality\",\n" +
+                                    "    \"Value\": \"92\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_start\": \"20/11/2024\",\n" +
+                                    "    \"Date_finish\": \"25/11/2024\",\n" +
+                                    "    \"Aggregator\": \"AVG\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_B\",\n" +
+                                    "    \"KPI_name\": \"Error_Rate\",\n" +
+                                    "    \"Value\": \"Error: Machine not found\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"15/11/2024\",\n" +
+                                    "    \"Aggregator\": \"MAX\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_C\",\n" +
+                                    "    \"KPI_name\": \"Temperature\",\n" +
+                                    "    \"Predicted_value\": \"75\",\n" +
+                                    "    \"Measure_unit\": \"Celsius\",\n" +
+                                    "    \"Date_prediction\": \"05/12/2024\",\n" +
+                                    "    \"Forecast\": true\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_D\",\n" +
+                                    "    \"KPI_name\": \"Humidity_Level\",\n" +
+                                    "    \"Predicted_value\": \"Error: KPI not forecastable\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_prediction\": \"06/12/2024\",\n" +
+                                    "    \"Forecast\": true\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_F\",\n" +
+                                    "    \"KPI_name\": \"Failure_Probability\",\n" +
+                                    "    \"Predicted_value\": \"0.03\",\n" +
+                                    "    \"Measure_unit\": \"probability\",\n" +
+                                    "    \"Date_prediction\": \"07/12/2024\",\n" +
+                                    "    \"Forecast\": true\n" +
+                                    "  }"),
+                                new XAISources("You can click on the 'View Dashboard' button to see more details.", "\"Machine_name\": \"Machine_A\",\n" +
+                                    "    \"KPI_name\": \"Efficiency\",\n" +
+                                    "    \"Value\": \"85\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false", "source_name", 0.9, "original_context"),
+                                new XAISources("You can also click on the 'View Explanation' button to see an explanation of the data.", "context", "source_name", 0.9, "{\n" +
+                                    "    \"Machine_name\": \"Machine_A\",\n" +
+                                    "    \"KPI_name\": \"Efficiency\",\n" +
+                                    "    \"Value\": \"85\",\n" +
+                                    "    \"Measure_unit\": \"percentage\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_B\",\n" +
+                                    "    \"KPI_name\": \"Production_Rate\",\n" +
+                                    "    \"Value\": \"500\",\n" +
+                                    "    \"Measure_unit\": \"units\",\n" +
+                                    "    \"Date_start\": \"01/11/2024\",\n" +
+                                    "    \"Date_finish\": \"30/11/2024\",\n" +
+                                    "    \"Aggregator\": \"AVG\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_C\",\n" +
+                                    "    \"KPI_name\": \"Downtime\",\n" +
+                                    "    \"Value\": \"12\",\n" +
+                                    "    \"Measure_unit\": \"hours\",\n" +
+                                    "    \"Date_start\": \"15/11/2024\",\n" +
+                                    "    \"Date_finish\": \"NULL\",\n" +
+                                    "    \"Aggregator\": \"NULL\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  },\n" +
+                                    "  {\n" +
+                                    "    \"Machine_name\": \"Machine_D\",\n" +
+                                    "    \"KPI_name\": \"Energy_Consumption\",\n" +
+                                    "    \"Value\": \"Error: Time period not present in the dataset\",\n" +
+                                    "    \"Measure_unit\": \"kWh\",\n" +
+                                    "    \"Date_start\": \"01/10/2023\",\n" +
+                                    "    \"Date_finish\": \"31/10/2023\",\n" +
+                                    "    \"Aggregator\": \"SUM\",\n" +
+                                    "    \"Forecast\": false\n" +
+                                    "  }"),
                             ],
                             dashboardData: {
                                 target: '/dashboard/new',

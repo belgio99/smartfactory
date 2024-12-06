@@ -25,7 +25,7 @@ interface MessageProps {
     onNavigate: (target: string, metadata: any) => void;
 }
 
-const MessageBubble: React.FC<MessageProps> = ({ message, onNavigate }) => {
+const MessageBubble: React.FC<MessageProps> = ({message, onNavigate}) => {
     return (
         <div
             className={classNames(
@@ -39,7 +39,7 @@ const MessageBubble: React.FC<MessageProps> = ({ message, onNavigate }) => {
                 {message.sender === 'user' ? 'You' : 'Assistant'}
             </div>
             <p>{message.content}</p>
-            {message.extraData && <ExtraDataButtons extraData={message.extraData} onNavigate={onNavigate} />}
+            {message.extraData && <ExtraDataButtons extraData={message.extraData} onNavigate={onNavigate}/>}
         </div>
     );
 };
@@ -52,15 +52,38 @@ interface ExtraDataProps {
     onNavigate: (target: string, metadata: any) => void;
 }
 
-const ExtraDataButtons: React.FC<ExtraDataProps> = ({ extraData, onNavigate }) => {
+const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => {
     const [isExplanationOpen, setIsExplanationOpen] = useState(false);
 
     const toggleExplanation = () => setIsExplanationOpen((prev) => !prev);
 
     const metadata = extraData.dashboardData;
-    const openSourceInNewWindow = (source: string | undefined) => {
-        //TODO Implement this
+
+    const [activeSource, setActiveSource] = useState<string | null>(null);
+
+    const openSourceInModal = (source: string | undefined) => {
+        if (source) setActiveSource(source);
     };
+
+    const closeModal = () => setActiveSource(null);
+
+    // Utility function to group explanations
+    function groupExplanations(explanations: XAISources[]): Record<string, XAISources[]> {
+        const grouped: Record<string, XAISources[]> = {};
+
+        explanations.forEach((source) => {
+            const key = `${source.context || ''}-${source.source_name || ''}`;
+            if (!grouped[key]) {
+                grouped[key] = [];
+            }
+            grouped[key].push(source);
+        });
+
+        return grouped;
+    }
+
+    const groupedExplanations = groupExplanations(extraData.explanation ? extraData.explanation : []);
+
     return (
         <div className="mt-2 space-y-2">
             {/* Explanation Button */}
@@ -87,25 +110,60 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({ extraData, onNavigate }) =
                                 </div>
 
                                 {/* Loop through the explanation segments */}
-                                {extraData.explanation.map((segment, index) => (
-                                    <div key={index} className="mb-4">
-                                        <div className="font-semibold text-lg">{segment.response_segment}</div>
-                                        {segment.context && (
-                                            <div className="italic text-gray-700 mb-2">Context: {segment.context}</div>
-                                        )}
-                                        {segment.source_name && (
-                                            <div className="text-blue-600 mb-2 cursor-pointer" onClick={() => openSourceInNewWindow(segment?.source_name)}>
-                                                Source: {segment.source_name}
+                                <div>
+                                    {activeSource && (
+                                        <div
+                                            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                                            <div className="bg-white rounded-lg shadow-lg p-4 max-w-lg w-full">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h3 className="text-lg font-bold text-gray-800">Source Details</h3>
+                                                    <button
+                                                        onClick={closeModal}
+                                                        className="text-gray-600 hover:text-gray-800"
+                                                        aria-label="Close"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                                <div
+                                                    className="overflow-y-auto flex-col flex-wrap max-h-96 max-w-fit text-gray-700">
+                                                    <pre>{activeSource}</pre>
+                                                </div>
+                                                <div className="mt-4 text-right">
+                                                    <button
+                                                        onClick={closeModal}
+                                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                    >
+                                                        Close
+                                                    </button>
+                                                </div>
                                             </div>
-                                        )}
-                                        {segment.similarity_score !== undefined && (
-                                            <div className="text-sm text-gray-600">
-                                                Similarity Score: {segment.similarity_score.toFixed(2)}
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                                        </div>
+                                    )}
+                                    {Object.entries(groupedExplanations).map(([key, sources], index) => (
+                                        <div key={index} className="mb-4">
+                                            <div
+                                                className="font-semibold text-lg">{"Reference [" + (index + 1) + "]"}</div>
+                                            {sources[0].context && (
+                                                <pre
+                                                    className="italic text-gray-700 mb-2">Context: {sources[0].context}
+                                                </pre>
+                                            )}
+                                            {sources[0].source_name && (
+                                                <div
+                                                    className="text-blue-600 mb-2 cursor-pointer"
+                                                    onClick={() => {
+                                                        console.log(sources[0].original_context);
+                                                        openSourceInModal(sources[0].original_context)
+                                                    }}
+                                                >
+                                                    Source: {sources[0].source_name}
+                                                </div>
+                                            )}
 
+                                        </div>
+                                    ))}
+                                </div>
                                 <div className="mt-4 text-right">
                                     <button
                                         onClick={toggleExplanation}
