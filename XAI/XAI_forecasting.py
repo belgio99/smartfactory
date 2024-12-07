@@ -31,23 +31,11 @@ class forecastExplainer:
             training_data = training_data.detach().cpu().numpy()
         self.training_data = training_data
 
-        # Prepare data for LIME
         self.num_samples, self.seq_length = self.training_data.shape
-        self.feature_names = [f'Time_{t}' for t in range(self.seq_length)]
 
-        # Initialize the LIME explainer
-        self.explainer = LimeTabularExplainer(
-            self.training_data,
-            mode='regression',
-            feature_names=self.feature_names,
-            verbose=False
-        )
-
-        # Compute the baseline bootstrap noise std from the variability of the training data
+        # Compute baseline noise std from training data variability
         data_std = np.std(self.training_data)
-        # Use 5% of data standard deviation as baseline noise
         self.bootstrap_noise_std_base = 0.05 * data_std if data_std > 0 else 0.001
-
 
     def predict(self, input_data: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         """
@@ -92,7 +80,6 @@ class forecastExplainer:
         - n_samples (int): Number of bootstrap samples.
         - confidence (float): Confidence level for the interval.
         - step (int): The step number in the autoregressive forecasting sequence.
-                      Used to increase uncertainty over steps.
 
         Returns:
         - mean_pred (float)
@@ -147,18 +134,22 @@ class forecastExplainer:
                 outputs = self.model.predict(data)
             return outputs.flatten()
 
-        exp = self.explainer.explain_instance(
+        # Create a new LimeTabularExplainer using the current input_labels as feature names
+        explainer = LimeTabularExplainer(
+            training_data=self.training_data,
+            feature_names=input_labels,  # Use the current labels directly
+            mode='regression',
+            verbose=False
+        )
+
+        exp = explainer.explain_instance(
             input_data_flat,
             predict_fn,
             num_features=num_features
         )
 
-        explanation = []
-        for feature, importance in exp.as_list():
-            # feature format: "Time_i"
-            idx_str = feature.split('_')[-1]
-            idx = int(idx_str) if idx_str.isdigit() else 0
-            explanation.append((input_labels[idx], importance))
+        # Now the feature names in exp.as_list() should be directly the timestamps
+        explanation = exp.as_list()
 
         return explanation
 
@@ -264,7 +255,7 @@ def main():
     model.fit(X_train, y_train)
 
     # Perform predictions beyond the training range
-    n_predictions = 50
+    n_predictions = 5
     input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
 
     # Generate labels for the input_data
@@ -279,7 +270,7 @@ def main():
         input_data=input_data,
         n_predictions=n_predictions,
         input_labels=input_labels,
-        num_features=5,
+        num_features=seq_length,  # Set to seq_length if you want all features explained
         confidence=0.95,
         n_samples=100
     )
@@ -298,7 +289,6 @@ def main():
     lower_bounds = results['Lower_bound']
     upper_bounds = results['Upper_bound']
 
-    # The input_data corresponds to a portion of the data. We'll plot the input + predictions.
     plt.figure(figsize=(10,6))
     # Plot the input data
     plt.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
