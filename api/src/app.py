@@ -10,6 +10,7 @@ from model.alert import Alert
 from notification_service import send_notification, retrieve_alerts
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
+from database.druid_connection import execute_druid_query
 from constants import *
 import logging
 from model.task import *
@@ -20,7 +21,7 @@ from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, S
 
 from model.user import *
 from model.report import Report
-from dotenv import load_dotenv
+from model.historical import HistoricalQueryParams, HistoricalData
 # TODO: how to import modules from rag directory ??
 from model.agent import Answer
 from datetime import datetime, timedelta, timezone
@@ -507,6 +508,61 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.post('/smartfactory/historical')
+def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve historical data.
+    This endpoint receives a set of parameters and retrieves historical data from the database based on those parameters.
+    Args:
+        historical_params (HistoricalQueryParams): The parameters for the historical data query.
+    Returns:
+        HistoricalData: The historical data retrieved from the database.
+    Raises:
+        HTTPException: If the query parameters are malformed or an unexpected error occurs.
+    """
+    
+    # build the aggregation string
+    aggregation = historical_params.aggregations["operation"] + '("' + historical_params.aggregations["field"] + '")'
+    # substitute square brackets with parentheses in machine list
+    historical_params.machines = tuple(historical_params.machines) 
+    # remove commas from machines string
+    machines = str(historical_params.machines).replace(",", "")
+    try:
+        
+        # Build the query body
+        # aggregation column (as "max") goes with double quotes, while the rest goes with single quotes!!!
+        
+        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe, {} AS aggregated_value FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND asset_id IN {} GROUP BY name, kpi, TIME_FORMAT(__time, 'yyyy-MM-dd') ORDER BY timeframe ASC
+        """.format(
+            aggregation, historical_params.kpi, historical_params.timeframe["start_date"], historical_params.timeframe["end_date"], machines
+            )
+        
+        '''
+        # append optional group by and aggregation
+        if historical_params.group_time :
+            query += """ORDER BY %s"""
+        if historical_params.group_category :
+            query += """, ORDER BY %s"""
+        '''
+        # query = 'SELECT SUM("max") FROM \"timeseries\"' + "WHERE kpi = 'consumption'"
+        print("Query:", query)
+
+        # Execute the query
+        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
+        if response:
+            print("Query response:", response)
+        else:
+            print("Failed to retrieve query response.")
+
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    return response
+
     
 
 @app.get("/smartfactory/dummy")
