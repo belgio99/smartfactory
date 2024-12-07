@@ -402,7 +402,7 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
             return JSONResponse(content={"data": []}, status_code=200)
         reports = []
         for row in response:
-            reports.append(Report(id=row[0], name=row[1], type=row[2]))
+            reports.append(ReportResponse(id=row[0], name=row[1], type=row[2]))
         close_connection(connection, cursor)
         return JSONResponse(content={"data": reports}, status_code=200)
     except Exception as e:
