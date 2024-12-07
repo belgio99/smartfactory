@@ -216,6 +216,8 @@ services:
     profiles:
       - data-processing
       - not-db-init
+    env_file:
+      - data-processing/.env
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
