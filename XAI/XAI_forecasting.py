@@ -43,6 +43,12 @@ class forecastExplainer:
             verbose=False
         )
 
+        # Compute the baseline bootstrap noise std from the variability of the training data
+        data_std = np.std(self.training_data)
+        # Use 5% of data standard deviation as baseline noise
+        self.bootstrap_noise_std_base = 0.05 * data_std if data_std > 0 else 0.001
+
+
     def predict(self, input_data: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         """
         Makes a single prediction using the provided model.
@@ -76,7 +82,7 @@ class forecastExplainer:
         input_data: np.ndarray,
         n_samples: int = 100,
         confidence: float = 0.95,
-        bootstrap_noise_std: float = 0.01
+        step: int = 0
     ) -> Tuple[float, float, float]:
         """
         Makes a prediction with a confidence interval using bootstrapping.
@@ -85,7 +91,8 @@ class forecastExplainer:
         - input_data (np.ndarray): Input data of shape (seq_length,).
         - n_samples (int): Number of bootstrap samples.
         - confidence (float): Confidence level for the interval.
-        - bootstrap_noise_std (float): Standard deviation of the noise used for bootstrapping.
+        - step (int): The step number in the autoregressive forecasting sequence.
+                      Used to increase uncertainty over steps.
 
         Returns:
         - mean_pred (float)
@@ -93,7 +100,9 @@ class forecastExplainer:
         - upper_bound (float)
         """
         predictions = []
-        # Create bootstrap samples by adding noise
+        # Scale noise with step to reflect increasing uncertainty
+        bootstrap_noise_std = self.bootstrap_noise_std_base * (1 + step)
+
         for _ in range(n_samples):
             perturbed_input = input_data + np.random.normal(0, bootstrap_noise_std, size=len(input_data))
             pred = self.predict(perturbed_input)
@@ -160,8 +169,7 @@ class forecastExplainer:
         input_labels: List[str],
         num_features: int = 10,
         confidence: float = 0.95,
-        n_samples: int = 100,
-        bootstrap_noise_std: float = 0.01
+        n_samples: int = 100
     ):
         """
         Performs autoregressive prediction and explanation for n_prediction steps.
@@ -173,7 +181,6 @@ class forecastExplainer:
         - num_features (int): Number of features for LIME explanation.
         - confidence (float): Confidence level.
         - n_samples (int): Number of bootstrap samples.
-        - bootstrap_noise_std (float): Noise std for bootstrapping.
         
         Returns:
         A dictionary with:
@@ -196,14 +203,10 @@ class forecastExplainer:
         current_labels = input_labels.copy()
 
         for i in range(n_predictions):
-            # Increase uncertainty with each step
-            step_noise_std = bootstrap_noise_std * (1 + i)
-
             mean_pred, lower_bound, upper_bound = self.predict_with_uncertainty(
-                current_input, n_samples=n_samples, confidence=confidence, bootstrap_noise_std=step_noise_std
+                current_input, n_samples=n_samples, confidence=confidence, step=i
             )
 
-            # Confidence score: inverse of interval width
             interval_width = upper_bound - lower_bound
             confidence_score = 1.0 / (1e-6 + interval_width)
 
@@ -215,9 +218,9 @@ class forecastExplainer:
             confidence_scores.append(confidence_score)
             lime_explanations.append(explanation)
 
-            # Update input_data and input_labels for next step
+            # Update the input_data for next step
             current_input = np.append(current_input[1:], mean_pred)
-            # Update labels: remove oldest, add a new one (next day)
+            # Update the labels (assume daily increments)
             last_label_date = datetime.strptime(current_labels[-1], "%Y-%m-%d")
             new_label_date = last_label_date + timedelta(days=1)
             new_label = new_label_date.strftime("%Y-%m-%d")
@@ -241,7 +244,6 @@ def main():
     random.seed(42)
 
     # Generate a sine wave
-    # We'll use a certain portion for training and then forecast beyond it.
     total_points = 300
     seq_length = 50
     t = np.linspace(0, 10*np.pi, total_points)
@@ -261,14 +263,11 @@ def main():
     model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
     model.fit(X_train, y_train)
 
-    # We'll pick the last sequence from the training range to start forecasting
-    # Actually, we pick the sequence ending at total_points - 1 - n_predictions
-    # For demonstration, let's predict 5 steps ahead beyond our training horizon
-    n_predictions = 5
+    # Perform predictions beyond the training range
+    n_predictions = 50
     input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
 
     # Generate labels for the input_data
-    # Assume we start at 2020-01-01 for convenience
     start_date = datetime(2020, 1, 1)
     input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
@@ -282,11 +281,9 @@ def main():
         input_labels=input_labels,
         num_features=5,
         confidence=0.95,
-        n_samples=100,
-        bootstrap_noise_std=0.01
+        n_samples=100
     )
 
-    # Print explanations for each step
     print("Results:")
     for key, val in results.items():
         if key == 'Lime_explaination':
@@ -297,20 +294,13 @@ def main():
             print(f"{key}: {val}")
 
     # Plot the results
-    # We'll plot the original data, the input sequence, and predicted points with their intervals.
     predicted_values = results['Predicted_value']
     lower_bounds = results['Lower_bound']
     upper_bounds = results['Upper_bound']
 
-    # The input_data corresponds to a portion ending before predictions start.
-    # We'll plot from the start of input_data up to the new predictions.
-    full_time = np.arange(len(input_data) + n_predictions)
+    # The input_data corresponds to a portion of the data. We'll plot the input + predictions.
     plt.figure(figsize=(10,6))
-    # Plot the underlying true function for the predicted horizon
-    # The true future values after input_data:
-    true_future = data[(total_points - n_predictions):total_points] if (total_points - n_predictions) < len(data) else None
-
-    # Plot the historical input_data
+    # Plot the input data
     plt.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
 
     # Plot predictions and their bounds
@@ -320,11 +310,8 @@ def main():
         lb = lower_bounds[i]
         ub = upper_bounds[i]
         plt.errorbar(step_idx, pred_val, yerr=[[pred_val - lb], [ub - pred_val]], fmt='ro', capsize=5, label='Predicted value' if i == 0 else "")
-        if true_future is not None and i < len(true_future):
-            # Plot the true future if available
-            plt.plot(step_idx, true_future[i], 'gx', label='True future' if i == 0 else "")
 
-    plt.title("Forecasting with XGBoost")
+    plt.title("Forecasting with XGBoost and Data-Driven Noise for Uncertainty")
     plt.xlabel("Time Steps")
     plt.ylabel("Value")
     plt.grid(True)
