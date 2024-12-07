@@ -1,3 +1,5 @@
+# from XAI_forecasting import forecastExplainer
+
 import pandas as pd
 import numpy as np
 
@@ -7,6 +9,9 @@ import itertools
 from tqdm import notebook
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import xgboost as xgb
+from sklearn.model_selection import GridSearchCV
+from xgboost import XGBRegressor
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import json
@@ -159,7 +164,26 @@ def optimize_ARIMA(endog, order_list, d):
   optimize_ARIMA_results = pd.DataFrame(results, columns=['(p,q)', 'AIC'])
   optimize_ARIMA_results = optimize_ARIMA_results.sort_values(by='AIC', ascending=True).reset_index(drop=True)
   return optimize_ARIMA_results
+def xgboost_parameter_select(X_train,y_train):
+  # Define the XGBoost regressor
+  xgb_model = XGBRegressor(objective="reg:squarederror", random_state=42)
 
+  # Define a small parameter grid
+  param_grid = {
+      "n_estimators": [50, 100, 200],
+      "max_depth": [3, 5, 7],
+      "learning_rate": [0.01, 0.1, 0.2],
+  }
+
+  # Set up GridSearchCV
+  grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, cv=3, scoring="neg_mean_squared_error", verbose=1)
+
+  # Perform the grid search
+  grid_search.fit(X_train, y_train)
+
+  # Best parameters and model performance
+  print("Best Parameters:", grid_search.best_params_)
+  return grid_search.best_estimator_ 
 #########################
 ### 1. data profiling ###
 #########################
@@ -257,7 +281,9 @@ def characterize_KPI(machine, kpi):
     }
   elif model_selected == 'xgboost':
     # parameter selection for xgboost
-    model = 0 #create xgboost model 
+    X_train, _, y_train, _ = custom_tts(data['Value'].values,kpi_data_Time) 
+
+    model = xgboost_parameter_select(X_train,y_train)
     model_bytes = model.save_raw()
     a_dict['model'] = {
        'name': 'xgboost',
@@ -275,6 +301,19 @@ def characterize_KPI(machine, kpi):
   # ############################
   save_model_data(machine, kpi, a_dict)
 
+
+def custom_tts(data, labels, window_size = 10):
+  X = []
+  y = []
+  for i in range(len(data) - window_size):
+    X.append(data[i:i + window_size])  # Input is the window of 10 elements
+    y.append(data[i + window_size])    # Target is the next value
+
+  X = np.array(X)
+  y = np.array(y)
+  X_train, X_test, y_train, y_test, labels_train, labels_test = train_test_split(X,y,labels, test_size=0, random_state=42) #decide what to do
+
+  return X_train, X_test, y_train, y_test
 ##############################
 #####====================#####
 ### II. Real-Time Analysis ###
@@ -304,11 +343,11 @@ def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q
         pred_ARIMA.extend(oos_pred)
 
     return pred_ARIMA[:horizon]
-    
+
 def make_prediction(machine, kpi, length):
 
   final_path = f'{models_path}{machine}_{kpi}.json'
-
+  
   a_dict = {}
   with open(final_path, "r") as file:
     a_dict = json.load(file)
@@ -321,7 +360,6 @@ def make_prediction(machine, kpi, length):
   data = data_clean_missing_values(timeseries)
 
   avg_values1 = data['Value'].values
-  # TODO: perform differencing first
   if a_dict['model']['name'] == 'ARIMA':
     
     # Split into train and test sets
@@ -364,14 +402,23 @@ def make_prediction(machine, kpi, length):
     else:
         print(f"No test data available for evaluation for {machine} - {kpi}")
 
-  elif a_dict['model']['name'] == 'xgboost':
+  elif a_dict['model']['name'] == 'xgboost': 
     # TODO: perform differentiation here
+    X_train, X_test, y_train, y_test, l_train, l_test = custom_tts(avg_values1,kpi_data_Time)
+
     loaded_model = xgb.XGBRegressor()
     loaded_model.load_model(a_dict['model']['xgb_bytes'])
     # Use the loaded model for predictions
-    predictions = loaded_model.predict(X_test)
 
-  return 0,pred_ARIMA
+    explainer = forecastExplainer(loaded_model, X_train)
+    Predicted_values, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(X_test, length, l_test)
+    
+    last_date = kpi_data_Time[-1]
+    out_dates = []
+    for i in range(horizon):
+      new_date = last_date+1
+      out_dates.append(str(new_date))
+    return Predicted_values, out_dates, Lower_bound, Upper_bound, Confidence_score, Lime_explaination
 
 def kpi_exists(machine, KPI, host_url, host_port):
 

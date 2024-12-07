@@ -6,6 +6,8 @@ from fastapi import FastAPI
 import os
 import datetime
 
+from model import Json_out, Json_in
+
 app = FastAPI()
 
 app.add_middleware(
@@ -25,12 +27,15 @@ host_port = 'TBD'
 @app.get("/data-processing/test")
 def test():
     print(f_dataprocessing.data_load('',''))
-    
+
+
+
+
 
 #http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
-@app.get("/data-processing/predict")
-def predict(JSONS):
-    d = datetime.datetime.today().date()
+@app.get("/data-processing/predict", response_model = Json_out)
+def predict(JSONS: Json_in):
+    d = str(datetime.datetime.today().date())
     out_dict = {
         'Machine_name': 'MACHINENAME :(',
         'KPI_name': 'KPINAME :)',
@@ -47,8 +52,8 @@ def predict(JSONS):
     out_dicts = []
     
     for json_in in JSONS: 
-        machine = json_in['Machine name']
-        KPI_name = json_in['KPI name']
+        machine = json_in['Machine_name']
+        KPI_name = json_in['KPI_name']
         out_dict = {
             'Machine_name': machine,
             'KPI_name': KPI_name,
@@ -75,7 +80,8 @@ def predict(JSONS):
                     response = f_dataprocessing.execute_druid_query(query_body)
                     if not 1:#json_exists(): TODO, update with cmpleted query
                         f_dataprocessing.characterize_KPI(machine,KPI_name)
-                    result_dates, result_values = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
+                    result_values, result_dates, lb, ub, cs, le = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
+                    
                     out_dict['Predicted_value'] = result_values
                     out_dict['Measure_unit'] = KPI_data["unit_measure"]
                     out_dict['Date_prediction'] = result_dates

@@ -7,3 +7,4 @@ requests
 matplotlib
 scikit-learn
 tqdm
+xgboost

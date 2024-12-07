@@ -22,7 +22,6 @@ services:
     profiles:
       - database
       - not-db-init
-      - data-processing
 
   zookeeper:
     container_name: zookeeper
@@ -36,7 +35,6 @@ services:
     profiles:
       - database
       - not-db-init
-      - data-processing
 
   coordinator:
     image: apache/druid:31.0.0
@@ -58,7 +56,6 @@ services:
     profiles:
       - database
       - not-db-init
-      - data-processing
 
   broker:
     image: apache/druid:31.0.0
@@ -143,7 +140,6 @@ services:
     profiles:
       - database
       - not-db-init
-      - data-processing
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://router:8888/status/health"]
       interval: 10s
