@@ -71,7 +71,7 @@ class forecastExplainer:
         n_samples: int = 100,
         confidence: float = 0.95,
         step: int = 0
-    ) -> Tuple[float, float, float]:
+    ) -> Tuple[float, float, float, float]:
         """
         Makes a prediction with a confidence interval using bootstrapping.
         
@@ -85,6 +85,7 @@ class forecastExplainer:
         - mean_pred (float)
         - lower_bound (float)
         - upper_bound (float)
+        - probability_in_interval (float): fraction of bootstrap predictions that lie within [lower_bound, upper_bound]
         """
         predictions = []
         # Scale noise with step to reflect increasing uncertainty
@@ -100,7 +101,11 @@ class forecastExplainer:
         lower_bound = np.percentile(predictions, ((1 - confidence) / 2) * 100)
         upper_bound = np.percentile(predictions, (confidence + (1 - confidence) / 2) * 100)
 
-        return mean_pred, lower_bound, upper_bound
+        # Compute the fraction of predictions within the interval
+        within_interval = np.sum((predictions >= lower_bound) & (predictions <= upper_bound))
+        probability_in_interval = within_interval / len(predictions)
+
+        return mean_pred, lower_bound, upper_bound, probability_in_interval
 
     def explain_prediction(
         self,
@@ -179,7 +184,7 @@ class forecastExplainer:
         - Predicted_value: List of predicted values
         - Lower_bound: List of lower bounds
         - Upper_bound: List of upper bounds
-        - Confidence_score: List of confidence scores
+        - Confidence_score: List of probabilities that the actual point lies within [lower_bound, upper_bound]
         - Lime_explaination: List of lists of (label, importance)
         """
         if isinstance(input_data, torch.Tensor):
@@ -195,8 +200,8 @@ class forecastExplainer:
         current_labels = input_labels.copy()
 
         for i in range(n_predictions):
-            # Compute uncertainties
-            mean_pred, lower_bound, upper_bound = self.predict_with_uncertainty(
+            # Compute uncertainties and probability in interval
+            mean_pred, lower_bound, upper_bound, probability_in_interval = self.predict_with_uncertainty(
                 current_input, n_samples=n_samples, confidence=confidence, step=i
             )
             # Compute raw prediction
@@ -205,15 +210,12 @@ class forecastExplainer:
             # Choose which value to use as the predicted value
             final_pred = mean_pred if use_mean_pred else raw_pred
 
-            interval_width = upper_bound - lower_bound
-            confidence_score = 1.0 / (1e-6 + interval_width)
-
             explanation = self.explain_prediction(current_input, current_labels, num_features=num_features)
 
             predicted_values.append(final_pred)
             lower_bounds.append(lower_bound)
             upper_bounds.append(upper_bound)
-            confidence_scores.append(confidence_score)
+            confidence_scores.append(probability_in_interval)  # Use the computed probability
             lime_explanations.append(explanation)
 
             # Update the input_data for next step
@@ -228,7 +230,7 @@ class forecastExplainer:
             'Predicted_value': predicted_values,
             'Lower_bound': lower_bounds,
             'Upper_bound': upper_bounds,
-            'Confidence_score': confidence_scores,
+            'Confidence_score': confidence_scores,  # Now a probability
             'Lime_explaination': lime_explanations
         }
 
@@ -272,7 +274,7 @@ def main():
     # Initialize the explainer
     explainer = forecastExplainer(model, X_train)
 
-    # Perform autoregressive predictions using raw predictions instead of mean of bootstrap:
+    # Perform autoregressive predictions
     results = explainer.predict_and_explain(
         input_data=input_data,
         n_predictions=n_predictions,
@@ -280,7 +282,7 @@ def main():
         num_features=5,
         confidence=0.95,
         n_samples=100,
-        use_mean_pred=False  # Set this to True or False as desired
+        use_mean_pred=False
     )
 
     print("Results:")
@@ -292,32 +294,25 @@ def main():
         else:
             print(f"{key}: {val}")
 
-
+    # Plot the results as three separate lines
     predicted_values = results['Predicted_value']
     lower_bounds = results['Lower_bound']
     upper_bounds = results['Upper_bound']
-    # Suppose predicted_values, lower_bounds, and upper_bounds are lists
-    # Each has length n_predictions
 
     time_indices = np.arange(len(input_data), len(input_data) + n_predictions)
 
     plt.figure(figsize=(10,6))
     plt.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
-
-    # Plot predicted values
     plt.plot(time_indices, predicted_values, 'r-', label='Predicted value')
-
-    # Plot lower and upper bounds
     plt.plot(time_indices, lower_bounds, 'g--', label='Lower bound')
     plt.plot(time_indices, upper_bounds, 'b--', label='Upper bound')
 
-    plt.title("Forecasting with Confidence Intervals")
+    plt.title("Forecasting with XGBoost and Empirical Probability in Interval")
     plt.xlabel("Time Steps")
     plt.ylabel("Value")
     plt.grid(True)
     plt.legend()
     plt.show()
-
 
 if __name__ == '__main__':
     main()
