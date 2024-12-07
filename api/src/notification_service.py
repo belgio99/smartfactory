@@ -1,5 +1,6 @@
 import os
 import smtplib
+from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import logging
@@ -44,6 +45,46 @@ def send_email(to_email, alert):
     msg.attach(MIMEText(body, 'plain'))
 
     try:
+        smtp_server = os.getenv('SMTP_SERVER')
+        smtp_port = int(os.getenv('SMTP_PORT'))
+
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.login(from_email, from_password)
+        logging.info("Sending email")
+        server.send_message(msg)
+        logging.info("Email sent successfully")
+    except Exception as e:
+        logging.error("Error sending email: " + str(e))
+        raise e
+    finally:
+        server.quit()
+
+def send_report(to_email, report_name, tmp_path):
+    """
+    Sends an email notification with the given report pdf file attached.
+
+    Args:
+        to_email (str): The recipient's email address.
+        report_name (str): The name of the report.
+        tmp_path (str): the file path on the server.
+
+    Raises:
+        Exception: If there is an error sending the email.
+    """
+    from_email = os.getenv('SMTP_EMAIL')
+    from_password = os.getenv('SMTP_PASSWORD')
+
+    msg = EmailMessage()
+    msg['From'] = from_email
+    msg['To'] = to_email
+    msg['Subject'] = "Report: "+report_name
+    msg.set_content("Hello, please find attached your scheduled report")
+
+    try:
+        with open(tmp_path, "rb") as f:
+            pdf_data = f.read()
+            msg.add_attachment(pdf_data, maintype="application", subtype="pdf", filename=report_name+".pdf")
+
         smtp_server = os.getenv('SMTP_SERVER')
         smtp_port = int(os.getenv('SMTP_PORT'))
 

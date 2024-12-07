@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { userInfo } from 'os';
+import { Point } from 'recharts/types/shape/Curve';
 
 const BASE_URL = 'http://0.0.0.0:10040'; // API URL
 const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
@@ -203,6 +205,39 @@ export const register = async (
   } catch (error: any) {
     console.error('Register API error:', error);
     throw new Error(error.response?.data?.message || 'Registration failed');
+  }
+};
+
+/**
+ * API POST used to change the password of the user
+ * @param userId string - The user ID
+ * @param oldPassword string - The old password of the user
+ * @param newPassword string - The new password of the user
+ * @returns UserInfo - The user information
+ */
+export const changePassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<UserInfo> => { 
+  try {
+    const response = await axios.put<UserInfo>(
+      `${BASE_URL}/smartfactory/user/${userId}`,
+      {
+        old_password: oldPassword,
+        new_password: newPassword
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        }
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Change Password API error:', error);
+    throw new Error(error.response?.data?.message || 'Change Password failed');
   }
 };
 
@@ -497,5 +532,46 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
   } catch (error: any) {
     console.error('Retrieve Dashboard Settings API error:', error);
     throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
+  }
+};
+
+/**
+ * API POST used to schedule a report generation.
+ * @param userId string - The ID of the user scheduling the report.
+ * @param params object - Additional parameters for the report (e.g., name, type, site, email, startDate, kpis, machines).
+ * @param period number - The scheduling frequency (e.g., in seconds).
+ * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
+ */
+export const scheduleReport = async (
+  userId: string,
+  params: {
+    name: string;
+    type: "test" | "daily" | "weekly" | "monthly" | "yearly";
+    site: string;
+    email: string;
+    startDate: string;
+    kpis: string[];
+    machines: string[];
+  },
+  period: "test" | "daily" | "weekly" | "monthly" | "yearly"
+): Promise<void> => {
+  try {
+    await axios.post(
+      `${BASE_URL}/smartfactory/reports/schedule`,
+      {
+        userId,
+        params,
+        period,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error("Schedule Report API error:", error);
+    throw new Error(error.response?.data?.message || "Failed to schedule report generation");
   }
 };

@@ -6,3 +6,5 @@ langchain-google-genai
 python-dotenv
 sentence_transformers
 rdflib
+nltk
+rapidfuzz
