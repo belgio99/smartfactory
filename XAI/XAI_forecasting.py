@@ -7,6 +7,7 @@ from typing import Union, Any, List, Tuple
 import random
 from datetime import datetime, timedelta
 import xgboost as xgb
+import time
 
 class forecastExplainer:
     def __init__(
@@ -39,13 +40,24 @@ class forecastExplainer:
 
     def predict(self, input_data: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         """
-        Makes a single prediction using the provided model.
+        Makes a single prediction using the provided model. This method is compatible
+        with both PyTorch (nn.Module) models and sklearn/xgboost-type models.
+
+        For PyTorch models:
+        - The input_data is reshaped to (1, seq_length, 1).
+        - A torch.Tensor is created from the input and moved to the appropriate device (CPU or GPU).
+        - The model is placed in eval mode and a forward pass is performed without gradient computation.
+        - The result is then moved back to CPU (if needed) and converted to a numpy array.
+
+        For sklearn/xgboost models:
+        - The input_data is reshaped to (1, seq_length).
+        - The model's own 'predict' method is called directly to obtain the predicted value.
 
         Parameters:
-        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length,).
+        - input_data (np.ndarray or torch.Tensor): The input sequence of shape (seq_length,).
 
         Returns:
-        - prediction: The model's prediction as a 1D numpy array of shape (1,).
+        - prediction (np.ndarray): The model's single-step prediction as a 1D numpy array of shape (1,).
         """
         # Ensure input_data is a numpy array
         if isinstance(input_data, torch.Tensor):
@@ -74,7 +86,12 @@ class forecastExplainer:
     ) -> Tuple[float, float, float, float]:
         """
         Makes a prediction with a confidence interval using bootstrapping.
-        
+
+        This method is compatible with both PyTorch (nn.Module) and sklearn/xgboost models.
+
+        For sklearn/xgboost models, we rely on vectorized 'predict' calls.
+        For PyTorch models, we create a single batch of perturbed inputs and run the forward pass once.
+
         Parameters:
         - input_data (np.ndarray): Input data of shape (seq_length,).
         - n_samples (int): Number of bootstrap samples.
@@ -82,19 +99,27 @@ class forecastExplainer:
         - step (int): The step number in the autoregressive forecasting sequence.
 
         Returns:
-        - mean_pred (float)
-        - lower_bound (float)
-        - upper_bound (float)
-        - probability_in_interval (float): fraction of bootstrap predictions that lie within [lower_bound, upper_bound]
+        - mean_pred (float): Mean of bootstrap predictions
+        - lower_bound (float): Lower bound of the confidence interval
+        - upper_bound (float): Upper bound of the confidence interval
+        - probability_in_interval (float): fraction of predictions within the confidence interval
         """
-        predictions = []
         # Scale noise with step to reflect increasing uncertainty
         bootstrap_noise_std = self.bootstrap_noise_std_base * (1 + step)
 
-        for _ in range(n_samples):
-            perturbed_input = input_data + np.random.normal(0, bootstrap_noise_std, size=len(input_data))
-            pred = self.predict(perturbed_input)
-            predictions.append(pred[0])
+        perturbed_inputs = np.repeat(input_data.reshape(1, -1), n_samples, axis=0) 
+        perturbed_inputs += np.random.normal(0, bootstrap_noise_std, size=perturbed_inputs.shape)
+
+        # Predict in batch
+        if isinstance(self.model, nn.Module):
+            # PyTorch model: run batch through model
+            inputs_tensor = torch.from_numpy(perturbed_inputs.reshape(n_samples, self.seq_length, 1)).float().to(self.device)
+            self.model.eval()
+            with torch.no_grad():
+                predictions = self.model(inputs_tensor).cpu().numpy().flatten()
+        else:
+            # sklearn/xgboost model: can predict directly on batch
+            predictions = self.model.predict(perturbed_inputs)
 
         predictions = np.array(predictions)
         mean_pred = predictions.mean()
@@ -196,7 +221,7 @@ class forecastExplainer:
         upper_bounds = []
         confidence_scores = []
         lime_explanations = []
-        date_predictions = []  # List to store the predicted dates
+        date_predictions = []
 
         current_input = input_data.copy()
         current_labels = input_labels.copy()
@@ -217,7 +242,7 @@ class forecastExplainer:
             predicted_values.append(final_pred)
             lower_bounds.append(lower_bound)
             upper_bounds.append(upper_bound)
-            confidence_scores.append(probability_in_interval)  # Use the computed probability
+            confidence_scores.append(probability_in_interval)
             lime_explanations.append(explanation)
 
             # Update the input_data for next step
@@ -228,15 +253,15 @@ class forecastExplainer:
             new_label = new_label_date.strftime("%Y-%m-%d")
             current_labels = current_labels[1:] + [new_label]
 
-            date_predictions.append(new_label)  # Append the new predicted date
+            date_predictions.append(new_label)
 
         out_dict = {
             'Predicted_value': predicted_values,
             'Lower_bound': lower_bounds,
             'Upper_bound': upper_bounds,
-            'Confidence_score': confidence_scores,  # Now a probability
+            'Confidence_score': confidence_scores,
             'Lime_explaination': lime_explanations,
-            'Date_prediction': date_predictions  # Include the predicted dates
+            'Date_prediction': date_predictions
         }
 
         return out_dict
@@ -276,6 +301,7 @@ def main():
     start_date = datetime(2020, 1, 1)
     input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
+    start_time = time.time()
     # Initialize the explainer
     explainer = forecastExplainer(model, X_train)
 
@@ -289,6 +315,8 @@ def main():
         n_samples=100,
         use_mean_pred=False
     )
+
+    end_time = time.time()
 
     print("Results:")
     for key, val in results.items():
@@ -318,6 +346,9 @@ def main():
     plt.grid(True)
     plt.legend()
     plt.show()
+
+    print(f"Time taken: {end_time - start_time:.2f} seconds")
+
 
 if __name__ == '__main__':
     main()
