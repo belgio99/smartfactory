@@ -204,7 +204,7 @@ services:
       - kb
       - not-db-init
     env_file:
-      - kb/.env
+      - database/.env
     
   data-processing:
     build:
