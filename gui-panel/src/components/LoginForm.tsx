@@ -7,7 +7,7 @@ import { login } from './../api/ApiService';
 import { hashPassword } from '../api/security/securityService';
 
 interface LoginFormProps {
-  onLogin: (userId: string, username: string, token: string, role: string, site: string) => void;  
+  onLogin: (userId: string, username: string, token: string, role: string, site: string, email: string) => void;  
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
@@ -16,6 +16,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
   const [role, setRole] = useState('');
   const [site, setSite] = useState('');
   const [token, setToken] = useState('');
+  const [userId, setUserId] = useState('');
+  const [email, setEmail] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +40,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
         if(loginResponse.access_token){
                 // Call the onLogin function
                 // Pass the user information to the parent component
-                onLogin(loginResponse.userId,
+                onLogin(loginResponse.userId,        // User ID
                         loginResponse.username,      // Username
                         loginResponse.access_token,  // Token
                         loginResponse.role,          // Role
-                        loginResponse.site);         // Site
+                        loginResponse.site,          // Site
+                        loginResponse.email);        // Email
         } else {
           setError('Invalid credentials!');
         }
