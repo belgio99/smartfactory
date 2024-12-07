@@ -19,7 +19,6 @@ class HistoricalQueryParams(BaseModel):
             field (str): The field to perform the operation on.
             }
     """
-    aggregations: dict
     kpi: str
     timeframe: dict
     machines: list
