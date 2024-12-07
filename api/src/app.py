@@ -195,7 +195,7 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
         query = "SELECT * FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
         response = query_db_with_params(cursor, connection, query, (body.user,))
 
-        if not response or not password_context.verify(body.password, response[0][4]):
+        if not response or (body.password != response[0][4]):
             logging.error("Invalid credentials")
             raise HTTPException(status_code=401, detail="Invalid username or password")
    
@@ -277,11 +277,10 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             logging.error("User already registered")
             raise HTTPException(status_code=400, detail="User already registered")
         else:
-            hashed_password = password_context.hash(body.password)
 
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
-            cursor.execute(query_insert, (body.username, body.email, body.role, hashed_password, body.site))
+            cursor.execute(query_insert, (body.username, body.email, body.role, body.password, body.site))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
