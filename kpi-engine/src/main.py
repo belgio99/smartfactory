@@ -25,7 +25,7 @@ with open("../smart_app_data.pkl", "rb") as file:
 
 headers = {
     "Content-Type": "application/json",
-    "x-kpi-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234"
+    "x-api-key": "06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7"
 }
 druid_url = "http://router:8888/druid/v2/sql"
 query_body = {
@@ -39,6 +39,7 @@ except requests.exceptions.RequestException as e:
     print(f"An error occurred: {e}")
     exit()
 df = pd.DataFrame.from_dict(df, orient='columns')
+
 df.rename(columns={"__time": "time"}, inplace=True)
 
 app = FastAPI()
@@ -92,7 +93,7 @@ async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify
 
         # If the requested KPI is not in the static methods, call the dynamic KPI method. Otherwise, just call the good old static one
         if kpiID not in methods:
-            result = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
+            result, unitOfMeasure = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
         else:
             result = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
         
