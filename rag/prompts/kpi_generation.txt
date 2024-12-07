@@ -3,20 +3,23 @@
 USER QUERY: "{_USER_QUERY_}"
 
 INSTRUCTION: 
-"Using the contextual information provided in the CONTEXT section about already tracked KPIs, generate the new KPI requested by the user. The input includes details of existing KPIs, such as their IDs, short descriptions of what the KPI tracks, units of measure and formulas (if applicable). Note that formulas are only provided for non-atomic KPIs, while atomic KPIs do not have this information.
+In the CONTEXT section you are provided with information about existing tracked KPIs, including their IDs, short descriptions, units of measure, and formulas (for non-atomic KPIs). Atomic KPIs do not have formulas.  
 
-The output format MUST be this one:
-- ID: the ID representing the KPI (eg: power_consumption_efficiency)
-- Atomic: a boolean value that represent if the KPI formula is atomic or it requires other KPIs to be computed (eg: false)
-- Description: Brief text description that represent what the KPI compute (eg: This indicator calculates the energy efficiency of a specific machine in a given time interval)
-- Formula (base): the basic formula of the KPI (power_consumption_efficiency = working_time_sum / consumption_sum)
-- Unit of Measure: (eg %, Kw, m)
-- Domain: min, max and type of the value
+TASK: using the provided context, generate the new KPI requested by the user. Your response must strictly adhere to the specified format and provide only the most suitable KPI to meet the user’s needs.
 
-Give me only the best suitable KPI possible in order to accomplish user need.
-"
+OUTPUT FORMAT:  
+- ID: Unique identifier for the KPI (e.g., power_consumption_efficiency).  
+- Atomic: Boolean indicating if the KPI is atomic (true) or derived using other KPIs (false).  
+- Description: Brief explanation of what the KPI measures (e.g., "This indicator calculates the energy efficiency of a specific machine in a given time interval.").  
+- Formula (base): Basic formula used for the KPI (e.g., "power_consumption_efficiency = working_time_sum / consumption_sum").  
+- Unit of Measure: Unit associated with the KPI (e.g., %, kW, m).  
+- Domain: Definition of the KPI's value range (min, max, type).  
+
+REQUIREMENTS:  
+1. Generate only the best possible KPI that fully satisfies the user’s query.  
+2. Ensure descriptions and formulas are concise, accurate, and tailored to the user's needs.  
+3. Avoid unnecessary commentary or alternative KPI suggestions.  
+
 
 CONTEXT: 
 {_CONTEXT_}
-
-

@@ -11,6 +11,7 @@ INSTRUCTION:
 - "Computable  KPIs" is a list of Key Performance Indicators (KPIs) and their associated values. For each KPI you're given ini input the mean the max and the min value on the overall period
 - "Forecasted KPI Predictions" is a list of forecastable KPIs and their associated values.
 - [OVERAL_SUMMARY_ON_ALL_MACHINES] is a brief textual summary that compares the KPI values for this machine across the specified period with other machines. The overall summary must have three separate sections, one about machine comparison on computed KPIs. One that resume predicted values and one about anomalies, these reported as bullet list
+- [PREDICTION_DATE] contains the date or period related to this particular KPI prediction on this particular machine. You can find the period in the predicted contextual information.
 Ensure the report is clear, concise, and aligned with the data provided in the context. 
 
 Note:
@@ -28,8 +29,8 @@ Computable KPI:
 Other kpis ...
 
 Forecasted KPI Predictions:
-- kpi_1: value_kpi_1
-- kpi_2: value_kpi_2
+- kpi_1 on [PREDICTION_DATE]: value_kpi_1
+- kpi_2 on [PREDICTION_DATE]: value_kpi_2
 Other kpis ...
 
 Machine_2: [MACHINE_2_NAME]
@@ -40,8 +41,8 @@ Computable KPI:
 Other kpis ...
 
 Forecasted KPI Predictions:
-- kpi_1: value_kpi_1
-- kpi_2: value_kpi_2
+- kpi_1 on [PREDICTION_DATE]: value_kpi_1
+- kpi_2 on [PREDICTION_DATE]: value_kpi_2
 Other kpis ...
 
 Other machines... 
