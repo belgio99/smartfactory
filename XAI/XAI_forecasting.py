@@ -3,8 +3,10 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 from aix360.algorithms.lime import LimeTabularExplainer
-from typing import Union, Any
+from typing import Union, Any, List, Tuple
 import random
+from datetime import datetime, timedelta
+import xgboost as xgb
 
 class forecastExplainer:
     def __init__(
@@ -15,10 +17,10 @@ class forecastExplainer:
     ):
         """
         Initializes the forecastExplainer.
-
+        
         Parameters:
-        - model (Any): A trained forecasting model.
-        - training_data (np.ndarray or torch.Tensor): Training data used to fit the LIME explainer.
+        - model (Any): A trained forecasting model (PyTorch or sklearn-compatible).
+        - training_data (np.ndarray or torch.Tensor): Training data of shape (num_samples, seq_length).
         - device (torch.device): Device to run the model on (if applicable).
         """
         self.model = model
@@ -30,85 +32,72 @@ class forecastExplainer:
         self.training_data = training_data
 
         # Prepare data for LIME
-        self.num_samples, self.seq_length, self.input_size = self.training_data.shape
-        self.training_data_flat = self.training_data.reshape(self.num_samples, self.seq_length * self.input_size)
-        self.feature_names = [f'Time_{t}_Feature_{f}' for t in range(self.seq_length) for f in range(self.input_size)]
+        self.num_samples, self.seq_length = self.training_data.shape
+        self.feature_names = [f'Time_{t}' for t in range(self.seq_length)]
 
         # Initialize the LIME explainer
         self.explainer = LimeTabularExplainer(
-            self.training_data_flat,
+            self.training_data,
             mode='regression',
             feature_names=self.feature_names,
             verbose=False
         )
 
-    def predict(self, input_data: Union[np.ndarray, torch.Tensor]) -> Any:
+    def predict(self, input_data: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         """
-        Makes a prediction using the provided model.
+        Makes a single prediction using the provided model.
 
         Parameters:
-        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length, input_size).
+        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length,).
 
         Returns:
-        - prediction: The model's prediction.
+        - prediction: The model's prediction as a 1D numpy array of shape (1,).
         """
         # Ensure input_data is a numpy array
         if isinstance(input_data, torch.Tensor):
             input_data = input_data.detach().cpu().numpy()
 
-        # Reshape input_data to match model's expected input shape
-        if isinstance(self.model, torch.nn.Module):
-            # For PyTorch models, keep 3D shape
-            input_data_reshaped = input_data.reshape(1, self.seq_length, self.input_size)
+        if isinstance(self.model, nn.Module):
+            # PyTorch model expects (batch, seq_length, 1)
+            input_data_reshaped = input_data.reshape(1, self.seq_length, 1)
             input_tensor = torch.from_numpy(input_data_reshaped).float().to(self.device)
             self.model.eval()
             with torch.no_grad():
                 prediction = self.model(input_tensor).cpu().numpy().flatten()
         else:
-            # For other models, flatten the input
-            input_data_flat = input_data.reshape(1, self.seq_length * self.input_size)
-            prediction = self.model.predict(input_data_flat).flatten()
+            # sklearn/xgboost expects (batch, seq_length)
+            input_data_reshaped = input_data.reshape(1, -1)
+            prediction = self.model.predict(input_data_reshaped).flatten()
 
         return prediction
 
     def predict_with_uncertainty(
         self,
-        input_data: Union[np.ndarray, torch.Tensor],
+        input_data: np.ndarray,
         n_samples: int = 100,
-        confidence: float = 0.95
-    ):
+        confidence: float = 0.95,
+        bootstrap_noise_std: float = 0.01
+    ) -> Tuple[float, float, float]:
         """
-        Makes a prediction with a confidence interval using Monte Carlo Dropout.
-
+        Makes a prediction with a confidence interval using bootstrapping.
+        
         Parameters:
-        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length, input_size).
-        - n_samples (int): Number of forward passes for uncertainty estimation.
+        - input_data (np.ndarray): Input data of shape (seq_length,).
+        - n_samples (int): Number of bootstrap samples.
         - confidence (float): Confidence level for the interval.
+        - bootstrap_noise_std (float): Standard deviation of the noise used for bootstrapping.
 
         Returns:
-        - mean_pred (float): Mean prediction.
-        - lower_bound (float): Lower bound of the confidence interval.
-        - upper_bound (float): Upper bound of the confidence interval.
+        - mean_pred (float)
+        - lower_bound (float)
+        - upper_bound (float)
         """
         predictions = []
-
-        # Convert input_data to numpy array if it's a tensor
-        if isinstance(input_data, torch.Tensor):
-            input_data = input_data.detach().cpu().numpy()
-
-        if isinstance(self.model, torch.nn.Module):
-            # For PyTorch models, enable dropout during inference
-            input_data_reshaped = input_data.reshape(1, self.seq_length, self.input_size)
-            input_tensor = torch.from_numpy(input_data_reshaped).float().to(self.device)
-            self.model.train()  # Enable dropout layers
-            with torch.no_grad():
-                for _ in range(n_samples):
-                    prediction = self.model(input_tensor).cpu().numpy().flatten()
-                    predictions.append(prediction[0])
-        else:
-            # For other models, uncertainty estimation might not be applicable
-            prediction = self.predict(input_data)
-            predictions = np.array([prediction[0]] * n_samples)
+        # Create bootstrap samples by adding noise
+        for _ in range(n_samples):
+            perturbed_input = input_data + np.random.normal(0, bootstrap_noise_std, size=len(input_data))
+            pred = self.predict(perturbed_input)
+            predictions.append(pred[0])
 
         predictions = np.array(predictions)
         mean_pred = predictions.mean()
@@ -119,223 +108,228 @@ class forecastExplainer:
 
     def explain_prediction(
         self,
-        input_data: Union[np.ndarray, torch.Tensor],
-        num_features: int = 10,
-        verbose: bool = False
-    ) -> Any:
+        input_data: np.ndarray,
+        input_labels: List[str],
+        num_features: int = 10
+    ):
         """
-        Generates an explanation for the model's prediction on input_data using LIME.
-
+        Generates a LIME explanation for the model's prediction on input_data.
+        
         Parameters:
-        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length, input_size).
+        - input_data (np.ndarray): Input data of shape (seq_length,).
+        - input_labels (List[str]): Labels corresponding to each step in input_data.
         - num_features (int): Number of features to include in the explanation.
-        - verbose (bool): If True, displays the LIME explanation plot.
-
+        
         Returns:
-        - exp: LIME explanation object.
+        - explanation: List of (label, importance) pairs for the top features.
         """
-        # Convert input_data to numpy array if it's a tensor
-        if isinstance(input_data, torch.Tensor):
-            input_data = input_data.detach().cpu().numpy()
-
-        # Flatten input_data
         input_data_flat = input_data.flatten()
 
-        # Define prediction function for LIME
         def predict_fn(data):
             batch_size = data.shape[0]
-            if isinstance(self.model, torch.nn.Module):
-                # For PyTorch models, reshape to 3D
-                inputs = data.reshape(batch_size, self.seq_length, self.input_size)
+            if isinstance(self.model, nn.Module):
+                # For PyTorch models, reshape to (batch, seq_length, 1)
+                inputs = data.reshape(batch_size, self.seq_length, 1)
                 inputs_tensor = torch.from_numpy(inputs).float().to(self.device)
                 self.model.eval()
                 with torch.no_grad():
                     outputs = self.model(inputs_tensor).cpu().numpy()
             else:
-                # For other models, reshape to 2D
-                inputs = data.reshape(batch_size, self.seq_length * self.input_size)
-                outputs = self.model.predict(inputs)
+                outputs = self.model.predict(data)
             return outputs.flatten()
 
-        # Generate explanation
         exp = self.explainer.explain_instance(
             input_data_flat,
             predict_fn,
             num_features=num_features
         )
 
-        if verbose:
-            self.plot_lime_explanation(exp)
+        explanation = []
+        for feature, importance in exp.as_list():
+            # feature format: "Time_i"
+            idx_str = feature.split('_')[-1]
+            idx = int(idx_str) if idx_str.isdigit() else 0
+            explanation.append((input_labels[idx], importance))
 
-        return exp
+        return explanation
 
     def predict_and_explain(
         self,
         input_data: Union[np.ndarray, torch.Tensor],
-        n_samples: int = 100,
-        confidence: float = 0.95,
+        n_predictions: int,
+        input_labels: List[str],
         num_features: int = 10,
-        verbose: bool = False
+        confidence: float = 0.95,
+        n_samples: int = 100,
+        bootstrap_noise_std: float = 0.01
     ):
         """
-        Combines prediction with uncertainty estimation and explanation.
-
+        Performs autoregressive prediction and explanation for n_prediction steps.
+        
         Parameters:
-        - input_data (np.ndarray or torch.Tensor): Input data of shape (seq_length, input_size).
-        - n_samples (int): Number of forward passes for uncertainty estimation.
-        - confidence (float): Confidence level for the interval.
-        - num_features (int): Number of features to include in the explanation.
-        - verbose (bool): If True, displays the LIME explanation plot.
-
+        - input_data (np.ndarray or torch.Tensor): Initial input sequence of shape (seq_length,).
+        - n_predictions (int): Number of autoregressive predictions.
+        - input_labels (List[str]): Labels corresponding to the input_data.
+        - num_features (int): Number of features for LIME explanation.
+        - confidence (float): Confidence level.
+        - n_samples (int): Number of bootstrap samples.
+        - bootstrap_noise_std (float): Noise std for bootstrapping.
+        
         Returns:
-        - mean_pred (float): Mean prediction.
-        - lower_bound (float): Lower bound of the confidence interval.
-        - upper_bound (float): Upper bound of the confidence interval.
-        - exp: LIME explanation object.
+        A dictionary with:
+        - Predicted_value: List of predicted values
+        - Lower_bound: List of lower bounds
+        - Upper_bound: List of upper bounds
+        - Confidence_score: List of confidence scores
+        - Lime_explaination: List of lists of (label, importance)
         """
-        mean_pred, lower_bound, upper_bound = self.predict_with_uncertainty(
-            input_data, n_samples=n_samples, confidence=confidence)
-        exp = self.explain_prediction(
-            input_data, num_features=num_features, verbose=verbose)
-        return mean_pred, lower_bound, upper_bound, exp
+        if isinstance(input_data, torch.Tensor):
+            input_data = input_data.detach().cpu().numpy()
 
-    @staticmethod
-    def plot_lime_explanation(exp, title: str = "LIME Explanation"):
-        """
-        Plots the LIME explanation.
+        predicted_values = []
+        lower_bounds = []
+        upper_bounds = []
+        confidence_scores = []
+        lime_explanations = []
 
-        Parameters:
-        - exp: LIME explanation object.
-        - title (str): Title of the plot.
-        """
-        feature_importance = exp.as_list()
-        features, importances = zip(*feature_importance)
-        plt.figure(figsize=(10, 6))
-        plt.barh(features, importances, color="skyblue")
-        plt.title(title)
-        plt.xlabel("Importance")
-        plt.ylabel("Feature")
-        plt.gca().invert_yaxis()
-        plt.grid(True)
-        plt.show()
+        current_input = input_data.copy()
+        current_labels = input_labels.copy()
+
+        for i in range(n_predictions):
+            # Increase uncertainty with each step
+            step_noise_std = bootstrap_noise_std * (1 + i)
+
+            mean_pred, lower_bound, upper_bound = self.predict_with_uncertainty(
+                current_input, n_samples=n_samples, confidence=confidence, bootstrap_noise_std=step_noise_std
+            )
+
+            # Confidence score: inverse of interval width
+            interval_width = upper_bound - lower_bound
+            confidence_score = 1.0 / (1e-6 + interval_width)
+
+            explanation = self.explain_prediction(current_input, current_labels, num_features=num_features)
+
+            predicted_values.append(mean_pred)
+            lower_bounds.append(lower_bound)
+            upper_bounds.append(upper_bound)
+            confidence_scores.append(confidence_score)
+            lime_explanations.append(explanation)
+
+            # Update input_data and input_labels for next step
+            current_input = np.append(current_input[1:], mean_pred)
+            # Update labels: remove oldest, add a new one (next day)
+            last_label_date = datetime.strptime(current_labels[-1], "%Y-%m-%d")
+            new_label_date = last_label_date + timedelta(days=1)
+            new_label = new_label_date.strftime("%Y-%m-%d")
+            current_labels = current_labels[1:] + [new_label]
+
+        out_dict = {
+            'Predicted_value': predicted_values,
+            'Lower_bound': lower_bounds,
+            'Upper_bound': upper_bounds,
+            'Confidence_score': confidence_scores,
+            'Lime_explaination': lime_explanations
+        }
+
+        return out_dict
+
 
 def main():
-    # Set random seeds for reproducibility
+    # Seed
     np.random.seed(42)
     torch.manual_seed(42)
     random.seed(42)
 
-    # Device configuration
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Generate dummy training data
-    num_samples = 200
+    # Generate a sine wave
+    # We'll use a certain portion for training and then forecast beyond it.
+    total_points = 300
     seq_length = 50
-    input_size = 3  # Multidimensional input
+    t = np.linspace(0, 10*np.pi, total_points)
+    data = np.sin(t) + np.random.normal(0, 0.05, size=total_points)
 
+    # Prepare training data for XGBoost: predict next value from last seq_length values
     X_train = []
     y_train = []
-    for _ in range(num_samples):
-        freqs = np.random.uniform(0.1, 0.5, input_size)
-        phases = np.random.uniform(0, 2 * np.pi, input_size)
-        t = np.linspace(0, 2 * np.pi * seq_length, seq_length)
-        x = np.array([np.sin(freq * t + phase) for freq, phase in zip(freqs, phases)]).T
-        x += np.random.normal(0, 0.1, x.shape)
-        X_train.append(x)
-        y_train.append(x[-1, 0])  # Use last value of the first feature as target
+    for i in range(total_points - seq_length - 1):
+        X_train.append(data[i:i+seq_length])
+        y_train.append(data[i+seq_length])
 
     X_train = np.array(X_train)
     y_train = np.array(y_train)
 
-    # Convert data to tensors
-    X_train_tensor = torch.from_numpy(X_train).float().to(device)
-    y_train_tensor = torch.from_numpy(y_train).float().to(device)
+    # Train XGBoost model
+    model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
+    model.fit(X_train, y_train)
 
-    # Define a more complex PyTorch model with Dropout
-    class LSTMForecaster(nn.Module):
-        def __init__(self, input_size, hidden_size, num_layers, output_size, dropout_rate=0.5):
-            super(LSTMForecaster, self).__init__()
-            self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True, dropout=dropout_rate)
-            self.dropout = nn.Dropout(dropout_rate)
-            self.fc = nn.Linear(hidden_size, output_size)
+    # We'll pick the last sequence from the training range to start forecasting
+    # Actually, we pick the sequence ending at total_points - 1 - n_predictions
+    # For demonstration, let's predict 5 steps ahead beyond our training horizon
+    n_predictions = 5
+    input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
 
-        def forward(self, x):
-            # x: (batch_size, seq_length, input_size)
-            out, _ = self.lstm(x)
-            out = out[:, -1, :]  # Get output from last time step
-            out = self.dropout(out)
-            out = self.fc(out)
-            return out.squeeze()
+    # Generate labels for the input_data
+    # Assume we start at 2020-01-01 for convenience
+    start_date = datetime(2020, 1, 1)
+    input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
-    # Initialize the model, loss function, and optimizer
-    hidden_size = 64
-    num_layers = 2
-    output_size = 1
-    dropout_rate = 0.3
+    # Initialize the explainer
+    explainer = forecastExplainer(model, X_train)
 
-    model = LSTMForecaster(input_size, hidden_size, num_layers, output_size, dropout_rate).to(device)
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.005)
+    # Perform autoregressive predictions
+    results = explainer.predict_and_explain(
+        input_data=input_data,
+        n_predictions=n_predictions,
+        input_labels=input_labels,
+        num_features=5,
+        confidence=0.95,
+        n_samples=100,
+        bootstrap_noise_std=0.01
+    )
 
-    # Train the model
-    num_epochs = 20
-    for epoch in range(num_epochs):
-        model.train()
-        outputs = model(X_train_tensor)
-        loss = criterion(outputs, y_train_tensor)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        if (epoch + 1) % 5 == 0:
-            print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {loss.item():.4f}')
+    # Print explanations for each step
+    print("Results:")
+    for key, val in results.items():
+        if key == 'Lime_explaination':
+            print(f"{key}:")
+            for step, expl in enumerate(val):
+                print(f"  Step {step+1}: {expl}")
+        else:
+            print(f"{key}: {val}")
 
-    # Initialize the forecastExplainer with the model and training data
-    explainer = forecastExplainer(model, X_train, device=device)
+    # Plot the results
+    # We'll plot the original data, the input sequence, and predicted points with their intervals.
+    predicted_values = results['Predicted_value']
+    lower_bounds = results['Lower_bound']
+    upper_bounds = results['Upper_bound']
 
-    # Generate a test instance
-    freqs = np.random.uniform(0.1, 0.5, input_size)
-    phases = np.random.uniform(0, 2 * np.pi, input_size)
-    t = np.linspace(0, 2 * np.pi * seq_length, seq_length)
-    x_test = np.array([np.sin(freq * t + phase) for freq, phase in zip(freqs, phases)]).T
-    x_test += np.random.normal(0, 0.1, x_test.shape)
+    # The input_data corresponds to a portion ending before predictions start.
+    # We'll plot from the start of input_data up to the new predictions.
+    full_time = np.arange(len(input_data) + n_predictions)
+    plt.figure(figsize=(10,6))
+    # Plot the underlying true function for the predicted horizon
+    # The true future values after input_data:
+    true_future = data[(total_points - n_predictions):total_points] if (total_points - n_predictions) < len(data) else None
 
-    # Use the combined method to get prediction, confidence interval, and explanation
-    mean_pred, lower_bound, upper_bound, exp = explainer.predict_and_explain(
-        x_test, n_samples=100, confidence=0.95, num_features=10, verbose=True)
+    # Plot the historical input_data
+    plt.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
 
-    # Print the results
-    print(f"Prediction: {mean_pred:.4f}")
-    print(f"95% Confidence Interval: [{lower_bound:.4f}, {upper_bound:.4f}]")
+    # Plot predictions and their bounds
+    for i in range(n_predictions):
+        step_idx = len(input_data) + i
+        pred_val = predicted_values[i]
+        lb = lower_bounds[i]
+        ub = upper_bounds[i]
+        plt.errorbar(step_idx, pred_val, yerr=[[pred_val - lb], [ub - pred_val]], fmt='ro', capsize=5, label='Predicted value' if i == 0 else "")
+        if true_future is not None and i < len(true_future):
+            # Plot the true future if available
+            plt.plot(step_idx, true_future[i], 'gx', label='True future' if i == 0 else "")
 
-    print("\nExplanation:")
-    for feature, importance in exp.as_list():
-        print(f"{feature}: {importance:.4f}")
+    plt.title("Forecasting with XGBoost")
+    plt.xlabel("Time Steps")
+    plt.ylabel("Value")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
 if __name__ == '__main__':
     main()
-
-    
-    # from statsmodels.tsa.statespace.sarimax import SARIMAX
-    model = any
-    training_data: Union[np.ndarray, torch.Tensor]
-    explainer = forecastExplainer(model, training_data)
-    input_data: Union[np.ndarray, torch.Tensor]
-    n_predictions: int
-    input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD'] 
-    Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
-    # Model MUST be able to do prediction = model.predict(input_data)
-
-    '''
-    out_dict = {
-        'Machine_name': 'MACHINENAME :(',
-        'KPI_name': 'KPINAME :)',
-        'Predicted_value': [0,1,2,3,4,5,6,7,8,9,10],
-        'Lower_bound':[1,1,1,1,1,1,1,1,1,1], #from XAI
-        'Upper_bound':[0,0,0,0,0,0,0,0,0,0], #from XAI
-        'Confidence_score':[9,8,7,6,5,4,3,2,1,0], #from XAI
-        'Lime_explaination': list(('string',2.1),("2",2),("s",1)), #from XAI
-        'Measure_unit': 'Kbps',
-        'Date_prediction': [d,d,d,d,d,d,d,d,d,d],
-        'Forecast': True
-    }
-    '''
