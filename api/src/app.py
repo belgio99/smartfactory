@@ -1,12 +1,14 @@
 from typing import Annotated
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import Json
 import uvicorn
+import tempfile
+import json
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
-from notification_service import send_notification, retrieve_alerts
+from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from database.minio_connection import *
@@ -399,16 +401,39 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
             logging.info("No reports for userID %s", str(userId))
             return JSONResponse(content={"data": []}, status_code=200)
         reports = []
-        path_to_report = {}
         for row in response:
-            logging.info(row[3])
-            path_to_report[row[3]] = Report(id=row[0], name=row[1], type=row[2], data="")
+            reports.append(Report(id=row[0], name=row[1], type=row[2]))
         close_connection(connection, cursor)
-        #TODO get reports from DB
-        for path in path_to_report.keys():
-            break #TODO set data for each report and add to reports list
         return JSONResponse(content={"data": reports}, status_code=200)
     except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/smartfactory/reports/download/{report_id}")
+def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    try:
+        connection, cursor = get_db_connection()   
+        query = "SELECT ReportID, Name, OwnerID, FilePath FROM Reports WHERE ReportID = %s"
+        response = query_db_with_params(cursor, connection, query, (report_id,))
+        if not response or response[0] is None:
+            raise HTTPException(status_code=404, detail="Report not found")
+        file_name = response[0][1]
+        ownerID = response[0][2]
+        tmp_path = "/tmp/"+ownerID+"_"+file_name+".pdf"
+        minio = get_minio_connection()
+        download_object(minio, "/reports/"+ownerID, file_name, tmp_path)
+        close_connection(connection, cursor)
+        return FileResponse(
+            path=tmp_path,
+            media_type="application/pdf",
+            filename="downloaded_example.pdf"
+        )
+    except HTTPException as e:
+        logging.error("HTTPException: %s", e.detail)
+        close_connection(connection, cursor)
+        raise e
+    except Exception as e:
+        close_connection(connection, cursor)
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -424,6 +449,13 @@ def call_ai_agent(input: str):
     response = requests.post(os.getenv('RAG_API_ENDPOINT'), headers=headers, json=body)
     response.raise_for_status()
     return response
+
+def create_pdf(text: str, path: str):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Arial', '', 12)
+    pdf.cell(0, 100, text)
+    pdf.output(name=path, dest="F")
     
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
 def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Body()], is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -451,26 +483,22 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
         logging.info(ai_response)
         answer = Answer.model_validate(ai_response)
         report_data = answer.textResponse
-        tmp_path = "/tmp/"+userId+params.name+".pdf"
+        tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
         obj_path = "/reports/"+userId+"/"+params.name+params.period+".pdf"
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font('Arial', '', 12)
-        pdf.cell(0, 100, report_data)
-        pdf.output(name=tmp_path, dest="F")
+        create_pdf(report_data, tmp_path)
         minio = get_minio_connection()
-        upload_object(minio, "/reports/"+userId, params.name+params.period+".pdf", tmp_path)
-        os.remove(tmp_path)
+        upload_object(minio, "/reports/"+userId, params.name+".pdf", tmp_path)
         query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
-        cursor.execute(query_insert, (params.name or "Report"+datetime.now().strftime("%d_%m_%Y"), params.type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
+        cursor.execute(query_insert, (params.name+".pdf", params.type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
         connection.commit()
-        report_db = cursor.fetchone()
-        report = ReportResponse(id=report_db[0], name=report_db[1], type=report_db[2], data=report_data)
         close_connection(connection, cursor)
-        logging.info(report.model_dump_json())
         if is_scheduled:
-            return report
-        return JSONResponse(content={"data": report.model_dump()}, status_code=201)
+            return (params.name, params.email, tmp_path)
+        return FileResponse(
+            path=tmp_path,
+            media_type="application/pdf",
+            filename="downloaded_example.pdf"
+        )
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
@@ -482,12 +510,16 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
     
 def generate_and_send_report(userId: str, email: str, params: ScheduledReport, api_key: str):
     logging.info("Started scheduled report generation")
-    report = generate_report(userId, params, True, api_key)
-    #TODO send email
+    report_name, to_email, tmp_path = generate_report(userId, params, True, api_key)
+    send_report(to_email, report_name, tmp_path)
 
 @app.get("/smartfactory/reports/schedule")
 def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     schedules = []
+    minio = get_minio_connection()
+    objects = minio.list_objects(bucket_name="/settings/"+"userId", )
+    for ob in objects:
+        logging.info(ob)
     #TODO get schedules from DB
     return JSONResponse(content={"data": schedules}, status_code=200)
 
@@ -502,7 +534,13 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
             raise HTTPException(status_code=404, detail="User not found")
         email = response[0][1]
         close_connection(connection, cursor)
-        #TODO save scheduling in DB
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete_on_close=False) as temp_file:
+            json.dump(params.model_dump(), temp_file, indent=4)
+            tmp_path = temp_file.name
+            logging.info(tmp_path)
+            minio = get_minio_connection()
+            #TODO update object if id is populated
+            upload_object(minio, "/settings/"+userId, params.name+"_scheduling.json", tmp_path)
         async with tasks_lock:
             tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds)
     except HTTPException as e:

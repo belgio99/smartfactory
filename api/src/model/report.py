@@ -15,7 +15,6 @@ class ReportResponse(BaseModel):
     id: int
     name: str
     type: str
-    data: str
 
 class ScheduledReport(BaseModel):
     id: Optional[int]
