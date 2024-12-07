@@ -66,7 +66,7 @@ MINIO_ADDRESS = ':9000'
 MINIO_CONSOLE_ADDRESS = ':9001'
 
 SMTP_SERVER=host.docker.internal
-SMTP_PORT=1025
+SMTP_PORT=11025
 SMTP_EMAIL=noreply@smartfactory.com
 SMTP_PASSWORD=SmartAppPassword123
 
