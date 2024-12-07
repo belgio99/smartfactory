@@ -19,13 +19,14 @@ class HistoricalQueryParams(BaseModel):
             field (str): The field to perform the operation on.
             }
     """
+    aggregations: dict
     kpi: str
     timeframe: dict
     machines: list
     group_by: str
     group_time: Optional[str] = None
     group_category: Optional[str] = None
-    aggregations: dict
+    
 
 class HistoricalData(BaseModel):
     data: dict

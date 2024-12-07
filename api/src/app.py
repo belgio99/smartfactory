@@ -529,24 +529,39 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     historical_params.machines = tuple(historical_params.machines) 
     # remove commas from machines string
     machines = str(historical_params.machines).replace(",", "")
+    # check if group_time has valid values
+    if historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
+        raise HTTPException(status_code=400, detail="Invalid group_time value")
     try:
-        
         # Build the query body
+        
         # aggregation column (as "max") goes with double quotes, while the rest goes with single quotes!!!
+
+        # you always have to group by name at least
+        # time or name first?
+
+        # group_time is optional and has values: 
+        # 'P1D'for daily intervals
+        # 'P1W' for weekly intervals
+        # 'P1M' for monthly intervals.
+        
         
         query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe, {} AS aggregated_value FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
-                    AND asset_id IN {} GROUP BY name, kpi, TIME_FORMAT(__time, 'yyyy-MM-dd') ORDER BY timeframe ASC
+                    AND asset_id IN {} GROUP BY {}
         """.format(
-            aggregation, historical_params.kpi, historical_params.timeframe["start_date"], historical_params.timeframe["end_date"], machines
+            aggregation, historical_params.kpi, historical_params.timeframe["start_date"],
+            historical_params.timeframe["end_date"], machines, historical_params.group_by
             )
         
         '''
+         name, kpi, TIME_FORMAT(__time, 'yyyy-MM-dd') ORDER BY timeframe ASC
+        '''
         # append optional group by and aggregation
         if historical_params.group_time :
-            query += """ORDER BY %s"""
+            query += f""", TIME_FLOOR(__time, '{historical_params.group_time}')"""
         if historical_params.group_category :
-            query += """, ORDER BY %s"""
-        '''
+            query += """ GROUP BY """
+        
         # query = 'SELECT SUM("max") FROM \"timeseries\"' + "WHERE kpi = 'consumption'"
         print("Query:", query)
 
