@@ -127,18 +127,19 @@ def save_alert(alert):
 
         insertAlertQuery = """
         INSERT INTO Alerts (Title, Type, Description, TriggeredAt, MachineName, isPush, Severity)
-        VALUES ('{}', '{}', '{}', '{}', '{}', '{}', '{}') RETURNING AlertID
-        """.format(
+        VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING AlertID
+        """
+
+        cursor.execute(insertAlertQuery, (
             alert.title,
             alert.type,
             alert.description,
             alert.triggeredAt,
             alert.machineName,
-            1 if alert.isPush else 0,
+            True if alert.isPush else False,
             alert.severity.value
-        )
+        ))
 
-        cursor.execute(insertAlertQuery)
         alertId = cursor.fetchone()[0]
         logging.info("Alert inserted with ID: %s", alertId)
 
