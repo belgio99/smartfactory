@@ -94,12 +94,12 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
             )}
             {/* Explanation Button */}
             {extraData.explanation && (
-                <div className="text-xs">
+                <div>
                     <button
                         onClick={toggleExplanation}
-                        className="inline-block px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-lg text-sm shadow-md focus:outline-none"
+                        className="inline-block px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded-lg text-xs shadow-md focus:outline-none"
                     >
-                        {isExplanationOpen ? "Hide Explanation" : "View Explanation"}
+                        {isExplanationOpen ? "Hide Explanation" : "View Sources"}
                     </button>
                     {isExplanationOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
