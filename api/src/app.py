@@ -527,14 +527,14 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     aggregation = historical_params.aggregations["operation"] + '("' + historical_params.aggregations["field"] + '")'
     # substitute square brackets with parentheses in machine list
     historical_params.machines = tuple(historical_params.machines) 
-    # remove commas from machines string
+    # remove commas from machines string in case it's a single one
     machines = str(historical_params.machines).replace(",", "")
     # check if group_time has valid values
     if historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
         raise HTTPException(status_code=400, detail="Invalid group_time value")
     try:
         # Build the query body
-        
+
         # aggregation column (as "max") goes with double quotes, while the rest goes with single quotes!!!
 
         # you always have to group by name at least
@@ -547,20 +547,16 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
         
         
         query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe, {} AS aggregated_value FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
-                    AND asset_id IN {} GROUP BY {}
+                    AND asset_id IN {} GROUP BY name
         """.format(
             aggregation, historical_params.kpi, historical_params.timeframe["start_date"],
-            historical_params.timeframe["end_date"], machines, historical_params.group_by
+            historical_params.timeframe["end_date"], machines
             )
         
-        '''
-         name, kpi, TIME_FORMAT(__time, 'yyyy-MM-dd') ORDER BY timeframe ASC
-        '''
         # append optional group by and aggregation
         if historical_params.group_time :
-            query += f""", TIME_FLOOR(__time, '{historical_params.group_time}')"""
-        if historical_params.group_category :
-            query += """ GROUP BY """
+            query += f""", __time, TIME_FLOOR(__time, '{historical_params.group_time}')"""
+
         
         # query = 'SELECT SUM("max") FROM \"timeseries\"' + "WHERE kpi = 'consumption'"
         print("Query:", query)

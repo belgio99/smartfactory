@@ -23,9 +23,7 @@ class HistoricalQueryParams(BaseModel):
     kpi: str
     timeframe: dict
     machines: list
-    group_by: str
     group_time: Optional[str] = None
-    group_category: Optional[str] = None
     
 
 class HistoricalData(BaseModel):
