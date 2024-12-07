@@ -60,7 +60,7 @@ def execute_druid_query(body):
 def data_load(machine,kpi):
   
   query_body = {
-      "query": f"SELECT * FROM timeseries" # WHERE Machine_name = {machine} AND KPI_name = {KPI}
+      "query": "SELECT * FROM \"timeseries\"" # WHERE Machine_name = {machine} AND KPI_name = {KPI}
   }
   # Execute the query
   response = execute_druid_query(query_body)
@@ -164,13 +164,14 @@ def optimize_ARIMA(endog, order_list, d):
   optimize_ARIMA_results = pd.DataFrame(results, columns=['(p,q)', 'AIC'])
   optimize_ARIMA_results = optimize_ARIMA_results.sort_values(by='AIC', ascending=True).reset_index(drop=True)
   return optimize_ARIMA_results
+
 def xgboost_parameter_select(X_train,y_train):
   # Define the XGBoost regressor
   xgb_model = XGBRegressor(objective="reg:squarederror", random_state=42)
 
   # Define a small parameter grid
   param_grid = {
-      "n_estimators": [50, 100, 200],
+      "n_estimators": [50, 100, 200, 300, 400],
       "max_depth": [3, 5, 7],
       "learning_rate": [0.01, 0.1, 0.2],
   }
@@ -184,6 +185,19 @@ def xgboost_parameter_select(X_train,y_train):
   # Best parameters and model performance
   print("Best Parameters:", grid_search.best_params_)
   return grid_search.best_estimator_ 
+
+
+def custom_tts(data, labels, window_size = 10):
+  X = []
+  y = []
+  for i in range(len(data) - window_size):
+    X.append(data[i:i + window_size])  # Input is the window of 10 elements
+    y.append(data[i + window_size])    # Target is the next value
+
+  X = np.array(X)
+  y = np.array(y)
+  X_train, X_test, y_train, y_test, labels_train, labels_test = train_test_split(X,y,labels, test_size=0, random_state=42) #decide what to do
+
 #########################
 ### 1. data profiling ###
 #########################
@@ -227,7 +241,7 @@ def characterize_KPI(machine, kpi):
   }
 
   if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
-    diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value']})
+    diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff()})
     diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
     print(diff1_series)
     data['Value'] = data_normalize_params(diff1_series['Value'])
@@ -239,7 +253,7 @@ def characterize_KPI(machine, kpi):
       'Stationary': 1 if diff1_p_value < 0.05 else 0
     }
     if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
-        diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value']})
+        diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff()})
         diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
         data['Value'] = data_normalize_params(diff2_series['Value'])
 
@@ -289,31 +303,12 @@ def characterize_KPI(machine, kpi):
        'name': 'xgboost',
        'xgb_bytes': model_bytes
     }
-    # loaded_model = xgb.XGBRegressor()
-    # loaded_model.load_model(my_big_dict["model_bytes"])
-
-    # # Use the loaded model for predictions
-    # predictions = loaded_model.predict(X_test)
-     
-
-  # ############################
-  # ### 4. Meta-Data storage ###
-  # ############################
+  ############################
+  ### 4. Meta-Data storage ###
+  ############################
   save_model_data(machine, kpi, a_dict)
 
-
-def custom_tts(data, labels, window_size = 10):
-  X = []
-  y = []
-  for i in range(len(data) - window_size):
-    X.append(data[i:i + window_size])  # Input is the window of 10 elements
-    y.append(data[i + window_size])    # Target is the next value
-
-  X = np.array(X)
-  y = np.array(y)
-  X_train, X_test, y_train, y_test, labels_train, labels_test = train_test_split(X,y,labels, test_size=0, random_state=42) #decide what to do
-
-  return X_train, X_test, y_train, y_test
+  return X_train, X_test, y_train, y_test, labels_train, labels_test
 ##############################
 #####====================#####
 ### II. Real-Time Analysis ###
@@ -323,7 +318,6 @@ def custom_tts(data, labels, window_size = 10):
 #########################
 ### Alerts generation ###
 #########################
-
 
 def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q: int, d: int) -> list:
     total_len = train_len + horizon
