@@ -49,19 +49,31 @@ def connect_db():
 
 def retrieve_keys(microservice_id: str):
     """
-    Retrieve the API key for a specified microservice from the database.
+    Retrieve the API key for the specified microservice from the database.
+
+    This function connects to the database, executes a query to fetch the API key
+    associated with the given microservice ID, and returns the key if found. If the 
+    database connection fails or the query encounters an error, appropriate error 
+    messages are logged.
 
     Args:
-        microservice_id (str): The unique identifier of the microservice.
+        microservice_id (str): The unique identifier of the microservice whose API key 
+                               needs to be retrieved.
 
     Returns:
-        str or None: The API key if found, otherwise None.
+        str or None: The API key associated with the specified microservice ID if found, 
+                     otherwise None.
+
+    Raises:
+        Exception: If there is an error during the database query execution, it will be 
+                   logged but not raised. The function will return None in such cases.
     """
+
     # Retrieve the API key for the specified microservice from the database
     connection, cursor = connect_db()
     if connection is None or cursor is None:
         logging.error("Database connection failed")
-        return json.load(open(API_KEYS_FILE_PATH, 'r'))['microservice'][microservice_id]    
+        return None #json.load(open(API_KEYS_FILE_PATH, 'r'))['microservice'][microservice_id]    
     try:
         query = "SELECT KEY FROM Microservices WHERE ServiceID = %s"
         cursor.execute(query, (microservice_id,))
@@ -72,7 +84,7 @@ def retrieve_keys(microservice_id: str):
             result = None
     except Exception as e:
         logging.error("Database query failed: %s", str(e))
-        result = json.load(open(API_KEYS_FILE_PATH, 'r'))['microservice'][microservice_id]
+        #result = json.load(open(API_KEYS_FILE_PATH, 'r'))['microservice'][microservice_id]
     finally:
         cursor.close()
         connection.close()
@@ -80,13 +92,16 @@ def retrieve_keys(microservice_id: str):
     
 def get_verify_api_key(microservice_ids: list):
     """
-    Creates an asynchronous dependency function to verify API keys against the specified microservice IDs.
+    Creates an asynchronous dependency function to verify an API key against a list of microservice IDs.
 
     Args:
-        microservice_ids (list): A list of microservice IDs to retrieve and verify API keys for.
+        microservice_ids (list): A list of microservice IDs to retrieve valid API keys from.
 
     Returns:
-        Callable: An asynchronous function that verifies the provided API key. Raises an HTTPException with a 401 status code if the API key is invalid.
+        function: An asynchronous function that verifies the provided API key.
+
+    Raises:
+        HTTPException: If the provided API key is not found in the list of valid API keys, an HTTP 401 Unauthorized exception is raised.
     """
     async def verify_api_key(api_key: str = Depends(api_key_header)):
         matched_keys = [retrieve_keys(microservice_id) for microservice_id in microservice_ids]
@@ -98,14 +113,18 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     """
     Retrieve the current user based on the provided JWT token.
 
+    This function decodes the JWT token to extract the username, then queries the database
+    to retrieve the user information. If the token is invalid or the user does not exist,
+    an HTTP 401 error is raised.
+
     Args:
-        token (str): The JWT token provided by the user, extracted using the OAuth2 scheme.
+        token (str): The JWT token provided by the user.
 
     Returns:
-        dict: A dictionary containing user information if the token is valid.
+        dict: The user information retrieved from the database.
 
     Raises:
-        HTTPException: If the token is invalid or the user does not exist, an HTTP 401 error is raised.
+        HTTPException: If the token is invalid or the user does not exist.
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
