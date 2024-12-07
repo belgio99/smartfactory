@@ -175,7 +175,7 @@ class forecastExplainer:
         - input_labels (List[str]): Labels corresponding to the input_data.
         - num_features (int): Number of features for LIME explanation.
         - confidence (float): Confidence level.
-        - n_samples (int): Number of bootstrap samples. Must be at least 100 to have meaningful  Confidence_score.
+        - n_samples (int): Number of bootstrap samples. Must be at least 100 to have meaningful Confidence_score.
         - use_mean_pred (bool): If True, use the mean of bootstrapped predictions as final prediction.
                                 If False, use the direct model prediction (raw prediction) as final prediction.
         
@@ -186,6 +186,7 @@ class forecastExplainer:
         - Upper_bound: List of upper bounds
         - Confidence_score: List of probabilities that the actual point lies within [lower_bound, upper_bound]
         - Lime_explaination: List of lists of (label, importance)
+        - Date_prediction: List of predicted dates (strings)
         """
         if isinstance(input_data, torch.Tensor):
             input_data = input_data.detach().cpu().numpy()
@@ -195,6 +196,7 @@ class forecastExplainer:
         upper_bounds = []
         confidence_scores = []
         lime_explanations = []
+        date_predictions = []  # List to store the predicted dates
 
         current_input = input_data.copy()
         current_labels = input_labels.copy()
@@ -226,12 +228,15 @@ class forecastExplainer:
             new_label = new_label_date.strftime("%Y-%m-%d")
             current_labels = current_labels[1:] + [new_label]
 
+            date_predictions.append(new_label)  # Append the new predicted date
+
         out_dict = {
             'Predicted_value': predicted_values,
             'Lower_bound': lower_bounds,
             'Upper_bound': upper_bounds,
             'Confidence_score': confidence_scores,  # Now a probability
-            'Lime_explaination': lime_explanations
+            'Lime_explaination': lime_explanations,
+            'Date_prediction': date_predictions  # Include the predicted dates
         }
 
         return out_dict
