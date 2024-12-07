@@ -1,21 +1,3 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
 volumes:
   metadata_data: {}
   middle_var: {}
@@ -31,7 +13,6 @@ services:
   postgres:
     container_name: postgres
     image: postgres:latest
-    platform: linux/amd64
     volumes:
       - metadata_data:/var/lib/postgresql/data
 #   environment:
@@ -40,8 +21,8 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
-  # Need 3.5 or later for container nodes
   zookeeper:
     container_name: zookeeper
     image: zookeeper:3.5.10
@@ -53,6 +34,7 @@ services:
       #- ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
     profiles:
       - database
+      - not-db-init
 
   coordinator:
     image: apache/druid:31.0.0
@@ -73,6 +55,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   broker:
     image: apache/druid:31.0.0
@@ -92,6 +75,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   historical:
     image: apache/druid:31.0.0
@@ -112,6 +96,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -134,6 +119,7 @@ services:
       - database/environment
     profiles:
       - database
+      - not-db-init
 
   router:
     image: apache/druid:31.0.0
@@ -152,7 +138,8 @@ services:
     env_file:
       - database/environment
     profiles:
-      - database 
+      - database
+      - not-db-init
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://router:8888/status/health"]
       interval: 10s
@@ -164,7 +151,6 @@ services:
     env_file:
       - database/.env
     image: postgres:latest
-    platform: linux/amd64
     ports:
       - "15432:5432"
 #    environment:
@@ -173,6 +159,7 @@ services:
       - db:/var/lib/postgresql/data
     profiles:
       - database
+      - not-db-init
 
   minio:
     container_name: minio
@@ -187,9 +174,10 @@ services:
     command: minio server /data
     profiles:
       - database
+      - not-db-init
 
   db-init:
-    platform: linux/amd64
+    image: ghcr.io/belgio99/smartfactory/db-init:latest
     build:
       context: ./database
       dockerfile: Dockerfile
@@ -214,24 +202,24 @@ services:
       - "10010:8000"
     profiles:
       - kb
+      - not-db-init
     
   data-processing:
     build:
       context: ./data-processing
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
-    platform: linux/amd64
     ports: 
       - "10030:8000"
     profiles:
       - data-processing
+      - not-db-init
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
     build:
       context: ./api
       dockerfile: Dockerfile
-    platform: linux/amd64
     ports: 
       - "10040:8000"
     env_file:
@@ -242,9 +230,11 @@ services:
       - router
     profiles:
       - api
+      - not-db-init
 
   smtp:
     image: mailhog/mailhog
+    platform: linux/amd64
     ports:
         - "11025:1025"
         - "18025:8025"
@@ -253,6 +243,7 @@ services:
         MH_OUTGOING_SMTP_PASSWORD: "SmartAppPassword123"
     profiles:
       - api
+      - not-db-init
     
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
@@ -261,33 +252,33 @@ services:
       dockerfile: Dockerfile
     env_file:
       - rag/.env
-    platform: linux/amd64
     ports: 
       - "10050:8000"
     profiles:
       - rag
+      - not-db-init
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
     build:
       context: ./gui-panel
       dockerfile: Dockerfile
-    platform: linux/amd64
     ports: 
       - "10060:8000"
     profiles:
       - gui-panel
+      - not-db-init
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
     build:
       context: ./kpi-engine
       dockerfile: Dockerfile
-    platform: linux/amd64
     ports: 
       - "10080:8000"
     profiles:
       - kpi-engine
+      - not-db-init
     env_file:
       - kpi-engine/.env
 

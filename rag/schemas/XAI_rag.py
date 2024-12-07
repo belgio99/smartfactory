@@ -50,7 +50,6 @@ class RagExplainer:
             self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
         else:
             self.embedding_model = None
-
         # Process initial context (if any)
         self.add_to_context(context)
 
@@ -340,6 +339,7 @@ class RagExplainer:
         textResponse, textExplanation, attribution = self._generate_attribution(response_segments, similarity_matrix)
 
         return textResponse, textExplanation, attribution
+
 
     def attribute_response_to_context(self, response: str) -> Tuple[str, str, List[Dict[str, Any]]]:
         """

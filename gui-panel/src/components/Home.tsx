@@ -18,10 +18,16 @@ import ReportSchedules from "./Reports/ReportSchedules";
 import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
 import AIDashboard from "./Dashboard/AIDashboard";
+import { userInfo } from 'os';
 
 interface UserProps {
+    userId: string;
     username: string;
+    token: string;
     role: string;
+    site: string;
+    email: string;
+    // User Avatar
     userAvatar?: string;
 }
 
@@ -42,7 +48,7 @@ const NotificationBanner: React.FC = () => {
     );
 };
 
-const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
+const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, email, userAvatar}) => {
     const location = useLocation();
     const {addNotification} = useNotification();
 
@@ -106,25 +112,25 @@ const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
 
                     <Routes>
                         <Route path="/" element={<Navigate to="dashboards/overview" replace/>}/>
-                        <Route path="home" element={<Home/>}/>
+                        <Route path="home" element={<Home username={username} token={token} role={role} site={site} />}/>
                         <Route path="dashboards/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/:dashboardPath/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/new" element={<AIDashboard/>}/>
-                        <Route path="user-settings" element={<UserSettings/>}/>
+                        <Route path="user-settings" element={<UserSettings userId={userId} username={username} token={token} role={role} site={site} email={email}/>}/>
                         <Route path="data-view" element={<DataView/>}/>
                         <Route path="log" element={<LogPage/>}/>
                         <Route path="kpis" element={<KpiViewer/>}/>
                         <Route path="forecasts" element={<Forecasting/>}/>
                         <Route path="production-lines" element={<ProductionLineManager/>}/>
-                        <Route path="reports" element={<ReportArchive/>}/>
-                        <Route path="reports/schedules" element={<ReportSchedules/>}/>
+                        <Route path="reports" element={<ReportArchive userId={userId} username={username} token={token} role={role} site={site} />}/>
+                        <Route path="reports/schedules" element={<ReportSchedules userId={userId} username={username} />}/>
                         <Route path="*" element={<Navigate to="/home" replace/>}/>
                     </Routes>
                 </div>
             </main>
 
             {/* Chat Assistant */}
-            <ChatAssistant/>
+            <ChatAssistant username={username} />
         </div>
     );
 };

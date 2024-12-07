@@ -1,6 +1,10 @@
 import axios from 'axios';
+import { userInfo } from 'os';
+import { Point } from 'recharts/types/shape/Curve';
 
-const BASE_URL = 'https://your-api-url.com'; // API URL
+const BASE_URL = 'http://0.0.0.0:10040'; // API URL
+const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
+
 
 /**
  * Interface UserInfo
@@ -19,19 +23,6 @@ export interface UserInfo {
   access_token?: string;
   site: string;
 }
-
-/**
- * Interface LoginResponse
- * @param outcome string - The outcome of the login
- * @param userInfo UserInfo - The user information [UserInfo] of the login
- * @param message string - The message of the login
- */
-export interface LoginResponse {
-  outcome: boolean;
-  userInfo?: UserInfo;
-  message?: string;
-}
-
 
 /**
  * Interface Report
@@ -146,19 +137,36 @@ export const login = async (
   user: string,
   isEmail: boolean,
   password: string
-): Promise<LoginResponse> => {
+): Promise<UserInfo> => {
   try {
-    const response = await axios.post<LoginResponse>(`${BASE_URL}/smartfactory/login`, {
-      user,
-      isEmail,
-      password,
-    });
+    console.log('Sending login request to:', `${BASE_URL}/smartfactory/login`);
+    console.log('Payload:', { user, isEmail, password });
+    console.log('Headers:', { "x-api-key": API_KEY });
+
+    const response = await axios.post<UserInfo>(
+      `${BASE_URL}/smartfactory/login`,
+      {
+        user,
+        isEmail,
+        password,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
+
+    console.log('Login response:', response.data);
     return response.data;
   } catch (error: any) {
-    console.error('Login API error:', error);
+    console.error('Login API error:', error.response || error.message);
     throw new Error(error.response?.data?.message || 'Login failed');
   }
 };
+
+
 
 /**
  * API POST used to register a new user
@@ -175,19 +183,61 @@ export const register = async (
   password: string,
   role: string,
   site: string
-): Promise<LoginResponse> => {
+): Promise<UserInfo> => {
   try {
-    const response = await axios.post<LoginResponse>(`${BASE_URL}/smartfactory/signup`, {
-      username,
-      email,
-      password,
-      role,
-      site,
-    });
+    const response = await axios.post<UserInfo>(
+      `${BASE_URL}/smartfactory/register`,
+      {
+        username,
+        email,
+        password,
+        role,
+        site,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
     return response.data;
   } catch (error: any) {
     console.error('Register API error:', error);
     throw new Error(error.response?.data?.message || 'Registration failed');
+  }
+};
+
+/**
+ * API POST used to change the password of the user
+ * @param userId string - The user ID
+ * @param oldPassword string - The old password of the user
+ * @param newPassword string - The new password of the user
+ * @returns UserInfo - The user information
+ */
+export const changePassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<UserInfo> => { 
+  try {
+    const response = await axios.put<UserInfo>(
+      `${BASE_URL}/smartfactory/user/${userId}`,
+      {
+        old_password: oldPassword,
+        new_password: newPassword
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        }
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Change Password API error:', error);
+    throw new Error(error.response?.data?.message || 'Change Password failed');
   }
 };
 
@@ -202,6 +252,10 @@ export const getReports = async (userId: string): Promise<Report[]> => {
       `${BASE_URL}/smartfactory/reports`,
       {
         params: { userId },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
       }
     );
     return response.data.data;
@@ -222,6 +276,10 @@ export const getHistoricalData = async (query: string[]): Promise<HistoricalData
       `${BASE_URL}/smartfactory/historical`,
       {
         params: { query },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
       }
     );
     return response.data.data;
@@ -242,6 +300,10 @@ export const getDashboards = async (userId: string): Promise<DashboardData> => {
       `${BASE_URL}/smartfactory/dashboards`,
       {
         params: { userId },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
       }
     );
     return response.data.data;
@@ -262,7 +324,16 @@ export const updateUserSettings = async (
   settings: UserSettings
 ): Promise<void> => {
   try {
-    await axios.post(`${BASE_URL}/smartfactory/settings/${userId}`, settings);
+    await axios.post(
+      `${BASE_URL}/smartfactory/settings/${userId}`,
+      settings,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Update User Settings API error:', error);
     throw new Error(error.response?.data?.message || 'Failed to update settings');
@@ -277,7 +348,13 @@ export const updateUserSettings = async (
 export const getUserSettings = async (userId: string): Promise<UserSettings> => {
   try {
     const response = await axios.get<{ userSettings: UserSettings }>(
-      `${BASE_URL}/smartfactory/settings/${userId}`
+      `${BASE_URL}/smartfactory/settings/${userId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
     );
     return response.data.userSettings;
   } catch (error: any) {
@@ -294,7 +371,13 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
 export const getAlerts = async (userId: string): Promise<Alert[]> => {
   try {
     const response = await axios.get<{ data: Alert[] }>(
-      `${BASE_URL}/smartfactory/alerts/${userId}`
+      `${BASE_URL}/smartfactory/alerts/${userId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
     );
     return response.data.data;
   } catch (error: any) {
@@ -309,21 +392,21 @@ export const getAlerts = async (userId: string): Promise<Alert[]> => {
  * @returns Promise will return the AI response
  */
 export const interactWithAgent = async (userInput: string): Promise<{ textResponse: string; data?: string }> => {
-  const response = await axios.post(`${BASE_URL}/smartfactory/agent`, { userInput });
-  return response.data;
-};
-
-/**
- * API POST used to calculate the KPI
- * @param alert Alert - The alert to post
- * @returns Promise will return void
- */
-export const postAlert = async (alert: Alert): Promise<void> => {
   try {
-    await axios.post(`${BASE_URL}/smartfactory/postAlert`, alert);
+    const response = await axios.post(
+      `${BASE_URL}/smartfactory/agent`,
+      { userInput },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
+    return response.data;
   } catch (error: any) {
-    console.error('Post Alert API error:', error);
-    throw new Error(error.response?.data?.message || 'Failed to post alert');
+    console.error('Interact With Agent API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to interact with agent');
   }
 };
 
@@ -333,7 +416,15 @@ export const postAlert = async (alert: Alert): Promise<void> => {
  */
 export const retrieveKPIs = async (): Promise<KPIObject[]> => {
   try {
-    const response = await axios.get<{ kpis: KPIObject[] }>(`${BASE_URL}/smartfactory/kpi`);
+    const response = await axios.get<{ kpis: KPIObject[] }>(
+      `${BASE_URL}/smartfactory/kpi`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
     return response.data.kpis;
   } catch (error: any) {
     console.error('Retrieve KPIs API error:', error);
@@ -349,11 +440,23 @@ export const retrieveKPIs = async (): Promise<KPIObject[]> => {
  * @param endTime string (optional) - The end time
  * @returns KPIValue - The KPI value
  */
-export const calculateKPIValue = async (kpiId: string, machineId?: string, startTime?: string, endTime?: string): Promise<KPIValue> => {
+export const calculateKPIValue = async (
+  kpiId: string,
+  machineId?: string,
+  startTime?: string,
+  endTime?: string
+): Promise<KPIValue> => {
   try {
-    const response = await axios.get<KPIValue>(`${BASE_URL}/smartfactory/${kpiId}/calculate`, {
-      params: { machineId, startTime, endTime },
-    });
+    const response = await axios.get<KPIValue>(
+      `${BASE_URL}/smartfactory/${kpiId}/calculate`,
+      {
+        params: { machineId, startTime, endTime },
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
     return response.data;
   } catch (error: any) {
     console.error('Calculate KPI Value API error:', error);
@@ -368,7 +471,16 @@ export const calculateKPIValue = async (kpiId: string, machineId?: string, start
  */
 export const insertKPI = async (kpi: Omit<KPIObject, 'id'>): Promise<string> => {
   try {
-    const response = await axios.post<{ kpiId: string }>(`${BASE_URL}/smartfactory/kpi`, { kpi });
+    const response = await axios.post<{ kpiId: string }>(
+      `${BASE_URL}/smartfactory/kpi`,
+      { kpi },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
     return response.data.kpiId;
   } catch (error: any) {
     console.error('Insert KPI API error:', error);
@@ -384,7 +496,16 @@ export const insertKPI = async (kpi: Omit<KPIObject, 'id'>): Promise<string> => 
  */
 export const postDashboardSettings = async (userId: string, settings: DashboardData): Promise<void> => {
   try {
-    await axios.post(`${BASE_URL}/smartfactory/dashboardSettings/${userId}`, settings);
+    await axios.post(
+      `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
+      settings,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
   } catch (error: any) {
     console.error('Post Dashboard Settings API error:', error);
     throw new Error(error.response?.data?.message || 'Failed to post dashboard settings');
@@ -398,10 +519,59 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
  */
 export const retrieveDashboardSettings = async (userId: string): Promise<DashboardData> => {
   try {
-    const response = await axios.get<DashboardData>(`${BASE_URL}/smartfactory/dashboardSettings/${userId}`);
+    const response = await axios.get<DashboardData>(
+      `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
     return response.data;
   } catch (error: any) {
     console.error('Retrieve Dashboard Settings API error:', error);
     throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
+  }
+};
+
+/**
+ * API POST used to schedule a report generation.
+ * @param userId string - The ID of the user scheduling the report.
+ * @param params object - Additional parameters for the report (e.g., name, type, site, email, startDate, kpis, machines).
+ * @param period number - The scheduling frequency (e.g., in seconds).
+ * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
+ */
+export const scheduleReport = async (
+  userId: string,
+  params: {
+    name: string;
+    type: "test" | "daily" | "weekly" | "monthly" | "yearly";
+    site: string;
+    email: string;
+    startDate: string;
+    kpis: string[];
+    machines: string[];
+  },
+  period: "test" | "daily" | "weekly" | "monthly" | "yearly"
+): Promise<void> => {
+  try {
+    await axios.post(
+      `${BASE_URL}/smartfactory/reports/schedule`,
+      {
+        userId,
+        params,
+        period,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error("Schedule Report API error:", error);
+    throw new Error(error.response?.data?.message || "Failed to schedule report generation");
   }
 };

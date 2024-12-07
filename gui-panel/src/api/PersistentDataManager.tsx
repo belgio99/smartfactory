@@ -1,5 +1,5 @@
 //in this file we store the temporary memory the data loaded from json and save to json the files for persistency
-import {KPI, Machine, DashboardFolder, DashboardLayout, KPIGroup} from "./DataStructures";
+import {KPI, Machine, DashboardFolder, DashboardLayout} from "./DataStructures";
 import axios from "axios";
 
 export async function loadFromApi<T>(apiEndpoint: string, decoder: (json: Record<string, any>) => T): Promise<T[]> {
@@ -34,7 +34,6 @@ export async function loadFromLocal<T>(filePath: string, decoder: (json: Record<
         if (!response.ok) {
             throw new Error(`Failed to load file: ${filePath}`);
         }
-
         // Parse the JSON content
         const jsonData: Record<string, any>[] = await response.json();
         // Decode the JSON into instances of T
@@ -53,7 +52,6 @@ export async function loadFromLocal<T>(filePath: string, decoder: (json: Record<
 class DataManager {
     private static instance: DataManager | null = null;
 
-    private kpiGroups: KPIGroup[] = [];
     private kpiList: KPI[] = [];
     private machineList: Machine[] = [];
     private dashboards: (DashboardFolder | DashboardLayout)[] = [];
@@ -69,10 +67,21 @@ class DataManager {
 
     async initialize(): Promise<void> {
         try {
-            this.kpiGroups = await loadFromLocal('/mockData/kpi.json', KPIGroup.decode);
-            this.kpiList = this.buildKPIList(this.kpiGroups);
+            this.kpiList = await loadFromLocal('/mockData/kpis.json', KPI.decodeGroups).then(
+                kpiToUnwrap => kpiToUnwrap[0] || [],
+                error => {
+                    console.error("Error loading kpis:", error);
+                    return [];
+                }
+            );
 
-            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decode);
+            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
+                kpiToUnwrap => kpiToUnwrap[0] || [],
+                error => {
+                    console.error("Error loading kpis:", error);
+                    return [];
+                }
+            );
 
             this.dashboards = await loadFromLocal('/mockData/dashboards.json', DashboardFolder.decode).then(
                 dashboards => dashboards[0]?.children || [],
@@ -100,30 +109,9 @@ class DataManager {
     }
 
     invalidateCaches(): void {
-        this.kpiGroups = [];
         this.kpiList = [];
         this.machineList = [];
         this.dashboards = [];
-    }
-
-
-    private buildKPIList(groups: KPIGroup[]): KPI[] {
-        const kpiList: KPI[] = [];
-
-        groups.forEach(group => {
-            group.metrics.forEach(metric => {
-                const kpi = new KPI(
-                    metric.id, // Metric ID
-                    group.category, // Category from KPIGroup
-                    `${group.subcategory} (${metric.name})`, // Constructed name
-                    metric.description, // Metric description
-                    group.unit // Unit from KPIGroup
-                );
-                kpiList.push(kpi);
-            });
-        });
-
-        return kpiList;
     }
 
     /**

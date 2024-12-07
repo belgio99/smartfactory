@@ -110,7 +110,8 @@ if __name__ == "__main__":
         ('kpi-engine', 'b3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
         ('knowledge-base', 'c3ebe1bb-a4e7-41a3-bbcc-6c281136e234'),
         ('data', '12d326d6-8895-49b9-8e1b-a760462ac13f'),
-        ('gui', '111c50cc-6b03-4c01-9d2f-aac6b661b716');
+        ('gui', '111c50cc-6b03-4c01-9d2f-aac6b661b716')
+        ON CONFLICT (ServiceID) DO NOTHING;
         """
         cur.execute(demo_api_keys_query)
         conn.commit()

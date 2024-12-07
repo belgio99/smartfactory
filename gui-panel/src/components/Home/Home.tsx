@@ -2,10 +2,13 @@ import React from 'react';
 import styles from './styles/Home.module.css';
 
 interface HomeProps {
-  username?: string;
+  username: string;
+  token: string;
+  role: string;
+  site: string;
 }
 
-const Home: React.FC<HomeProps> = ({ username }) => {
+const Home: React.FC<HomeProps> = ({ username, token, role, site }) => {
   return (
     <div className={styles.homeContainer}>
       <h1>Welcome, {username}!</h1>

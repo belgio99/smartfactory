@@ -49,10 +49,10 @@ This is an example of the information for a KPI stored in the Knowledge Base (OW
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
         <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
-        <sa-ontology:atomic_formula>availability=working_time_sum/(working_time_sum+idle_time_sum)</sa-ontology:atomic_formula>
+        <sa-ontology:atomic_formula>working_time_sum/(working_time_sum+idle_time_sum)</sa-ontology:atomic_formula>
         <sa-ontology:description>Percentage of time worked compared to time available.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
-        <sa-ontology:formula>availability=working_time_sum/(working_time_sum+idle_time_sum)</sa-ontology:formula>
+        <sa-ontology:formula>working_time_sum/(working_time_sum+idle_time_sum)</sa-ontology:formula>
         <sa-ontology:id>availability</sa-ontology:id>
         <sa-ontology:unit_measure>%</sa-ontology:unit_measure>
     </owl:NamedIndividual>
@@ -61,7 +61,7 @@ This is an example of the information for a KPI stored in the Knowledge Base (OW
 ## Usage
 Start the application using the following command:
 ```bash
-uvicorn main:app --reload
+python3 ./src/kb.py
 ```
 This will start the API using environment values, usually on http://127.0.0.1:8000.
 

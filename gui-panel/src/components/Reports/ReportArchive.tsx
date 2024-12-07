@@ -1,23 +1,50 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {useNavigate} from "react-router-dom"; // React Router
+import {getReports} from "../../api/ApiService";
 
 type Report = {
-    id: number;
+    id: string;
     title: string;
     description: string;
 };
 
-const ReportArchive: React.FC = () => {
-    const navigate = useNavigate(); // React Router hook for navigation
+interface ReportArchiveProps {
+    // Props
+    userId: string;
+    username: string;
+    token: string;
+    role: string;
+    site: string;
+}
 
-    // Getter method for the list of reports
-    const getReportList = (): Report[] => [
-        { id: 1, title: "Quarterly Report Q1", description: "Summary and details of Q1 performance." },
-        { id: 2, title: "Quarterly Report Q2", description: "Summary and details of Q2 performance." },
-        { id: 3, title: "Annual Report 2023", description: "Comprehensive analysis of the year 2023." },
-        { id: 4, title: "Quarterly Report Q3", description: "Summary and details of Q3 performance." },
-        { id: 5, title: "Annual Report 2022", description: "Comprehensive analysis of the year 2022." },
-    ];
+
+const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, role, site}) => {
+    const navigate = useNavigate(); // React Router hook for navigation
+    var getReportList; // Variable to get the list of reports
+
+    // Take from API the list of reports
+    // While waiting for the API response, show loading spinner
+    const [loading, setLoading] = useState(true);
+    const [reports, setReports] = useState<Report[]>([]);
+
+    useEffect(() => {
+        getReports(userId).then((reports) => {
+            setReports(reports);
+            setLoading(false);
+        });
+    }, [userId]);
+
+    // If no reports are available, show mock data
+    if(reports.length === 0) {
+        const getReportList = (): Report[] => [
+            { id: "1", title: "Quarterly Report Q1", description: "Summary and details of Q1 performance." },
+            { id: "2", title: "Quarterly Report Q2", description: "Summary and details of Q2 performance." },
+            { id: "3", title: "Annual Report 2023", description: "Comprehensive analysis of the year 2023." },
+            { id: "4", title: "Quarterly Report Q3", description: "Summary and details of Q3 performance." },
+            { id: "5", title: "Annual Report 2022", description: "Comprehensive analysis of the year 2022." },
+        ];
+        setReports(getReportList());
+    }
 
     const [expanded, setExpanded] = useState<number | null>(null);
     const [filter, setFilter] = useState<string>(""); // For filtering reports by title
@@ -27,13 +54,13 @@ const ReportArchive: React.FC = () => {
         setExpanded((prev) => (prev === id ? null : id));
     };
 
-    const handleManageSchedules = () => {
+    const handleManageSchedules = (): void => {
         // Navigate to the recurring schedules page
         navigate("/reports/schedules");
     };
 
     // Filtering and sorting the reports
-    const filteredReports = getReportList()
+    const filteredReports = reports
         .filter((report) =>
             report.title.toLowerCase().includes(filter.toLowerCase())
         )
@@ -93,12 +120,12 @@ const ReportArchive: React.FC = () => {
                     >
                         <div
                             className="flex items-center justify-between p-4 cursor-pointer"
-                            onClick={() => toggleAccordion(report.id)}
+                            onClick={() => toggleAccordion(Number(report.id))}
                         >
                             <span className="font-medium text-gray-700">{report.title}</span>
-                            <span className="text-gray-500">{expanded === report.id ? "▲" : "▼"}</span>
+                            <span className="text-gray-500">{expanded === Number(report.id) ? "▲" : "▼"}</span>
                         </div>
-                        {expanded === report.id && (
+                        {expanded === Number(report.id) && (
                             <div className="p-4 border-t border-gray-200">
                                 <p className="text-gray-600 mb-4 font-normal text-start ">{report.description}</p>
                                 <div className="flex space-x-4">

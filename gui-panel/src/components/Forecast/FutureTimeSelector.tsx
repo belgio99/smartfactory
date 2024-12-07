@@ -1,4 +1,4 @@
-import {TimeFrame} from "../KpiSelector/TimeSelector";
+import {TimeFrame} from "../Selectors/TimeSelect";
 import React from "react";
 
 export interface FutureTimeFrameSelectorProps {
@@ -66,10 +66,16 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
     };
 
     return (
-        <div className="max-h-fit max-w-fit">
-            <div className="flex justify-center items-center mb-4">
-                <div className="text-sm font-semibold text-gray-700">Select Future Timeframe</div>
-            </div>
+        <div className="flex-1 flex-col max-w-fit items-start text-start  space-y-1">
+            {/* Label */}
+            <label htmlFor="kpi_selector" className="text-base font-medium text-gray-700">
+                Select a TimeFrame
+            </label>
+
+            {/* Optional General Description */}
+            <p className="text-sm text-gray-500 font-normal">
+                Choose a time frame for the forecast.
+            </p>
 
             <div className="flex items-center mb-4 space-x-4 font-normal">
                 <select

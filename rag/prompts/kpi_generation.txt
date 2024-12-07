@@ -1,3 +1,5 @@
+{_HISTORY_}
+
 USER QUERY: "{_USER_QUERY_}"
 
 INSTRUCTION: 
@@ -8,7 +10,6 @@ The output format MUST be this one:
 - Atomic: a boolean value that represent if the KPI formula is atomic or it requires other KPIs to be computed (eg: false)
 - Description: Brief text description that represent what the KPI compute (eg: This indicator calculates the energy efficiency of a specific machine in a given time interval)
 - Formula (base): the basic formula of the KPI (power_consumption_efficiency = working_time_sum / consumption_sum)
-- Formula (atomic): if the base formula contains non atomic KPIs this formula simplify all terms to obtain only atomic ones (power_consumption_efficiency = working_time_sum / consumption_sum)
 - Unit of Measure: (eg %, Kw, m)
 - Domain: min, max and type of the value
 

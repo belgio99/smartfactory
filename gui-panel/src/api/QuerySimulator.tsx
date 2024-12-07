@@ -1,7 +1,7 @@
 import PersistentDataManager from "./PersistentDataManager";
 import {KPI, Machine} from "./DataStructures";
-import {Filter} from "../components/KpiSelector/FilterOptions";
-import {TimeFrame} from "../components/KpiSelector/TimeSelector";
+import {Filter} from "../components/Selectors/FilterOptions";
+import {TimeFrame} from "../components/Selectors/TimeSelect";
 
 const dataManager = PersistentDataManager.getInstance();
 const smoothData = (data: number[], alpha: number = 0.3): number[] => {

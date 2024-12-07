@@ -3,8 +3,8 @@ import React, {useEffect, useState} from "react";
 import {DashboardEntry, DashboardLayout} from "../../api/DataStructures";
 import Chart from "../Chart/Chart";
 import {simulateChartData} from "../../api/QuerySimulator";
-import FilterOptionsV2, {Filter} from "../KpiSelector/FilterOptions";
-import TimeSelector, {TimeFrame} from "../KpiSelector/TimeSelector";
+import FilterOptionsV2, {Filter} from "../Selectors/FilterOptions";
+import TimeSelector, {TimeFrame} from "../Selectors/TimeSelect";
 import PersistentDataManager from "../../api/PersistentDataManager";
 
 const Dashboard: React.FC = () => {
@@ -80,6 +80,13 @@ const Dashboard: React.FC = () => {
         </div>;
     }
     return <div className="p-8 space-y-8 bg-gray-50 min-h-screen">
+        {/* Disclaimer */}
+        <div className="text-sm text-gray-500">
+            <p>This is still a demo dashboard. If you don't see any data, try changing the time frame or filters.</p>
+            <p> For "Today" it will try to fetch data for the current day, but it may not be available before 1:00 AM.</p>
+            <p> Same applies for other timeframes under current simulator. </p>
+        </div>
+
         {/* Dashboard Title */}
         <h1 className="text-3xl font-extrabold text-center text-gray-800">{dashboardData.name}</h1>
         <div className="flex space-x-4">
