@@ -523,42 +523,44 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
         HTTPException: If the query parameters are malformed or an unexpected error occurs.
     """
     
-    # build the aggregation string
-    aggregation = historical_params.aggregations["operation"] + '("' + historical_params.aggregations["field"] + '")'
+    # check if group_time has valid values
+    if historical_params.group_time and historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
+        raise HTTPException(status_code=400, detail="Invalid group_time value")
+    
+    # check if necessary fields are not empty
+    if not historical_params.kpi or not historical_params.timeframe or not historical_params.machines:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
     # substitute square brackets with parentheses in machine list
     historical_params.machines = tuple(historical_params.machines) 
+
     # remove commas from machines string in case it's a single one
-    machines = str(historical_params.machines).replace(",", "")
-    # check if group_time has valid values
-    if historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
-        raise HTTPException(status_code=400, detail="Invalid group_time value")
+    if len(historical_params.machines) == 1:
+        machines = str(historical_params.machines).replace(",", "")
+    else:
+        machines = str(historical_params.machines)
+
     try:
         # Build the query body
-
-        # aggregation column (as "max") goes with double quotes, while the rest goes with single quotes!!!
-
-        # you always have to group by name at least
-        # time or name first?
 
         # group_time is optional and has values: 
         # 'P1D'for daily intervals
         # 'P1W' for weekly intervals
         # 'P1M' for monthly intervals.
         
-        
-        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe, {} AS aggregated_value FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
-                    AND asset_id IN {} GROUP BY name
+        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND asset_id IN {} GROUP BY 
         """.format(
-            aggregation, historical_params.kpi, historical_params.timeframe["start_date"],
+            historical_params.kpi, historical_params.timeframe["start_date"],
             historical_params.timeframe["end_date"], machines
             )
         
-        # append optional group by and aggregation
+        # append optional group by time clause. if present, group by time first
         if historical_params.group_time :
-            query += f""", __time, TIME_FLOOR(__time, '{historical_params.group_time}')"""
-
+            query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'), name, __time"""
+        else:
+            query += "name, __time"
         
-        # query = 'SELECT SUM("max") FROM \"timeseries\"' + "WHERE kpi = 'consumption'"
         print("Query:", query)
 
         # Execute the query
