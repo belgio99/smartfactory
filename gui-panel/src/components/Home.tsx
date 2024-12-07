@@ -123,7 +123,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                         <Route path="forecasts" element={<Forecasting/>}/>
                         <Route path="production-lines" element={<ProductionLineManager/>}/>
                         <Route path="reports" element={<ReportArchive userId={userId} username={username} token={token} role={role} site={site} />}/>
-                        <Route path="reports/schedules" element={<ReportSchedules/>}/>
+                        <Route path="reports/schedules" element={<ReportSchedules userId={userId} username={username} />}/>
                         <Route path="*" element={<Navigate to="/home" replace/>}/>
                     </Routes>
                 </div>
