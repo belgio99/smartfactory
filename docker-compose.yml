@@ -203,6 +203,8 @@ services:
     profiles:
       - kb
       - not-db-init
+    env_file:
+      - kb/.env
     
   data-processing:
     build:
