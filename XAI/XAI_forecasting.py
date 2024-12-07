@@ -270,7 +270,7 @@ def main():
         input_data=input_data,
         n_predictions=n_predictions,
         input_labels=input_labels,
-        num_features=seq_length,  # Set to seq_length if you want all features explained
+        num_features=10,  # Set to seq_length if you want all features explained
         confidence=0.95,
         n_samples=100
     )
