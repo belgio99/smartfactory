@@ -99,9 +99,10 @@ async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify
         
         return {
             "Machine_Name": machineId,
+            "Machine_Type": machineType,
             "KPI_Name": kpiID,
             "Value": result,
-            "Measure_Unit": machineType,
+            "Measure_Unit": unitOfMeasure,
             "Date_Start": startPeriod,
             "Date_Finish": endPeriod,
             "Aggregator": aggregator,
