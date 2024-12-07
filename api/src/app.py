@@ -209,7 +209,7 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
         )
         logging.info(result)
         user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3], access_token=access_token, site=result[5])
-        return JSONResponse(content=user.to_dict(), status_code=200) #TODO change to user
+        return JSONResponse(content=user.to_dict(), status_code=200)
     
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
@@ -390,11 +390,11 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/smartfactory/reports")
-def retrieve_reports(userId: int, api_key: str = Depends(get_verify_api_key(["gui"]))):
+def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT ReportID, Name, Type, FilePath FROM Reports WHERE OwnerID = %s"
-        response = query_db_with_params(cursor, connection, query, (userId,))
+        response = query_db_with_params(cursor, connection, query, (int(userId),))
         if not response or response[0] is None:
             logging.info("No reports for userID %s", str(userId))
             return JSONResponse(content={"data": []}, status_code=200)
@@ -484,6 +484,12 @@ def generate_and_send_report(userId: str, email: str, params: ScheduledReport, a
     logging.info("Started scheduled report generation")
     report = generate_report(userId, params, True, api_key)
     #TODO send email
+
+@app.get("/smartfactory/reports/schedule")
+def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    schedules = []
+    #TODO get schedules from DB
+    return JSONResponse(content={"data": schedules}, status_code=200)
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
 async def schedule_report(userId: Annotated[str, Body()], params: Annotated[ScheduledReport, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
