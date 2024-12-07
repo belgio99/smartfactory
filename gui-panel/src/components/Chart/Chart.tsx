@@ -20,7 +20,7 @@ import {
 } from 'recharts';
 import {KPI} from "../../api/DataStructures";
 import Trend from "./Trend";
-import {formatTimeFrame, getColor, COLORS} from "../../utils/chartUtil";
+import {COLORS, formatTimeFrame, getColor} from "../../utils/chartUtil";
 
 interface ChartProps {
     data: any[],
@@ -131,10 +131,15 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                 <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0"/>
-                        <XAxis dataKey="name" tick={{fill: '#666'}}/>
+                        <XAxis
+                            dataKey="name"
+                            tick={{fill: '#666', fontSize: 14}}
+                            angle={-30} // Rotate the labels by -30 degrees
+                            textAnchor="end" // Align text at the end of each label
+                            height={80} // Add space for the tilted labels
+                        />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<DrillDownTooltip kpi={kpi}/>}/>
-                        <Legend/>
                         <Bar dataKey="value" fill="#8884d8" radius={[10, 10, 0, 0]}/>
                     </BarChart>
                 </ResponsiveContainer>
@@ -142,12 +147,11 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
         case 'barh': // Horizontal Bar Chart
             return (
                 <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={data} layout='vertical'>
+                    <BarChart data={data} layout='vertical' margin={{left: 25}}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0"/>
                         <XAxis type="number" tick={{fill: '#666'}}/>
-                        <YAxis type="category" dataKey="name" tick={{fill: '#666'}}/>
+                        <YAxis type="category" dataKey="name" tick={{fill: '#666', fontSize: 14, textAnchor: 'end'}}/>
                         <Tooltip content={<DrillDownTooltip kpi={kpi}/>}/>
-                        <Legend/>
                         <Bar dataKey="value" fill="#8884d8" radius={[0, 10, 10, 0]}/>
                     </BarChart>
                 </ResponsiveContainer>
@@ -164,8 +168,17 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<LineTooltip kpi={kpi}/>} trigger={"hover"}/>
-                        <Legend/>
-                        {Object.keys(data[0] || {})
+                        <Legend
+                            content={(props) => (
+                                <ul style={{padding: 0, margin: 0}}>
+                                    {props.payload && props.payload.map((entry, index) => (
+                                        <li key={index} style={{display: 'inline-block', marginRight: 10}}>
+                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 5)}...
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        /> {Object.keys(data[0] || {})
                             .filter((key) => key !== 'timestamp') // Exclude the timestamp key
                             .map((machine, index) => (
                                 <Line
@@ -194,7 +207,6 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<LineTooltip kpi={kpi}/>} trigger={"hover"}/>
-                        <Legend/>
                         {Object.keys(data[0] || {}).filter((key) => key !== 'timestamp')
                             .map((machine, index) => (
                                 <Area
@@ -317,7 +329,17 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         />
                         <YAxis tick={{fill: "#666"}}/>
                         <Tooltip content={<LineTooltip kpi={kpi}/>} trigger={"hover"}/>
-                        <Legend/>
+                        <Legend
+                            content={(props) => (
+                                <ul style={{padding: 0, margin: 0}}>
+                                    {props.payload && props.payload.map((entry, index) => (
+                                        <li key={index} style={{display: 'inline-block', marginRight: 10}}>
+                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 5)}...
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        />
                         {data.length > 0 &&
                             Object.keys(data[0])
                                 .filter((key) => key !== "timestamp")
@@ -332,6 +354,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                                 ))}
                     </BarChart>
                 </ResponsiveContainer>
+
             );
         case "scatter":
             return (
@@ -353,7 +376,17 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                             tickFormatter={(value) => value.toFixed(2)} // Precision limited to 2 decimal places
                         />
                         <Tooltip content={<ScatterTooltip kpi={kpi}/>}/>
-                        <Legend/>
+                        <Legend
+                            content={(props) => (
+                                <ul style={{padding: 0, margin: 0}}>
+                                    {props.payload && props.payload.map((entry, index) => (
+                                        <li key={index} style={{display: 'inline-block', marginRight: 10}}>
+                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 5)}...
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        />
                         {Object.keys(data[0] || {})
                             .filter((key) => key !== 'timestamp') // Exclude timestamp key
                             .map((machine, index) => {

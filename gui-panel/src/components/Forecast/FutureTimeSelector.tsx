@@ -58,7 +58,7 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
         const to = new Date();
 
         // 5 days before
-        const from = new Date;
+        const from = new Date();
         from.setDate(from.getDate() - 5);
 
         return {from, to, aggregation: 'days'}
