@@ -163,7 +163,7 @@ class forecastExplainer:
         input_labels: List[str],
         num_features: int = 10,
         confidence: float = 0.95,
-        n_samples: int = 100,
+        n_samples: int = 100,   # Must be at least 100 for meaningful Confidence_score
         use_mean_pred: bool = False
     ):
         """
@@ -175,7 +175,7 @@ class forecastExplainer:
         - input_labels (List[str]): Labels corresponding to the input_data.
         - num_features (int): Number of features for LIME explanation.
         - confidence (float): Confidence level.
-        - n_samples (int): Number of bootstrap samples.
+        - n_samples (int): Number of bootstrap samples. Must be at least 100 to have meaningful  Confidence_score.
         - use_mean_pred (bool): If True, use the mean of bootstrapped predictions as final prediction.
                                 If False, use the direct model prediction (raw prediction) as final prediction.
         
