@@ -148,9 +148,7 @@ class forecastExplainer:
             num_features=num_features
         )
 
-        # Now the feature names in exp.as_list() should be directly the timestamps
         explanation = exp.as_list()
-
         return explanation
 
     def predict_and_explain(
@@ -160,7 +158,8 @@ class forecastExplainer:
         input_labels: List[str],
         num_features: int = 10,
         confidence: float = 0.95,
-        n_samples: int = 100
+        n_samples: int = 100,
+        use_mean_pred: bool = False
     ):
         """
         Performs autoregressive prediction and explanation for n_prediction steps.
@@ -172,6 +171,8 @@ class forecastExplainer:
         - num_features (int): Number of features for LIME explanation.
         - confidence (float): Confidence level.
         - n_samples (int): Number of bootstrap samples.
+        - use_mean_pred (bool): If True, use the mean of bootstrapped predictions as final prediction.
+                                If False, use the direct model prediction (raw prediction) as final prediction.
         
         Returns:
         A dictionary with:
@@ -194,23 +195,29 @@ class forecastExplainer:
         current_labels = input_labels.copy()
 
         for i in range(n_predictions):
+            # Compute uncertainties
             mean_pred, lower_bound, upper_bound = self.predict_with_uncertainty(
                 current_input, n_samples=n_samples, confidence=confidence, step=i
             )
+            # Compute raw prediction
+            raw_pred = self.predict(current_input)[0]
+
+            # Choose which value to use as the predicted value
+            final_pred = mean_pred if use_mean_pred else raw_pred
 
             interval_width = upper_bound - lower_bound
             confidence_score = 1.0 / (1e-6 + interval_width)
 
             explanation = self.explain_prediction(current_input, current_labels, num_features=num_features)
 
-            predicted_values.append(mean_pred)
+            predicted_values.append(final_pred)
             lower_bounds.append(lower_bound)
             upper_bounds.append(upper_bound)
             confidence_scores.append(confidence_score)
             lime_explanations.append(explanation)
 
             # Update the input_data for next step
-            current_input = np.append(current_input[1:], mean_pred)
+            current_input = np.append(current_input[1:], final_pred)
             # Update the labels (assume daily increments)
             last_label_date = datetime.strptime(current_labels[-1], "%Y-%m-%d")
             new_label_date = last_label_date + timedelta(days=1)
@@ -255,7 +262,7 @@ def main():
     model.fit(X_train, y_train)
 
     # Perform predictions beyond the training range
-    n_predictions = 5
+    n_predictions = 20
     input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
 
     # Generate labels for the input_data
@@ -265,14 +272,15 @@ def main():
     # Initialize the explainer
     explainer = forecastExplainer(model, X_train)
 
-    # Perform autoregressive predictions
+    # Perform autoregressive predictions using raw predictions instead of mean of bootstrap:
     results = explainer.predict_and_explain(
         input_data=input_data,
         n_predictions=n_predictions,
         input_labels=input_labels,
-        num_features=10,  # Set to seq_length if you want all features explained
+        num_features=5,
         confidence=0.95,
-        n_samples=100
+        n_samples=100,
+        use_mean_pred=False  # Set this to True or False as desired
     )
 
     print("Results:")
@@ -284,29 +292,32 @@ def main():
         else:
             print(f"{key}: {val}")
 
-    # Plot the results
+
     predicted_values = results['Predicted_value']
     lower_bounds = results['Lower_bound']
     upper_bounds = results['Upper_bound']
+    # Suppose predicted_values, lower_bounds, and upper_bounds are lists
+    # Each has length n_predictions
+
+    time_indices = np.arange(len(input_data), len(input_data) + n_predictions)
 
     plt.figure(figsize=(10,6))
-    # Plot the input data
     plt.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
 
-    # Plot predictions and their bounds
-    for i in range(n_predictions):
-        step_idx = len(input_data) + i
-        pred_val = predicted_values[i]
-        lb = lower_bounds[i]
-        ub = upper_bounds[i]
-        plt.errorbar(step_idx, pred_val, yerr=[[pred_val - lb], [ub - pred_val]], fmt='ro', capsize=5, label='Predicted value' if i == 0 else "")
+    # Plot predicted values
+    plt.plot(time_indices, predicted_values, 'r-', label='Predicted value')
 
-    plt.title("Forecasting with XGBoost and Data-Driven Noise for Uncertainty")
+    # Plot lower and upper bounds
+    plt.plot(time_indices, lower_bounds, 'g--', label='Lower bound')
+    plt.plot(time_indices, upper_bounds, 'b--', label='Upper bound')
+
+    plt.title("Forecasting with Confidence Intervals")
     plt.xlabel("Time Steps")
     plt.ylabel("Value")
     plt.grid(True)
     plt.legend()
     plt.show()
+
 
 if __name__ == '__main__':
     main()
