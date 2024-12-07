@@ -29,6 +29,13 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
 import os
+import hashlib
+
+def hash_data(data : tuple) -> tuple:
+    hashed_data = ()
+    for i in range(len(data)):
+        hashed_data[i] = hashlib.sha256(data[i].encode()).hexdigest()
+    return hashed_data
 
 logging.basicConfig(level=logging.INFO)
 
@@ -193,7 +200,7 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()
         query = "SELECT * FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
-        response = query_db_with_params(cursor, connection, query, (body.user,))
+        response = query_db_with_params(cursor, connection, query, hash_data((body.user,)))
 
         if not response or (body.password != response[0][4]):
             logging.error("Invalid credentials")
@@ -269,7 +276,7 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
         connection, cursor = get_db_connection()
         # Check if user already exists
         query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
-        response = query_db_with_params(cursor, connection, query, (body.username, body.email))
+        response = query_db_with_params(cursor, connection, query, hash_data((body.username, body.email)))
         user_exists = response
         logging.info(user_exists)
 
@@ -280,7 +287,7 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
 
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
-            cursor.execute(query_insert, (body.username, body.email, body.role, body.password, body.site))
+            cursor.execute(query_insert, hash_data((body.username, body.email, body.role)) + body.password + hash_data((body.site,)))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)

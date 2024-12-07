@@ -8,6 +8,7 @@ volumes:
   druid_shared: {}
   db: {}
   minio_data: {}
+  vault_data: {}
 
 services:
   postgres:
@@ -281,6 +282,23 @@ services:
       - not-db-init
     env_file:
       - kpi-engine/.env
+
+  vault:
+    image: hashicorp/vault
+    container_name: vault
+    volumes:
+      - vault_data:/vault/file
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_STORAGE_BACKEND: "file"  # Using file storage backend (you can also use Consul)
+    ports:
+      - "8200:8200"
+    profiles:
+      - database
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"    # Mantiene solo un file di log
 
 
 
