@@ -1,12 +1,14 @@
 import time
 from enum import Enum
+import datetime
 
 class Task(object):
-    def __init__(self, func, delay, args=()):
+    def __init__(self, func, delay, start_date, args=()):
         self.args = args
         self.function = func
         self.delay = delay
-        self.next_run = time.time() + self.delay
+        date_object = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+        self.next_run = date_object.timestamp()
 
     def shouldRun(self):
         return time.time() >= self.next_run

@@ -542,7 +542,7 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
             #TODO update object if id is populated
             upload_object(minio, "/settings/"+userId, params.name+"_scheduling.json", tmp_path)
         async with tasks_lock:
-            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds)
+            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds, start_date=params.startDate)
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
