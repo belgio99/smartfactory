@@ -119,7 +119,7 @@ const ForecastingPage: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [selectedKpi, setSelectedKpi] = useState<KPI>(new KPI("none", "None", "None Selected", "", "")); // Update to store the entire KPI object
     const [selectedMachine, setSelectedMachine] = useState<Machine>(new Machine("None Selected", "None", "None ")); // Update to store the entire Machine object
-    const [forecastData, setForecastData] = useState<ForecastData[]>([]);
+    const [forecastData, setForecastData] = useState<{ past: any[], future: ForecastData[] }>({past: [], future: []});
     const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame; key: string } | null>(null);
 
     useEffect(() => {
@@ -140,13 +140,13 @@ const ForecastingPage: React.FC = () => {
             const pastData = await simulateChartData(selectedKpi, timeFrame.past, "line", machineFilter);
             const futureData = await simulateChartData(selectedKpi, timeFrame.future, "line", machineFilter);
             // Add default confidence value to each data point
-            const combinedData = [...pastData, ...futureData].map(dataPoint => ({
+            const combinedData = futureData.map(dataPoint => ({
                 ...dataPoint,
                 confidence: 80, // Default confidence value
             }));
-            setForecastData(combinedData);
+            setForecastData({past: pastData, future: combinedData});
             setLoading(false);
-        } else setForecastData([])
+        } else setForecastData({past: [], future: []});
     };
 
 
@@ -186,7 +186,7 @@ const ForecastingPage: React.FC = () => {
             <div className="bg-white p-6 rounded-lg shadow-md">
                 {loading ? (
                     <p className="text-gray-600 text-center">Loading forecast data...</p>
-                ) : (forecastData.length > 0 && timeFrame ? (
+                ) : (forecastData && timeFrame ? (
                     <div>
                         <p className="text-sm text-gray-700 mb-4">
                             Forecasting data
@@ -195,10 +195,11 @@ const ForecastingPage: React.FC = () => {
                             using data from {formatDate(timeFrame.past.from)}
                             {' '} to {formatDate(timeFrame.past.to)}.
                         </p>
-                        <ForeChart data={forecastData}
+                        <ForeChart pastData={forecastData.past}
+                                   futureData={forecastData.future}
                                    kpi={selectedKpi}
                                    timeUnit={timeFrame.past.aggregation}
-                                   explanationData={getDummyExplanationData(forecastData)}
+                                   explanationData={getDummyExplanationData(forecastData.future)}
                         />
                     </div>
                 ) : (

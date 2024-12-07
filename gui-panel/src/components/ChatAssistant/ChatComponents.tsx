@@ -82,9 +82,19 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
 
     return (
         <div className="mt-2 space-y-2">
+
+            {/* Dashboard Navigation Button */}
+            {metadata && (
+                <button
+                    onClick={() => onNavigate("dashboards/new", metadata.metadata)}
+                    className="inline-block px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-lg text-sm shadow-md focus:outline-none"
+                >
+                    Go to Dashboard
+                </button>
+            )}
             {/* Explanation Button */}
             {extraData.explanation && (
-                <>
+                <div className="text-xs">
                     <button
                         onClick={toggleExplanation}
                         className="inline-block px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-lg text-sm shadow-md focus:outline-none"
@@ -164,18 +174,9 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                             </div>
                         </div>
                     )}
-                </>
+                </div>
             )}
 
-            {/* Dashboard Navigation Button */}
-            {metadata && (
-                <button
-                    onClick={() => onNavigate("dashboards/new", metadata.metadata)}
-                    className="inline-block px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-lg text-sm shadow-md focus:outline-none"
-                >
-                    Go to Dashboard
-                </button>
-            )}
         </div>
     );
 };

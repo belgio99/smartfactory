@@ -181,7 +181,7 @@ const constructQuery = (
     );
 
     // Dynamically determine time grouping based on duration
-    let timeGrouping: string | null = null;
+    let timeGrouping: string = "day"; // Default to day
     if (durationInDays <= 1) {
         timeGrouping = "hour"; // For a single day, group by hour
     } else if (durationInDays <= 31) {
@@ -199,25 +199,18 @@ const constructQuery = (
         case "scatter":
         case "area":
             groupBy.time = timeGrouping; // Use dynamically determined time grouping
-            groupBy.category = "name"; // Data grouped by machines
             break;
 
         case "barv":
         case "barh":
         case "stacked_bar":
             groupBy.time = timeGrouping; // Use dynamically determined time grouping
-            groupBy.category = "name"; // Data grouped by machines
-            break;
-
-        case "pie":
-        case "donut":
-            groupBy.time = null; // No time grouping for pie/donut charts
-            groupBy.category = "name"; // Group by machines
             break;
 
         case "hist":
-            groupBy.time = null; // No time grouping for histograms
-            groupBy.category = null; // Histograms group by numeric ranges
+        case "pie":
+        case "donut":
+            groupBy.time = null; // No time grouping for pie/donut charts
             break;
 
         default:
@@ -232,17 +225,13 @@ const constructQuery = (
             end_date: to,
         },
         machines: machineList, // List of machine IDs
-        group_by: groupBy, // Grouping logic
-        aggregations: {
-            operation: "SUM", // Default aggregation is 'SUM'
-            field: kpi.id, // Use the KPI ID as the aggregation field
-        },
+        group_by: timeGrouping, // Grouping logic
     };
 };
 
 const convertJsonToSql = (query: any): string => {
     // Destructure the query object
-    const {kpi, timeframe, machines, group_by, aggregations} = query;
+    const {kpi, timeframe, machines, group_by} = query;
 
     const getKpiAndAggregationMethod = (kpi: string) => {
         // Define the list of known aggregation methods
@@ -271,14 +260,13 @@ const convertJsonToSql = (query: any): string => {
         sql += `DATE_TRUNC('${group_by.time}', __time) AS time_period, `;
     }
 
-    // Add grouping fields like machine name
-    if (group_by.category) {
-        sql += `${group_by.category}, `;
-    }
+    // Add grouping by machine name
+    sql += `name, `;
+
 
     // Add aggregation field with alias (e.g., consumption_avg -> consumption_avg)
-    if (aggregations.operation && aggMethod) {
-        sql += `${aggregations.operation.toUpperCase()}("${aggMethod}") AS ${kpi}`;
+    if (aggMethod) {
+        sql += `SUM("${aggMethod}") AS ${kpi}`;
     }
 
     // FROM clause
@@ -304,12 +292,12 @@ const convertJsonToSql = (query: any): string => {
 
     // GROUP BY clause
     const groupByFields = [];
-    if (group_by.time) {
-        groupByFields.push(`DATE_TRUNC('${group_by.time}', __time)`);
+    if (group_by) {
+        groupByFields.push(`DATE_TRUNC('${group_by}', __time)`);
     }
-    if (group_by.category) {
-        groupByFields.push(group_by.category);
-    }
+
+    groupByFields.push(group_by.category);
+
     if (groupByFields.length > 0) {
         sql += ` GROUP BY ` + groupByFields.join(", ");
     }
