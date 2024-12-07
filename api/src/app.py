@@ -642,7 +642,11 @@ def insert_kpi(kpi: Kpi, _: str = Depends(get_verify_api_key(["gui"]))):
     kpi_data = json.dumps(kpi.to_dict())
 
     response = requests.post(url, data=kpi_data, headers=headers)
-    return JSONResponse(content=response.json(), status_code=200)
+    response_data = response.json()
+    if response_data['Status'] == 0:
+        return JSONResponse(content=kpi.id, status_code=200)
+    else:
+        return JSONResponse(content=response_data, status_code=400)
 
 @app.post("/smartfactory/calculate", status_code=status.HTTP_200_OK)
 def calculate_kpi(request: List[KpiRequest], _: str = Depends(get_verify_api_key(["gui"]))):
