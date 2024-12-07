@@ -534,7 +534,7 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
             raise HTTPException(status_code=404, detail="User not found")
         email = response[0][1]
         close_connection(connection, cursor)
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete_on_close=False) as temp_file:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as temp_file:
             json.dump(params.model_dump(), temp_file, indent=4)
             tmp_path = temp_file.name
             logging.info(tmp_path)
