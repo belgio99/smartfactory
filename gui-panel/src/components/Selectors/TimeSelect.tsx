@@ -68,11 +68,6 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
         }
     };
 
-    // UseEffect to log timeFrame whenever it changes
-    useEffect(() => {
-        console.log("Updated timeFrame:", timeFrame);
-    }, [timeFrame]);
-
     return (
         <div className="max-h-fit max-w-fit">
             <div className="flex justify-between items-center mb-4">

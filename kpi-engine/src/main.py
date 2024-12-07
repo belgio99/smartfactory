@@ -8,6 +8,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+from api_auth.api_auth import get_verify_api_key
+from fastapi import Depends
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
 print(env_path)
@@ -41,7 +43,7 @@ async def read_root():
     return {"message": "Welcome to the KPI Calculation Engine!"}
 
 @app.post("/kpi/calculate")
-async def calculate(request: KPIRequest):
+async def calculate(request: KPIRequest, api_key: str = Depends(get_verify_api_key(["gui"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     ''' print(f"Received request: {request.json()}") '''
 
     kpiID = request.KPI_Name

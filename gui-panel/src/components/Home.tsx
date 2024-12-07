@@ -18,18 +18,15 @@ import ReportSchedules from "./Reports/ReportSchedules";
 import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
 import AIDashboard from "./Dashboard/AIDashboard";
-
-
-// Mock data for demonstration
-export const mockDashboards = [
-    { id: 'Lines', name: 'Production Lines Dashboards', type: 'folder' },
-    { id: 'Lines/1', name: 'Production Line #1', type: 'point' },
-    { id: 'placeholder', name: 'Saved Dashboard Folder Name', type: 'folder' },
-];
+import { userInfo } from 'os';
 
 interface UserProps {
+    userId: string;
     username: string;
+    token: string;
     role: string;
+    site: string
+    // User Avatar
     userAvatar?: string;
 }
 
@@ -50,7 +47,7 @@ const NotificationBanner: React.FC = () => {
     );
 };
 
-const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
+const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, userAvatar}) => {
     const location = useLocation();
     const {addNotification} = useNotification();
 
@@ -114,7 +111,7 @@ const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
 
                     <Routes>
                         <Route path="/" element={<Navigate to="dashboards/overview" replace/>}/>
-                        <Route path="home" element={<Home/>}/>
+                        <Route path="home" element={<Home username={username} token={token} role={role} site={site} />}/>
                         <Route path="dashboards/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/:dashboardPath/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/new" element={<AIDashboard/>}/>
@@ -124,7 +121,7 @@ const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
                         <Route path="kpis" element={<KpiViewer/>}/>
                         <Route path="forecasts" element={<Forecasting/>}/>
                         <Route path="production-lines" element={<ProductionLineManager/>}/>
-                        <Route path="reports" element={<ReportArchive/>}/>
+                        <Route path="reports" element={<ReportArchive userId={userId} username={username} token={token} role={role} site={site} />}/>
                         <Route path="reports/schedules" element={<ReportSchedules/>}/>
                         <Route path="*" element={<Navigate to="/home" replace/>}/>
                     </Routes>
@@ -132,7 +129,7 @@ const SmartFactory: React.FC<UserProps> = ({username, role, userAvatar}) => {
             </main>
 
             {/* Chat Assistant */}
-            <ChatAssistant/>
+            <ChatAssistant username={username} />
         </div>
     );
 };

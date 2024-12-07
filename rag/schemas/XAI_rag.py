@@ -24,6 +24,7 @@ class RagExplainer:
         verbose: bool = False,
         tokenize_context: bool = True,
         use_embeddings: bool = True
+
     ):
         """
         Initializes the RagExplainer object with the given parameters.
@@ -50,7 +51,6 @@ class RagExplainer:
             self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
         else:
             self.embedding_model = None
-
         # Process initial context (if any)
         self.add_to_context(context)
 
@@ -71,6 +71,7 @@ class RagExplainer:
         print("\nText Response:")
         print(textResponse)
         print("\nText Explanation (JSON):")
+
         print(textExplanation)
         print("-" * 50)
 
@@ -93,6 +94,7 @@ class RagExplainer:
         """
         Validates the threshold and verbose parameters.
         """
+
         if not isinstance(self.threshold, (int, float)) or not (0 <= self.threshold <= 100):
             raise ValueError(f"The 'threshold' parameter must be a number between 0 and 100. Received {self.threshold}.")
 
@@ -168,6 +170,7 @@ class RagExplainer:
                     continue
 
                 if string not in self.sentence_info:
+
                     self.context_sentences.append(string)
                     self.sentence_info[string] = {
                         'source_name': source_name,
@@ -177,6 +180,7 @@ class RagExplainer:
 
         if self.use_embeddings and new_context_sentences:
             new_embeddings = self.embedding_model.encode(new_context_sentences, convert_to_tensor=True)
+
             if self.context_embeddings is not None:
                 self.context_embeddings = np.concatenate((self.context_embeddings, new_embeddings), axis=0)
             else:
@@ -232,6 +236,7 @@ class RagExplainer:
 
         for response_segment in response_segments:
             original_segment = response_segment
+
             match = process.extractOne(
                 response_segment, self.context_sentences, scorer=fuzz.partial_ratio, score_cutoff=self.threshold
             )
@@ -272,6 +277,7 @@ class RagExplainer:
         textExplanation = json.dumps(references, indent=2)
         return textResponse.strip(), textExplanation, attribution
 
+
     def _generate_attribution(self, response_segments, similarity_matrix):
         """
         Generates the attribution results based on similarity matrix.
@@ -304,6 +310,7 @@ class RagExplainer:
                     original_context,
                     similarity_score
                 )
+
                 response_segment = self._insert_reference(response_segment, ref_num)
             else:
                 similarity_score = 0
@@ -340,6 +347,7 @@ class RagExplainer:
         textResponse, textExplanation, attribution = self._generate_attribution(response_segments, similarity_matrix)
 
         return textResponse, textExplanation, attribution
+
 
     def attribute_response_to_context(self, response: str) -> Tuple[str, str, List[Dict[str, Any]]]:
         """
@@ -419,6 +427,7 @@ if __name__ == "__main__":
         "El Sol es la estrella central del sistema solar. "
     )
 
+
     textResponse, textExplanation, attribution_results = explainer.attribute_response_to_context(response)
 
     # Output the results
@@ -426,6 +435,7 @@ if __name__ == "__main__":
     print("Text Response:")
     print(textResponse)
     print("\nText Explanation (JSON):")
+
     print(textExplanation)
     print("\nAttribution Results:")
     for result in attribution_results:

@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import {getMachineList} from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 import {Machine} from "../../api/DataStructures";
 import ProductionLineEditor from "./ProductionLineEditor";
 
@@ -11,6 +11,7 @@ export interface ProductionLine {
 }
 
 const ProductionLineManager = () => {
+    const dataManager = PersistentDataManager.getInstance();
     const [productionLines, setProductionLines] = useState<ProductionLine[]>([]);
     const [editingLine, setEditingLine] = useState<ProductionLine | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -19,7 +20,7 @@ const ProductionLineManager = () => {
 
     // Fetch machines on component mount
     useEffect(() => {
-        const fetchedMachines = getMachineList();
+        const fetchedMachines = dataManager.getMachineList();
         setMachines(fetchedMachines);
 
         // Initialize production lines based on machines
