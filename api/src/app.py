@@ -11,12 +11,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.kpi import Kpi
 from model.kpi_calculate_request import KpiRequest
-from notification_service import send_notification, retrieve_alerts
+from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from database.minio_connection import *
 from database.druid_connection import execute_druid_query
 from constants import *
+from langchain_core.prompts import PromptTemplate
 import logging
 from model.task import *
 from contextlib import asynccontextmanager
@@ -32,6 +33,8 @@ from model.historical import HistoricalQueryParams, HistoricalData
 from model.agent import Answer
 from datetime import datetime, timedelta, timezone
 from jose import jwt
+from fpdf import FPDF
+
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 import sys
