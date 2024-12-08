@@ -11,20 +11,23 @@ const DashboardSidebar: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
 
     const sectionsItems = [
+        /*
         {
             icon: '/icons/user.svg',
             text: 'User Settings',
             path: '/user-settings'
         },
-        {
-            icon: '/icons/log.svg',
-            text: 'Reports',
-            path: '/reports'
-        },
+         */
+        {icon: '/icons/kpi.svg', text: 'KPIs', path: '/kpis'},
         {
             icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/a71c21e7b5dfbcb7b600377b94bb0ba6e150f444fca7a9c978d6d84a0e3b8cea?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130',
             text: 'Data View',
             path: '/data-view'
+        },
+        {
+            icon: '/icons/log.svg',
+            text: 'Reports',
+            path: '/reports'
         },
         {
             icon: '/icons/log.svg',
@@ -37,7 +40,6 @@ const DashboardSidebar: React.FC = () => {
             path: '/production-lines'
         },
          */
-        {icon: '/icons/kpi.svg', text: 'KPIs', path: '/kpis'},
         {icon: '/icons/forecast.svg', text: 'Forecasting', path: '/forecasts'},
     ];
 
