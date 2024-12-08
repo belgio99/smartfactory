@@ -34,6 +34,7 @@ jobs:
           file: ./${{ matrix.service }}/Dockerfile
           tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
           push: false 
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
