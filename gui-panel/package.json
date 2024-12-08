@@ -52,7 +52,7 @@
     "webpack": "^5.97.1"
   },
   "scripts": {
-    "start": "cross-env PORT=8000 react-app-rewired start",
+    "start": "cross-env PORT=8080 react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
     "eject": "react-scripts eject"
