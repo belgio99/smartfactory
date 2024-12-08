@@ -206,6 +206,8 @@ services:
     profiles:
       - kb
       - not-db-init
+    env_file:
+      - database/.env
     
   data-processing:
     build:
