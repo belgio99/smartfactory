@@ -453,20 +453,49 @@ def call_ai_agent(input: str):
 
 def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str, type: str = None):
     connection, cursor = get_db_connection()
-    report_data = answer.data
     obj_path = "/reports/"+userId+"/"+obj_name+".pdf"
-    create_pdf(report_data, tmp_path)
+    create_pdf(answer.data, answer.textExplanation, tmp_path)
     minio = get_minio_connection()
     upload_object(minio, "reports", userId+"/"+obj_name+".pdf", tmp_path, "application/pdf")
     query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
     cursor.execute(query_insert, (obj_name+".pdf", type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
     connection.commit()
 
-def create_pdf(text: str, path: str):
+def create_pdf(text: str, appendix: str, path: str):
     pdf = FPDF()
-    pdf.add_page()
     pdf.set_font('Arial', '', 12)
-    pdf.cell(0, 100, text)
+    pdf.add_page()
+    lines = text.split("\n")
+    for line in lines:
+        if len(line) > 0:
+            pdf.multi_cell(190, 5, line)
+        else:
+            pdf.ln()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(190, 5, "Explanation")
+    pdf.ln()
+    pdf.ln()
+    pdf.set_font('Arial', '', 12)
+    appendix = appendix.replace("\n", "ACAPO")
+    appendix = json.loads(appendix)
+    for obj in appendix:
+        if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
+            pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
+            pdf.ln()
+            pdf.cell(190, 5, "Context:")
+            lines = obj["context"].split("ACAPO")
+            for line in lines:
+                if len(line) > 0:
+                    pdf.multi_cell(190, 5, line)
+                else:
+                    pdf.ln()
+            pdf.ln()
+            pdf.set_text_color(0,0,255)
+            pdf.cell(190, 5, "Source: "+str(obj["source_name"]))
+            pdf.set_text_color(0,0,0)
+            pdf.ln()
+            pdf.ln()
     pdf.output(name=path, dest="F")
 
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
