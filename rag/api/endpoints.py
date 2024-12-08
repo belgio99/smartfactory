@@ -179,7 +179,16 @@ async def ask_kpi_engine(url):
         'Unit of Measure': 'kW',
         'Date': '12/10/2024',
         'Forecast': False
-      }])
+        },
+        {
+        'Machine name': 'Riveting Machine',
+        'KPI name': 'power',
+        'Value': '0,07',
+        'Unit of Measure': 'kW',
+        'Date': '12/10/2024',
+        'Forecast': False
+        },
+        ])
 
     #   json = [{
     #     "Machine_name": "Riveting Machine",
@@ -333,8 +342,10 @@ async def handle_report(url):
     return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
 
 async def handle_dashboard(question: Question, llm, graph, history):
-    with open("docs/gui_elements.txt", "r") as f:
-        gui_elements = f.read()
+    with open("docs/gui_elements.json", "r") as f:
+        chart_types = json.load(f)
+    gui_elements = json.dumps(chart_types["charts"]).replace('‘', "'").replace('’', "'")
+    gui_elements = ",".join(json.dumps(element) for element in chart_types["charts"])
     dashboard_generation = DashboardGenerationChain(llm, graph, history)
     response = dashboard_generation.chain.invoke(question.userInput)
     return 'KB_CONTEXT:' + response['result'] + '\n GUI_CONTEXT:' + gui_elements
@@ -392,8 +403,8 @@ async def ask_question(question: Question):
         # Prepare the prompt and invoke the LLM
         prompt = prompt_manager.get_prompt(label).format(
             _HISTORY_=history_context,
-            _CONTEXT_=context,
-            _USER_QUERY_=question.userInput
+            _USER_QUERY_=question.userInput,
+            _CONTEXT_=context
         )
         llm_result = llm.invoke(prompt)
 
@@ -406,22 +417,25 @@ async def ask_question(question: Question):
 
         history.append({'question': question.userInput, 'answer': llm_result.content})
 
-        explainer = RagExplainer()
+        explainer = RagExplainer(threshold = 20.0,)
 
         if label == 'predictions':
             # Response: Chat response, Explanation: TODO, Data: No data to send            
             explainer.add_to_context([("Predictor", context)])
-            return Answer(textResponse=llm_result.content, textExplanation='', data='')
+            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data='')
 
         if label == 'kpi_calc':
             # Response: Chat response, Explanation: TODO, Data: No data to send            
             explainer.add_to_context([("KPI Engine", context)])
-            return Answer(textResponse=llm_result.content, textExplanation='', data='')
+            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data='')
 
         if label == 'new_kpi':
             # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
             explainer.add_to_context([("Knowledge Base", context)])
-            return Answer(textResponse=llm_result.content, textExplanation='', data=context)
+            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content)
 
         if label == 'report':
             # Response: No chat response, Explanation: TODO, Data: Report in str format
@@ -434,4 +448,12 @@ async def ask_question(question: Question):
             # TODO: separare il chat response dal binding nel prompt
             kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
             explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
-            return Answer(textResponse=llm_result.content, textExplanation='', data=llm_result.content)
+            
+            # Converting the JSON string to a dictionary
+            response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+            response_json = json.loads(response_cleaned)
+            
+            textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
+            data = json.dumps(response_json["bindings"], indent=2)
+            
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data)
