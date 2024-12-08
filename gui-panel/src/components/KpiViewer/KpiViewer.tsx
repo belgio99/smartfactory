@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import PersistentDataManager from "../../api/PersistentDataManager";
 
 const KpiViewer = () => {
@@ -19,9 +19,9 @@ const KpiViewer = () => {
         );
 
     return (
-        <div className="KpiViewer max-w-4xl mx-auto p-6 bg-gray-50 rounded-lg shadow-lg">
+        <div className="KpiViewer max-w-4xl mx-auto p-6 bg-gray-25 rounded-lg shadow-lg">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">Your KPIs</h1>
-            <h2 className="text-lg font-semibold mb-4 text-gray-800">
+            <h2 className="text-sm font-semibold mb-4 text-gray-800">
                 Here you can view all the KPIs you have available.
                 If you want to add a new KPI, please ask to the AI Chat Assistant.
             </h2>
