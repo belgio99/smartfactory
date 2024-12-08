@@ -1,0 +1,49 @@
+{
+   "modno":  2,
+   "version":  3,
+   "instance":  "my-backrest-server",
+   "repos":  [
+     {
+       "id":  "s3-repo",
+       "uri":  "/target_volume",
+       "prunePolicy":  {
+         "schedule":  {
+           "cron":  "0 0 1 * *",
+           "clock":  "CLOCK_LAST_RUN_TIME"
+         },
+         "maxUnusedPercent":  10
+       },
+       "checkPolicy":  {
+         "schedule":  {
+           "cron":  "0 0 1 * *",
+           "clock":  "CLOCK_LAST_RUN_TIME"
+         },
+         "readDataSubsetPercent":  0
+       },
+       "commandPrefix":  {}
+     }
+   ],
+   "plans":  [
+     {
+       "id":  "daily-backup",
+       "repo":  "s3-repo",
+       "paths":  [
+         "/userdata"
+       ],
+       "schedule":  {
+         "cron":  "0 1 * * *",
+         "clock":  "CLOCK_LOCAL"
+       },
+       "retention":  {
+         "policyTimeBucketed":  {
+           "hourly":  24,
+           "daily":  30,
+           "monthly":  12
+         }
+       }
+     }
+   ],
+   "auth":  {
+     "disabled":  true
+   }
+}
