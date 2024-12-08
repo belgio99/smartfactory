@@ -2,32 +2,32 @@ import subprocess, re
 import hvac
 
 
-def store_key_in_vault(client, key: bytes, vault_path: str, key_name: str) -> None:
+def store_key_in_vault(key: bytes, vault_path: str, key_name: str) -> None:
     """
     Store the key securely in Vault.
     
     Args:
-        vault_client: client for Vault
         key (bytes): AES encryption key.
         path: name of the path to identify the key in Vault
         key_name: name of the key in Vault
     """
+    client = create_client()
     client.secrets.kv.v2.create_or_update_secret(
         path=vault_path,
         secret={key_name: key.hex()}  # Store the key as a hex string
     )
     print("AES key stored in Vault succesully.")
 
-def retrieve_key_from_vault(client, vault_path: str, key_name: str) -> bytes:
+def retrieve_key_from_vault(vault_path: str, key_name: str) -> bytes:
     '''
     Retrieve the key stored in Vault
     Args:
-        client: Vault client
         vault_path (str): Name of the path to identify the key in Vault
         key_name: name of the key in Vault
     Returns:
         bytes: The retrieved key
     '''
+    client = create_client()
     secret = client.secrets.kv.v2.read_secret_version(path=vault_path, raise_on_deleted_version=True)
     # Extract the key using key_name
     key_hex = secret['data']['data'][key_name]  

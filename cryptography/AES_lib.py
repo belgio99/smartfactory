@@ -19,8 +19,7 @@ def login_encrypt(log:Login)-> tuple:
         encrypted_log (Login): register object with encrypted attributes
         iv: the initialization vector used for encryption.
     """
-    client = create_client()
-    key = retrieve_key_from_vault(client, default_aes_path, default_aes_name)  
+    key = retrieve_key_from_vault(default_aes_path, default_aes_name)  
     # Create AES cipher object with GCM mode
     cipher = AES.new(key, AES.MODE_GCM)
     encrypted_data = {}
@@ -48,8 +47,7 @@ def register_encrypt(register: Register) -> tuple:
         encrypted_register (Register): register object with encrypted attributes
         iv: the initialization vector used for encryption.
     """
-    client = create_client()
-    key = retrieve_key_from_vault(client, default_aes_path, default_aes_name)  
+    key = retrieve_key_from_vault(default_aes_path, default_aes_name)  
     # Create AES cipher object with GCM mode
     cipher = AES.new(key, AES.MODE_GCM)
     encrypted_data = {}
@@ -75,9 +73,8 @@ def aes_decrypt(encrypted_register: Register, iv) -> Register:
     Returns:
         Register: The decrypted register converted back to the original one.
     """
-    client = create_client()
     # Retrieve the AES key from Vault
-    key = retrieve_key_from_vault(client, default_aes_path, default_aes_name)  
+    key = retrieve_key_from_vault(default_aes_path, default_aes_name)  
     
     # Decrypt the data and remove padding
     cipher = AES.new(key, AES.MODE_GCM, iv)
@@ -104,8 +101,7 @@ def create_and_store_aes_key():
 
 def get_aes_key():
     try:
-        client = create_client()
-        aes_key = retrieve_key_from_vault(client, default_aes_path, default_aes_name)  
+        aes_key = retrieve_key_from_vault(default_aes_path, default_aes_name)  
         print("Encryption key retrieved succesfully") 
     except Exception as e: 
         print("Error while getting the key: %s", e)
