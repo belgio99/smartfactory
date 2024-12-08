@@ -2,7 +2,8 @@ import axios from 'axios';
 import { userInfo } from 'os';
 import { Point } from 'recharts/types/shape/Curve';
 
-const BASE_URL = 'http://0.0.0.0:10040'; // API URL
+const BASE_URL = 'https://api-smartfactory.thebelgionas.synology.me'; // API URL
+//const BASE_URL = 'http://0.0.0.0:10040'; // API URL
 const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
 
 
