@@ -14,8 +14,16 @@
         "graph_type": "barv"
       },
       {
+        "kpi": "offline_time_avg",
+        "graph_type": "donut"
+      },
+      {
         "kpi": "good_cycles_avg",
         "graph_type": "pie"
+      },
+      {
+        "kpi": "consumption_min",
+        "graph_type": "stacked_bar"
       }
     ]
   },

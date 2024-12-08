@@ -19,7 +19,9 @@ export const simulateChartData = async (
     filters?: Filter
 ): Promise<any[]> => {
     console.log("Fetching data with:", {kpi, timeFrame, type, filters});
-
+    let query = constructQuery(type, kpi, timeFrame, filters);
+    console.log("Constructed query json: ", query);
+    console.log("Constructed query: ", convertJsonToSql(query));
     const unfilteredData = dataManager.getMachineList();
     let filteredData: Machine[];
     // Apply filters
@@ -59,8 +61,7 @@ export const simulateChartData = async (
             timePeriods.push(currentDate.toISOString());
             currentDate.setDate(currentDate.getDate() + 7); // Increment by 7 days for each week
         }
-    }
-    else if (timeUnit === 'month') {
+    } else if (timeUnit === 'month') {
         const endDate = timeFrame.to;
         let currentDate = new Date(startDate);
         while (currentDate <= endDate) {
@@ -106,7 +107,7 @@ export const simulateChartData = async (
             }));
             donutData.push({name: "Total", value: donutData.reduce((acc, cur) => acc + cur.value, 0)});
             return donutData;
-        case "heatmap":
+
         case "stacked_bar":
             // Generate periods based on the timeframe
             return timePeriods.map((period) => {
@@ -124,48 +125,6 @@ export const simulateChartData = async (
                 bin: `${i * binSize}-${(i + 1) * binSize}`,
                 value: Math.round(Math.random() * 50),
             }));
-        /*
-    case "scatter":
-        const timeSeries = Array.from({length: 20}, (_, index) => {
-            return new Date(timeFrame ? timeFrame.from : Date.now() - index * 3600 * 1000).toISOString();
-        });
-
-        // Scatter data will include values over time for each machine
-        return filteredData.flatMap((machine) =>
-            timeSeries.map((timestamp) => ({
-                timestamp,                  // Time for this data point
-                machineId: machine.machineId, // Machine associated with the data point
-                value: Math.random() * 100, // Random value
-            }))
-        );
-
-    case "heatmap":
-        if (filters?.machineType !== "All" && filters?.machineType) {
-            // Group by machine type
-            const machineTypeData = filteredData
-                .filter((machine) => machine.type === filters.machineType)
-                .reduce((acc: any, machine) => {
-                    for (let i = 0; i < 10; i++) {
-                        const timeSlot = `Hour ${i + 1}`;
-                        acc[timeSlot] = acc[timeSlot] || {time: timeSlot};
-                        acc[timeSlot][machine.type] = (acc[timeSlot][machine.type] || 0) +
-                            Math.round(Math.random() * 100);
-                    }
-                    return acc;
-                }, {});
-
-            return Object.values(machineTypeData); // Return grouped data
-        } else {
-            // Group KPI values by machine and time
-            const timeSlots = Array.from({length: 10}, (_, i) => `Hour ${i + 1}`);
-            return filteredData.flatMap((machine) =>
-                timeSlots.map((timeSlot) => ({
-                    machine: machine.machineId,
-                    time: timeSlot,
-                    value: Math.round(Math.random() * 100),
-                }))
-            );
-        }*/
 
         default:
             throw new Error(`Unsupported chart type: ${type}`);
@@ -189,4 +148,165 @@ const getTimePeriodUnit = (timeFrame: TimeFrame): string => {
     }
 };
 
+///////////////////////////////////////////////////////////////
+const constructQuery = (
+    graph_type: string,
+    kpi: KPI,
+    timeFrame: TimeFrame,
+    filters?: Filter
+): object => {
+    // Get the list of machines from filters or default to all available
+    const machineList: string[] = filters?.machineIds
+        ? filters.machineIds
+        : dataManager.getMachineList().map(machine => machine.machineId);
 
+    const timeFrameCopy: TimeFrame = {
+        from: new Date(timeFrame.from),
+        to: new Date(timeFrame.to),
+        aggregation: timeFrame.aggregation,
+    }
+    // set the month of the timeframe to be betweeen 3 and 10, try to keep the same difference if possible
+    const diff = timeFrame.to.getMonth() - timeFrame.from.getMonth();
+    timeFrameCopy.from.setMonth(3);
+    timeFrameCopy.to.setMonth(Math.min(3 + diff, 10));
+
+    timeFrame = timeFrameCopy;
+    // Format dates to `yyyy-mm-dd`
+    const from: string = timeFrame.from.toISOString().split('T')[0];
+    const to: string = timeFrame.to.toISOString().split('T')[0];
+
+    // Calculate the duration of the timeframe in days
+    const durationInDays = Math.ceil(
+        (timeFrame.to.getTime() - timeFrame.from.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    // Dynamically determine time grouping based on duration
+    let timeGrouping: string = "day"; // Default to day
+    if (durationInDays <= 1) {
+        timeGrouping = "hour"; // For a single day, group by hour
+    } else if (durationInDays <= 31) {
+        timeGrouping = "day"; // For up to a month, group by day
+    } else if (durationInDays <= 365) {
+        timeGrouping = "month"; // For up to a year, group by month
+    } else {
+        timeGrouping = "year"; // For periods longer than a year, group by year
+    }
+
+    // Define grouping logic based on graph type
+    let groupBy: { time: string | null; category: string | null } = {time: null, category: null};
+    switch (graph_type) {
+        case "line":
+        case "scatter":
+        case "area":
+            groupBy.time = timeGrouping; // Use dynamically determined time grouping
+            break;
+
+        case "barv":
+        case "barh":
+        case "stacked_bar":
+            groupBy.time = timeGrouping; // Use dynamically determined time grouping
+            break;
+
+        case "hist":
+        case "pie":
+        case "donut":
+            groupBy.time = null; // No time grouping for pie/donut charts
+            break;
+
+        default:
+            throw new Error(`Unsupported graph type: ${graph_type}`);
+    }
+
+    // Construct the query JSON
+    return {
+        kpi: kpi.id, // Use the KPI ID
+        timeframe: {
+            start_date: from,
+            end_date: to,
+        },
+        machines: machineList, // List of machine IDs
+        group_by: timeGrouping, // Grouping logic
+    };
+};
+
+const convertJsonToSql = (query: any): string => {
+    // Destructure the query object
+    const {kpi, timeframe, machines, group_by} = query;
+
+    const getKpiAndAggregationMethod = (kpi: string) => {
+        // Define the list of known aggregation methods
+        const aggregationMethods = ['avg', 'sum', 'max'];
+
+        // Check if the kpi ends with one of the aggregation methods
+        for (const method of aggregationMethods) {
+            if (kpi.endsWith(`_${method}`)) {
+                // If it ends with one of the aggregation methods, split at the last underscore
+                const kpiName = kpi.substring(0, kpi.lastIndexOf(`_${method}`));
+                return {kpiName, aggMethod: method};
+            }
+        }
+
+        // If no aggregation method is found, return the kpi as is and undefined for aggMethod
+        return {kpiName: kpi, aggMethod: undefined};
+    };
+
+    const {kpiName, aggMethod} = getKpiAndAggregationMethod(kpi);
+
+    // Base SELECT statement
+    let sql = `SELECT `;
+
+    // Add time grouping if specified
+    if (group_by.time) {
+        sql += `DATE_TRUNC('${group_by.time}', __time) AS time_period, `;
+    }
+
+    // Add grouping by machine name
+    sql += `name, `;
+
+
+    // Add aggregation field with alias (e.g., consumption_avg -> consumption_avg)
+    if (aggMethod) {
+        sql += `SUM("${aggMethod}") AS ${kpi}`;
+    }
+
+    // FROM clause
+    sql += ` FROM "timeseries"`;
+
+    // WHERE conditions
+    const whereConditions = [];
+    if (timeframe.start_date && timeframe.end_date) {
+        whereConditions.push(
+            `__time BETWEEN '${timeframe.start_date}' AND '${timeframe.end_date}'`
+        );
+    }
+    if (machines && machines.length > 0) {
+        whereConditions.push(`name IN ('${machines.join("', '")}')`);
+    }
+    if (kpi) {
+        whereConditions.push(`kpi = '${kpiName || ""}'`);
+    }
+
+    if (whereConditions.length > 0) {
+        sql += ` WHERE ` + whereConditions.join(" AND ");
+    }
+
+    // GROUP BY clause
+    const groupByFields = [];
+    if (group_by) {
+        groupByFields.push(`DATE_TRUNC('${group_by}', __time)`);
+    }
+
+    groupByFields.push(group_by.category);
+
+    if (groupByFields.length > 0) {
+        sql += ` GROUP BY ` + groupByFields.join(", ");
+    }
+
+    // Add ORDER BY clause for time series
+    if (group_by.time) {
+        sql += ` ORDER BY time_period`;
+    }
+
+    // Return the constructed SQL query
+    return sql;
+};

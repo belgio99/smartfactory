@@ -1,4 +1,6 @@
-from typing import Annotated, Union
+from dotenv import load_dotenv
+from threading import Thread
+from typing import Annotated, Union, List
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import Json
@@ -7,10 +9,13 @@ import json
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
-from notification_service import send_notification, retrieve_alerts, send_report
+from model.kpi import Kpi
+from model.kpi_calculate_request import KpiRequest
+from notification_service import send_notification, retrieve_alerts
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from database.minio_connection import *
+from database.druid_connection import execute_druid_query
 from constants import *
 import logging
 from model.task import *
@@ -18,16 +23,17 @@ from contextlib import asynccontextmanager
 import asyncio
 import requests
 from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
-from langchain_core.prompts import PromptTemplate
+from pathlib import Path
+
 from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
-from dotenv import load_dotenv
+from model.historical import HistoricalQueryParams, HistoricalData
 # TODO: how to import modules from rag directory ??
 from model.agent import Answer
 from datetime import datetime, timedelta, timezone
 from jose import jwt
-from fpdf import FPDF
-import os
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
 import sys
 from io import BytesIO
 
@@ -580,6 +586,130 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/smartfactory/kpi", status_code=status.HTTP_200_OK)
+def get_kpi(_: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Retrieve all Key Performance Indicators (KPIs) from the knowledge base.
+
+    This function constructs a URL using the host and port specified in the environment variables
+    `KB_HOST` and `KB_PORT`. It then sends a GET request to the constructed URL to retrieve KPIs.
+    The request includes an API key in the headers for authentication.
+
+    Args:
+        _: str: A dependency injection placeholder for API key verification.
+
+    Returns:
+        JSONResponse: A JSON response containing the KPIs retrieved from the knowledge base with a status code of 200.
+    """
+    KB_HOST = os.getenv("KB_HOST", "kb")
+    KB_PORT = os.getenv("KB_PORT", "8000")
+    url = f"http://{KB_HOST}:{KB_PORT}/kb/retrieveKPIs"
+
+    api_key = os.getenv("API_KEY")
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+
+    logging.info("Retrieving all KPIs")
+    response = requests.get(url, headers=headers) 
+    return JSONResponse(content=response.json(), status_code=200)
+
+@app.get("/smartfactory/retrieveMachines", status_code=status.HTTP_200_OK)
+def get_machines(_: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Retrieve all machines from the knowledge base.
+
+    This function sends a GET request to the knowledge base service to retrieve
+    information about all machines. It requires an API key for authentication.
+
+    Args:
+        _: A dependency injection placeholder for API key verification.
+
+    Returns:
+        JSONResponse: A JSON response containing the list of machines and a status code of 200.
+    """
+    KB_HOST = os.getenv("KB_HOST", "kb")
+    KB_PORT = os.getenv("KB_PORT", "8000")
+    url = f"http://{KB_HOST}:{KB_PORT}/kb/retrieveMachines"
+
+    api_key = os.getenv("API_KEY")
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+
+    logging.info("Retrieving all Machines")
+    response = requests.get(url, headers=headers) 
+    return JSONResponse(content=response.json(), status_code=200)
+
+@app.post("/smartfactory/kpi", status_code=status.HTTP_200_OK)
+def insert_kpi(kpi: Kpi, _: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Inserts a KPI (Key Performance Indicator) into the knowledge base.
+
+    This function sends a POST request to the knowledge base service to insert
+    the provided KPI data. The knowledge base service URL and API key are
+    retrieved from environment variables.
+
+    Args:
+        kpi (Kpi): The KPI object to be inserted.
+        _ (str, optional): Dependency injection for API key verification. Defaults to Depends(get_verify_api_key(["gui"])).
+
+    Returns:
+        JSONResponse: A JSON response containing the result of the insertion operation.
+    """
+    KB_HOST = os.getenv("KB_HOST", "localhost")
+    KB_PORT = os.getenv("KB_PORT", "8000")
+    url = f"http://{KB_HOST}:{KB_PORT}/kb/insert"
+
+    api_key = os.getenv("API_KEY")
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+    logging.info("Inserting KPI: %s", kpi)
+    kpi_data = json.dumps(kpi.to_dict())
+
+    response = requests.post(url, data=kpi_data, headers=headers)
+    response_data = response.json()
+    if response_data['Status'] == 0:
+        return JSONResponse(content=kpi.id, status_code=200)
+    else:
+        return JSONResponse(content=response_data, status_code=400)
+
+@app.post("/smartfactory/calculate", status_code=status.HTTP_200_OK)
+def calculate_kpi(request: List[KpiRequest], _: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Calculate KPI based on the provided request data.
+
+    This function sends a POST request to the KPI engine to calculate KPIs.
+    The KPI engine host and port are retrieved from environment variables.
+    The request data is converted to JSON and sent to the KPI engine.
+
+    Args:
+        request (List[KpiRequest]): A list of KPI request objects.
+        _ (str, optional): Dependency injection for API key verification.
+
+    Returns:
+        JSONResponse: The response from the KPI engine containing the calculated KPIs.
+    """
+    KPI_ENGINE_HOST = os.getenv("KPI_ENGINE_HOST", "kpi-engine")
+    KPI_ENGINE_PORT = os.getenv("KPI_ENGINE_PORT", "8000")
+    url = f"http://{KPI_ENGINE_HOST}:{KPI_ENGINE_PORT}/kpi/calculate"
+
+    api_key = os.getenv("API_KEY")
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+    kpi_request = json.dumps([req.to_dict() for req in request])
+    logging.info("Calculating KPIs: %s", kpi_request)
+    
+    response = requests.post(url, headers=headers, data=kpi_request) #TODO Check when the kpi-engine will push its code
+    return JSONResponse(content=response.json(), status_code=200)
+
 
 
 @app.post("/smartfactory/agent", response_model=Answer)
@@ -602,6 +732,7 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
         # Send the user input to the RAG API and get the response
         response = call_ai_agent(userInput)
         answer = response.json()
+
         if answer["label"] == 'new_kpi': # TODO
             # add new kpi
            # insert_kpi(answer["data"], os.getenv("API_KEY"))
@@ -612,8 +743,137 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     return answer
+
+@app.post('/smartfactory/historical')
+def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve historical data.
+    This endpoint receives a set of parameters and retrieves historical data from the database based on those parameters.
+    Args:
+        historical_params (HistoricalQueryParams): The parameters for the historical data query.
+    Returns:
+        HistoricalData: The historical data retrieved from the database.
+    Raises:
+        HTTPException: If the query parameters are malformed or an unexpected error occurs.
+    """
+    
+    # check if group_time has valid values
+    if historical_params.group_time and historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
+        raise HTTPException(status_code=400, detail="Invalid group_time value")
+    
+    # check if necessary fields are not empty
+    if not historical_params.kpi or not historical_params.timeframe or not historical_params.machines:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    # substitute square brackets with parentheses in machine list
+    historical_params.machines = tuple(historical_params.machines) 
+
+    # remove commas from machines string in case it's a single one
+    if len(historical_params.machines) == 1:
+        machines = str(historical_params.machines).replace(",", "")
+    else:
+        machines = str(historical_params.machines)
+
+    try:
+        # Build the query body
+
+        # group_time is optional and has values: 
+        # 'P1D'for daily intervals
+        # 'P1W' for weekly intervals
+        # 'P1M' for monthly intervals.
+        
+        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND asset_id IN {} GROUP BY 
+        """.format(
+            historical_params.kpi, historical_params.timeframe["start_date"],
+            historical_params.timeframe["end_date"], machines
+            )
+        
+        # append optional group by time clause
+        if historical_params.group_time :
+            query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'),"""
+        
+        query += "name, __time"
+        
+        # Execute the query
+        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
+        if response:
+            print("Query response:", response)
+        else:
+            print("Failed to retrieve query response.")
+
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    
+    return response
+
+@app.post('/smartfactory/historical')
+def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve historical data.
+    This endpoint receives a set of parameters and retrieves historical data from the database based on those parameters.
+    Args:
+        historical_params (HistoricalQueryParams): The parameters for the historical data query.
+    Returns:
+        HistoricalData: The historical data retrieved from the database.
+    Raises:
+        HTTPException: If the query parameters are malformed or an unexpected error occurs.
+    """
+    
+    # check if group_time has valid values
+    if historical_params.group_time and historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
+        raise HTTPException(status_code=400, detail="Invalid group_time value")
+    
+    # check if necessary fields are not empty
+    if not historical_params.kpi or not historical_params.timeframe or not historical_params.machines:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    # substitute square brackets with parentheses in machine list
+    historical_params.machines = tuple(historical_params.machines) 
+
+    # remove commas from machines string in case it's a single one
+    if len(historical_params.machines) == 1:
+        machines = str(historical_params.machines).replace(",", "")
+    else:
+        machines = str(historical_params.machines)
+
+    try:
+        # Build the query body
+
+        # group_time is optional and has values: 
+        # 'P1D'for daily intervals
+        # 'P1W' for weekly intervals
+        # 'P1M' for monthly intervals.
+        
+        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND asset_id IN {} GROUP BY 
+        """.format(
+            historical_params.kpi, historical_params.timeframe["start_date"],
+            historical_params.timeframe["end_date"], machines
+            )
+        
+        # append optional group by time clause
+        if historical_params.group_time :
+            query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'),"""
+        
+        query += "name, __time"
+        
+        # Execute the query
+        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
+        if response:
+            print("Query response:", response)
+        else:
+            print("Failed to retrieve query response.")
+
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    return response
 
 @app.get("/smartfactory/dummy")
 async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -623,7 +883,6 @@ async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
         JSONResponse: A JSON response with a dummy message.
     """
     return JSONResponse(content={"message": "This is a dummy endpoint"}, status_code=200)
-
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")

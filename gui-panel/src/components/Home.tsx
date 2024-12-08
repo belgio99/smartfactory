@@ -18,7 +18,6 @@ import ReportSchedules from "./Reports/ReportSchedules";
 import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
 import AIDashboard from "./Dashboard/AIDashboard";
-import { userInfo } from 'os';
 
 interface UserProps {
     userId: string;
@@ -29,6 +28,8 @@ interface UserProps {
     email: string;
     // User Avatar
     userAvatar?: string;
+    // Logout hook
+    onLogout?: () => void;
 }
 
 const NotificationBanner: React.FC = () => {
@@ -48,7 +49,7 @@ const NotificationBanner: React.FC = () => {
     );
 };
 
-const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, email, userAvatar}) => {
+const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site, email, userAvatar, onLogout}) => {
     const location = useLocation();
     const {addNotification} = useNotification();
 
@@ -95,6 +96,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                     userAvatar={userAvatar || '/default-avatar.png'}
                     userName={username}
                     role={role}
+                    logoutHook={onLogout}
                 />
 
                 {/* Main Routes */}

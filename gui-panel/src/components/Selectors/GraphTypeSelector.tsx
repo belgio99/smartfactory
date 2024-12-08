@@ -6,7 +6,6 @@ interface GraphTypeSelectorProps {
 }
 
 const GraphTypeSelector: React.FC<GraphTypeSelectorProps> = ({value, onChange}) => {
-    require('./icons/graph.svg');
 
     const graphTypes = [
         {
@@ -15,7 +14,7 @@ const GraphTypeSelector: React.FC<GraphTypeSelectorProps> = ({value, onChange}) 
         },
         {
             type: 'donut',
-            icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/9c3b3b4f0b3d0b6f8b0d7c6f0e7f0c4b6b5f0b4'
+            icon: '/icons/donut.svg'
         },
         {
             type: 'barv',
@@ -25,11 +24,11 @@ const GraphTypeSelector: React.FC<GraphTypeSelectorProps> = ({value, onChange}) 
             type: 'barh',
             icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/2207bcbb65a5ea0c966aae909ab2eac60428a0dfab62d51c225a3a4cf9e62124?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130'
         },
-        {type: 'line', icon: './icons/graph.svg'},
-        {type: 'area', icon: ''},
-        {type: 'scatter', icon: ''},
-        {type: 'hist', icon: ''},
-        {type: 'stacked_bar', icon: ''},
+        {type: 'hist', icon: '/icons/histogram.svg'},
+        {type: 'stacked_bar', icon: '/icons/stack_bar.svg'},
+        {type: 'line', icon: '/icons/graph.svg'},
+        {type: 'area', icon: '/icons/area.svg'},
+        {type: 'scatter', icon: '/icons/scatter.svg'},
 
     ];
 
