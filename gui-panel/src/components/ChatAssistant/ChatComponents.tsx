@@ -97,13 +97,14 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                 <div>
                     <button
                         onClick={toggleExplanation}
-                        className="inline-block px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded-lg text-xs shadow-md focus:outline-none"
+                        className="inline-block px-2 py-1 text-xs underline text-blue-500 focus:outline-none"
                     >
                         {isExplanationOpen ? "Hide Explanation" : "View Sources"}
                     </button>
                     {isExplanationOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                            <div className="bg-white rounded-lg shadow-lg p-4 max-w-lg w-full">
+                            <div
+                                className="bg-white max-h-[95vh] min-h-[50vh] rounded-lg shadow-lg p-4 max-w-lg w-full">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-lg font-bold text-gray-800">Explanation</h3>
                                     <button
@@ -118,7 +119,8 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                                     {activeSource && (
                                         <div
                                             className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-                                            <div className="bg-white rounded-lg shadow-lg p-4 max-w-lg w-full">
+                                            <div
+                                                className="bg-white min-h-fit rounded-lg shadow-lg p-4 max-w-lg w-full">
                                                 <div className="flex justify-between items-center mb-4">
                                                     <h3 className="text-lg font-bold text-gray-800">Source Details</h3>
                                                     <button
@@ -130,8 +132,9 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                                                     </button>
                                                 </div>
                                                 <div
-                                                    className="overflow-y-auto flex-col flex-wrap max-h-96 max-w-fit text-gray-700">
-                                                    <pre>{activeSource}</pre>
+                                                    className="overflow-y-auto flex-wrap text-wrap max-h-[80vh] min-h-[40vh] text-gray-700">
+                                                    <pre
+                                                        className="whitespace-pre-wrap overflow-x-hidden">{activeSource}</pre>
                                                 </div>
                                                 <div className="mt-4 text-right">
                                                     <button
