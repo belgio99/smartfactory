@@ -2,6 +2,7 @@ import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
 import ScheduleModal from "./ScheduleModal";
 import {loadFromLocal} from "../../api/PersistentDataManager";
+import { scheduleReport } from "../../api/ApiService";
 
 interface SchedulesListProps {
     schedules: Schedule[];
@@ -9,6 +10,10 @@ interface SchedulesListProps {
     onDelete: (id: number) => void;
 }
 
+interface ScheduleProps {
+    userId: string;
+    username: string;
+}
 const SchedulesList: React.FC<SchedulesListProps> = ({schedules, onEdit, onDelete}) => {
     return (
         <div className="space-y-4">
@@ -44,7 +49,7 @@ const SchedulesList: React.FC<SchedulesListProps> = ({schedules, onEdit, onDelet
     );
 };
 
-const ReportSchedules: React.FC = () => {
+const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
     const [schedules, setSchedules] = useState<Schedule[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingSchedule, setEditingSchedule] = useState<Partial<Schedule> | null>(null);
@@ -57,17 +62,14 @@ const ReportSchedules: React.FC = () => {
         fetchData();
     }, []);
 
-    const handleSaveSchedule = (schedule: Partial<Schedule>) => {
+    const handleSaveSchedule = async (schedule: Partial<Schedule>) => {
         if (editingSchedule) {
-            // Edit existing schedule
             setSchedules((prev) =>
-                prev.map((s) => (s.id === editingSchedule.id ? {...s, ...schedule} : s))
+                prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...schedule } : s))
             );
         } else {
-            // Create new schedule
             const newId = schedules.length ? Math.max(...schedules.map((s) => s.id)) + 1 : 1;
-
-            // Fill in missing fields with defaults
+    
             const newSchedule: Schedule = new Schedule(
                 newId,
                 schedule.name || "Unnamed Schedule",
@@ -78,9 +80,47 @@ const ReportSchedules: React.FC = () => {
                 schedule.kpis || [],
                 schedule.machines || []
             );
+    
+            try {
+                // Mappatura dei valori di recurrence
+                const recurrenceOptions: { [key: string]: "test" | "daily" | "weekly" | "monthly" | "yearly" } = {
+                    Daily: "daily",
+                    Weekly: "weekly",
+                    Monthly: "monthly",
+                    Yearly: "yearly",
+                };
+            
+                // Converti la stringa `newSchedule.recurrence` in un valore valido
+                const validRecurrence = recurrenceOptions[newSchedule.recurrence];
+            
+                if (!validRecurrence) {
+                    throw new Error(`Invalid recurrence value: ${newSchedule.recurrence}`);
+                }
 
-            setSchedules((prev) => [...prev, newSchedule]);
+                const adaptedSchedule = {
+                    name: newSchedule.name,
+                    type: validRecurrence,
+                    site: "Factory A",
+                    email: newSchedule.email,
+                    startDate: newSchedule.startDate,
+                    kpis: newSchedule.kpis,
+                    machines: newSchedule.machines,
+                };
+                
+                console.log("Saving schedule:", adaptedSchedule);
+                console.log("Recurrence:", validRecurrence);
+                setSchedules((prev) => [...prev, newSchedule]);
+                // Chiamata all'API
+                await scheduleReport(
+                    userId,              // Deve essere una stringa
+                    adaptedSchedule,     // Parametri corretti
+                    validRecurrence      // Valore della recurrence validato
+                );
+            } catch (error) {
+                console.error("Failed to save schedule:", error);
+            }
         }
+    
         setIsModalOpen(false);
     };
 

@@ -4,7 +4,8 @@ smart_app_data.csv
 */*/upload
 .venv/
 .SA_venv/
-.vscode/settings.json
+.vscode/
 .DS_Store
 *.pyc
-
+*.py
+.idea

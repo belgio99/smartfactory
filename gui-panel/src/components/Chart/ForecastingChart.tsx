@@ -1,16 +1,16 @@
 import React, {useState} from "react";
 import {
-    ResponsiveContainer,
-    LineChart,
-    Line,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    Legend,
-    ReferenceLine,
+    Bar,
     BarChart,
-    Bar
+    CartesianGrid,
+    Legend,
+    Line,
+    LineChart,
+    ReferenceLine,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis
 } from "recharts";
 import {KPI} from "../../api/DataStructures";
 import {COLORS, formatTimeFrame} from "../../utils/chartUtil";
@@ -19,8 +19,6 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
     if (active && payload && payload.length) {
         // Variable to store the confidence value (which is the same for all three lines)
         let confidence: number = payload[0].payload.confidence;
-        console.log(payload[0].payload, payload[0].payload.confidence);
-        console.log("Confidence: ", confidence);
         return <div
             style={{
                 backgroundColor: '#fff',
@@ -46,7 +44,7 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
             })}
 
             {/* Show the confidence value only once */}
-            {<div style={{marginTop: '10px', fontStyle: 'italic', color: '#666'}}>
+            {confidence && <div style={{marginTop: '10px', fontStyle: 'italic', color: '#666'}}>
                 <p>{`Confidence: ${confidence.toFixed(2)}%`}</p>
             </div>}
         </div>;
@@ -55,7 +53,8 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
 };
 
 interface ForeChartProps {
-    data: any[];
+    pastData: any[];
+    futureData: any[];
     kpi: KPI | null;
     timeUnit?: string;
     timeThreshold?: number;
@@ -63,12 +62,15 @@ interface ForeChartProps {
 }
 
 const ForeChart: React.FC<ForeChartProps> = ({
-                                                 data,
+                                                 pastData,
+                                                 futureData,
                                                  kpi,
                                                  timeUnit = "day",
                                                  explanationData,
                                              }) => {
     const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
+
+    const data = [...pastData, ...futureData];
 
     if (!data || data.length === 0) {
         return <p style={{textAlign: "center", marginTop: "20px", color: "#555"}}>
@@ -77,7 +79,9 @@ const ForeChart: React.FC<ForeChartProps> = ({
     }
 
     const handleLineClick = (pointIndex: number) => {
-        setSelectedPoint(pointIndex);
+        console.log("Selected point:", pointIndex);
+        console.log("Explanation data:", explanationData?.length);
+        setSelectedPoint(pointIndex - breakpoint);
     };
 
     const selectedExplanationData =
@@ -89,7 +93,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
         ...selectedExplanationData.map((d: { feature: string; importance: number; }) => Math.abs(d.importance))
     ) : 0;
 
-    const halfLength = Math.floor(data.length / 2);
+    const breakpoint = pastData.length;
     const dataWithBounds = data.map((point, index) => {
         const newPoint = {...point};
 
@@ -98,13 +102,16 @@ const ForeChart: React.FC<ForeChartProps> = ({
             if (key !== "timestamp" && key !== "confidence") {
                 const machineValue = point[key];
                 // Apply ±20% margin for the bounds starting from the second half
-                newPoint[`${key} UpperBound`] = index >= halfLength ? machineValue * 1.2 : null;
-                newPoint[`${key} LowerBound`] = index >= halfLength ? machineValue * 0.8 : null;
+                newPoint[`UpperBound`] = index >= breakpoint ? machineValue * 1.2 : null;
+                newPoint[`LowerBound`] = index >= breakpoint ? machineValue * 0.8 : null;
             }
         });
 
         return newPoint;
     });
+    const machineKey = Object.keys(data[0] || {}).find(
+        key => key !== "timestamp" && key !== "confidence"
+    );
 
     return <div>
         {/* Forecasting Chart */}
@@ -126,57 +133,44 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 <YAxis tick={{fill: "#666"}}/>
                 <Tooltip content={<ForecastTooltip kpi={kpi}/>} trigger={"hover"}/>
                 {data.length > 0 && <ReferenceLine
-                    x={data[halfLength].timestamp}
+                    x={data[breakpoint].timestamp}
                     stroke="red"
                     label="Today"
                 />}
                 <Legend/>
-                {Object.keys(data[0] || {})
-                    .filter(key => key !== "timestamp" && key !== "confidence") // Exclude the timestamp key
-                    .map((machine, index) => <Line
-                        key={machine}
-                        type="monotone"
-                        dataKey={machine}
-                        stroke={COLORS[index % COLORS.length]}
-                        strokeWidth={2}
-                        dot={{r: 5}}
-                        activeDot={{r: 8}}
-                        name={machine}
-                    />)}
+                {/* Main Line for the Machine */}
+                <Line
+                    key={machineKey}
+                    type="monotone"
+                    dataKey={machineKey}
+                    stroke={COLORS[0]} // Assuming only one machine, use the first color
+                    strokeWidth={2}
+                    dot={{r: 5}}
+                    activeDot={{r: 8}}
+                    name={machineKey}
+                />
 
                 {/* Upper Bound Line */}
-                {/* Upper Bound Lines for Each Machine */}
-                {Object.keys(data[0] || {}).map((key, index) => {
-                    if (key !== "timestamp" && key !== "confidence") {
-                        return <Line
-                            key={`${key}UpperBound`}
-                            type="monotone"
-                            dataKey={`${key} UpperBound`}
-                            stroke="#82ca9d"
-                            strokeWidth={1.5}
-                            strokeDasharray="5 5"
-                            name={`${key} Upper Bound`}
-                        />;
-                    }
-                    return null;
-                })}
+                <Line
+                    key={`UpperBound`}
+                    type="monotone"
+                    dataKey={`UpperBound`}
+                    stroke="#82ca9d"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 5"
+                    name={`Upper Bound`}
+                />
 
-                {/* Lower Bound Lines for Each Machine */}
-                {Object.keys(data[0] || {}).map((key, index) => {
-                    if (key !== "timestamp" && key !== "confidence") {
-                        return <Line
-                            key={`${key}LowerBound`}
-                            type="monotone"
-                            dataKey={`${key} LowerBound`}
-                            stroke="#8884d8"
-                            strokeWidth={1.5}
-                            strokeDasharray="5 5"
-                            name={`${key} Lower Bound`}
-                        />;
-                    }
-                    return null;
-                })}
-            </LineChart>
+                {/* Lower Bound Line */}
+                <Line
+                    key={`LowerBound`}
+                    type="monotone"
+                    dataKey={`LowerBound`}
+                    stroke="#8884d8"
+                    strokeWidth={1.5}
+                    strokeDasharray="5 5"
+                    name={`Lower Bound`}
+                /> </LineChart>
         </ResponsiveContainer>
         {/* Explanation Chart */}
         {selectedExplanationData && <div className="mt-4">

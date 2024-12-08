@@ -1,66 +1,62 @@
-name: Build and Test Docker Services
+name: Build and Test Docker Compose Services
 
 on:
   pull_request:
-    branches-ignore:
-      - main
 
 jobs:
-  build-test-containers:
+  build-and-test-containers:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Replace with your actual service names
+        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Lista completa dei servizi.
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Create .env file from secret
+        run: echo "${{ secrets.RAG_ENV }}" > rag/.env
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-
-      - name: Create .env file from secret
-        run: echo "${{ secrets.RAG_ENV }}" >> rag/.env
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build Docker image
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest
-          push: false
+          tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          push: false 
           load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      - name: Run Docker container
-        run: docker compose up -d --no-build --no-deps --pull never ${{ matrix.service }}
-
-      - name: Wait for container to initialize
-        run: sleep 60
-
-      - name: Test running container
+      - name: Run container for testing
         run: |
-          CONTAINER_ID=$(docker ps -q --filter "status=running" | head -n 1)
-          if [ -z "$CONTAINER_ID" ]; then
-            echo "No running container found"
+          # Run the container in detached mode
+          docker run --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          
+          # Wait for 60 seconds to test stability
+          sleep 60
+          
+          # Check the container status
+          if ! docker ps --filter "name=test-${{ matrix.service }}" --filter "status=running" | grep -q test-${{ matrix.service }}; then
+            echo "Container test-${{ matrix.service }} failed. Printing logs:"
+            docker logs test-${{ matrix.service }}
             exit 1
           fi
-          STATUS=$(docker inspect -f '{{.State.Status}}' $CONTAINER_ID)
-          if [ "$STATUS" != "running" ]; then
-            echo "Service failed to run!"
-            docker logs $CONTAINER_ID
-
-      - name: Stop and remove container
-        run: |
-          CONTAINER_ID=$(docker ps -qf "name=${{ matrix.service }}")
-          docker stop $CONTAINER_ID
-          docker rm $CONTAINER_ID
+          
+          # Stop the container after testing
+          docker stop test-${{ matrix.service }}
+          docker logs test-${{ matrix.service }}
+          echo "Container test-${{ matrix.service }} passed."
+  

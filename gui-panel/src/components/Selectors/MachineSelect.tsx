@@ -1,6 +1,7 @@
 import React from "react";
 import {Machine} from "../../api/DataStructures";
 import Select from "react-select";
+
 const chevronDownIcon = "https://cdn.builder.io/api/v1/image/assets/TEMP/ee28ffec5ddc59d7906d5950c4861da7e441f40e4f9a912ad0c4390bc360c6bf?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130";
 
 interface MachineSelectProps {
@@ -101,7 +102,7 @@ const MachineSelect: React.FC<MachineSelectProps> = ({
             </div>
 
             {/* Selected Machine's Description */}
-            {value.description && (
+            {value.description && false && (
                 <p
                     className="flex-wrap text-start text-sm text-gray-500 font-normal mt-2"
                     style={{

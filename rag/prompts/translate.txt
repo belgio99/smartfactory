@@ -1,0 +1,14 @@
+{_HISTORY_}
+
+USER QUERY: "{_USER_QUERY_}"
+ 
+INSTRUCTION: 
+"
+0. Skip next points and just return the context if user query language is english.
+1. Translate the context in the user query language.
+2. Be sure every element except KPI names and GUI elements are translated.
+3. Return the translated response.
+"
+
+CONTEXT: 
+{_CONTEXT_}

@@ -1,6 +1,8 @@
+from typing import Optional
 from pydantic import BaseModel
+from model.task import SchedulingFrequency
 
-class Report(BaseModel):
+class ReportResponse(BaseModel):
     """
     Represents a report.
 
@@ -13,4 +15,22 @@ class Report(BaseModel):
     id: int
     name: str
     type: str
-    data: str
+
+class ScheduledReport(BaseModel):
+    id: Optional[int]
+    name: str
+    recurrence: SchedulingFrequency
+    status: bool
+    email: str
+    startDate: str
+    kpis: list
+    machines: list
+
+class Report(BaseModel):
+    name: str
+    type: str
+    period: str
+    status: bool
+    email: str
+    kpis: list
+    machines: list

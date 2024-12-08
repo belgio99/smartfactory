@@ -24,7 +24,8 @@ class PromptManager:
             "kpi_calc": "calculation_and_forecasting",
             "new_kpi": "kpi_generation",
             "report": "report",
-            "dashboard": "dashboard_generation"
+            "dashboard": "dashboard_generation",
+            "translate": "translate"
             }
     
     def load_prompts(self):

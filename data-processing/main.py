@@ -2,9 +2,10 @@ import f_dataprocessing
 import uvicorn
 
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import os
 import datetime
+from api_auth.api_auth import get_verify_api_key
 
 app = FastAPI()
 
@@ -21,7 +22,7 @@ host_port = 'TBD'
 
 #http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
 @app.get("/data-processing/predict")
-def predict(JSONS):
+def predict(JSONS, api_key: str = Depends(get_verify_api_key(["ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     d = datetime.datetime.today().date()
     out_dict = {
         'Machine_name': 'MACHINENAME :(',

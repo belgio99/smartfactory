@@ -1,7 +1,5 @@
 import bcrypt from 'bcryptjs';
 
-const SALT_ROUNDS = 10; // It's possibile change this value
-
 /**
  * Methods for hashing and verifying passwords.
  * @param password string - The password needed to be hashed.
@@ -9,8 +7,10 @@ const SALT_ROUNDS = 10; // It's possibile change this value
  */
 export const hashPassword = async (password: string): Promise<string> => {
   try {
-    const salt = await bcrypt.genSalt(SALT_ROUNDS);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const saltString = 'a'.repeat(16) + 'e'.repeat(6);
+    const customSalt = `$2b$12$${saltString}`;
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, customSalt);
     return hashedPassword;
   } catch (error) {
     console.error('Error hashing password:', error);

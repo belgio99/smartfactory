@@ -3,9 +3,9 @@ import sympy
 
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import json
-
+from api_auth.api_auth import get_verify_api_key
 from pydantic import BaseModel
 
 
@@ -527,7 +527,7 @@ def add_kpi(kpi_info):
 # -------------------------------------------- API Endpoints --------------------------------------------
 
 @app.get("/kb/{kpi_id}/get_kpi") 
-async def get_kpi_endpoint(kpi_id: str):
+async def get_kpi_endpoint(kpi_id: str, api_key: str = Depends(get_verify_api_key(["kpi-engine"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get KPI data by its ID via GET request.
 
@@ -543,7 +543,7 @@ async def get_kpi_endpoint(kpi_id: str):
 
 
 @app.get("/kb/retrieveKPIs")
-async def get_all_kpis_endpoint():
+async def get_all_kpis_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get all KPIs, grouped under the main classes of the ontology
 
@@ -556,7 +556,7 @@ async def get_all_kpis_endpoint():
 
 
 @app.get("/kb/retrieveMachines")
-async def get_all_machines_endpoint():
+async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get all machines, grouped under the main classes of the ontology
 
@@ -569,7 +569,7 @@ async def get_all_machines_endpoint():
 
 
 @app.get("/kb/{machine_id}/{kpi_id}/check")
-async def is_pair_machine_kpi_exist_endpoint(machine_id: str, kpi_id: str):
+async def is_pair_machine_kpi_exist_endpoint(machine_id: str, kpi_id: str, api_key: str = Depends(get_verify_api_key(["data"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Check if a pair of machine and KPI exists via GET request.
 

@@ -11,6 +11,13 @@ interface ModalProps {
     onClose: () => void;
 }
 
+const recurrenceOptions = {
+    Daily: { seconds: 86400 },
+    Weekly: { seconds: 604800 },
+    Monthly: { seconds: 2592000 },
+    Yearly: { seconds: 31536000 },
+};
+
 const ScheduleModal: React.FC<ModalProps> = ({isOpen, schedule, onSave, onClose}) => {
     const dataManager = PersistentDataManager.getInstance();
     const [formData, setFormData] = useState<Partial<Schedule>>(schedule);
