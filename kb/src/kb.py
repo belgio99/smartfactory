@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
+ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 
@@ -645,6 +645,6 @@ if __name__ == "__main__":
         "atomic": [False],
     }
     #kpi_info = KPI_Info(**info)
-    print(add_kpi(info))
+    #print(add_kpi(info))
     
-    #uvicorn.run(app, port=8000, host="0.0.0.0")
+    uvicorn.run(app, port=8000, host="0.0.0.0")
