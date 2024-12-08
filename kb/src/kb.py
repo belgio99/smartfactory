@@ -630,21 +630,4 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
 # -------------------------------------------- Main --------------------------------------------
 
 if __name__ == "__main__":
-    """try:
-        tmp = is_pair_machine_kpi_exist("assembly_machine_1", "oee")
-        print(tmp)
-    except Exception as error:
-        print(error)"""
-    
-    info = {
-        "id": ["kpi_prova"],
-        "description": ["KPI description"],
-        "formula": ["operative_time + power_sum"],
-        "unit_measure": ["unit"],
-        "forecastable": [True],
-        "atomic": [False],
-    }
-    #kpi_info = KPI_Info(**info)
-    #print(add_kpi(info))
-    
     uvicorn.run(app, port=8000, host="0.0.0.0")
