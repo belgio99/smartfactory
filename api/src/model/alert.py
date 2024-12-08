@@ -1,7 +1,6 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from enum import Enum
-import json
 
 class Severity(Enum):
     LOW = "Low"
@@ -22,8 +21,11 @@ class Alert(BaseModel):
         isEmail (bool): Indicates if the alert should be sent as an email.
         recipients (List[str]): List of recipients for the alert notifications.
         severity (Severity): Severity level of the alert.
+
+    Methods:
+        to_dict(): Converts the Alert instance to a dictionary.
     """
-    alertId: str
+    alertId: Optional[int] = None
     title: str
     type: str
     description: str
