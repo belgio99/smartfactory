@@ -70,59 +70,53 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
         } else {
             const newId = schedules.length ? Math.max(...schedules.map((s) => s.id)) + 1 : 1;
     
+            // Crea un nuovo oggetto Schedule
             const newSchedule: Schedule = new Schedule(
                 newId,
                 schedule.name || "Unnamed Schedule",
                 schedule.recurrence || "Daily",
                 "Active",
                 schedule.email || "",
-                schedule.startDate || new Date().toISOString().split("T")[0], // Default to today
+                schedule.startDate || new Date().toISOString().split("T")[0],
                 schedule.kpis || [],
                 schedule.machines || []
             );
     
+            // Aggiungi " 00:00:00" alla data (formato richiesto dal server)
+            newSchedule.startDate = newSchedule.startDate + " 00:00:00";
+    
             try {
-                // Mappatura dei valori di recurrence
-                const recurrenceOptions: { [key: string]: "test" | "daily" | "weekly" | "monthly" | "yearly" } = {
-                    Daily: "daily",
-                    Weekly: "weekly",
-                    Monthly: "monthly",
-                    Yearly: "yearly",
+                // Prepara il payload per l'API
+                const requestData = {
+                    userId: userId,
+                    params: {
+                        id: newId.toString(), 
+                        status: newSchedule.status === "Active",
+                        name: newSchedule.name,
+                        recurrence: newSchedule.recurrence,
+                        startDate: newSchedule.startDate, // Es. "2024-12-10 00:00:00"
+                        email: newSchedule.email,
+                        kpis: newSchedule.kpis.filter((kpi) => kpi && kpi.trim().length > 0),
+                        machines: newSchedule.machines,
+                    }
                 };
-            
-                // Converti la stringa `newSchedule.recurrence` in un valore valido
-                const validRecurrence = recurrenceOptions[newSchedule.recurrence];
-            
-                if (!validRecurrence) {
-                    throw new Error(`Invalid recurrence value: ${newSchedule.recurrence}`);
-                }
-
-                const adaptedSchedule = {
-                    name: newSchedule.name,
-                    type: validRecurrence,
-                    site: "Factory A",
-                    email: newSchedule.email,
-                    startDate: newSchedule.startDate,
-                    kpis: newSchedule.kpis,
-                    machines: newSchedule.machines,
-                };
+    
+                console.log("Saving schedule with requestData:", requestData);
                 
-                console.log("Saving schedule:", adaptedSchedule);
-                console.log("Recurrence:", validRecurrence);
                 setSchedules((prev) => [...prev, newSchedule]);
-                // Chiamata all'API
-                await scheduleReport(
-                    userId,              // Deve essere una stringa
-                    adaptedSchedule,     // Parametri corretti
-                    validRecurrence      // Valore della recurrence validato
-                );
+    
+                //Call the API to save the schedule
+                await scheduleReport(requestData);
+    
+                console.log("Schedule saved successfully!");
             } catch (error) {
                 console.error("Failed to save schedule:", error);
             }
+
+            setIsModalOpen(false);
         }
-    
-        setIsModalOpen(false);
     };
+    
 
     const handleDeleteSchedule = (id: number) => {
         setSchedules((prev) => prev.filter((schedule) => schedule.id !== id));

@@ -74,7 +74,7 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
             // Pass the username, isEmail and hashed password
 
             // Call the register API
-            const registerResponse = await register(username, hashedPassword, role, site, email);
+            const registerResponse = await register(username, email, hashedPassword, role, site);
             // If the register is successful, call the onLogin function
             if (registerResponse) {
                 if (registerResponse.access_token) {
@@ -132,8 +132,8 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
                                 onChange={(e) => setRole(e.target.value)}
                                 className={styles.input}
                             >
-                                <option value="Floor Factory Manager">Floor Factory Manager</option>
-                                <option value="Specialty Manufactory Owner">Specialty Manufactory Owner</option>
+                                <option value="FloorFactoryManager">Floor Factory Manager</option>
+                                <option value="SpecialtyManufactoryOwner">Specialty Manufactory Owner</option>
                             </select>
                         </div>
                         <div className={styles.inputGroup}>
