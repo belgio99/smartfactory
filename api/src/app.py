@@ -1,9 +1,8 @@
-from typing import Annotated
+from typing import Annotated, Union
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import Json
 import uvicorn
-import tempfile
 import json
 from fastapi import Body, Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,19 +28,23 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
 import os
+import sys
+from io import BytesIO
 
 logging.basicConfig(level=logging.INFO)
 
-tasks = dict()
+tasks: dict[str, Task] = dict()
 tasks_lock = asyncio.Lock()
-
+last_task_id = 0
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
     while True:
         async with tasks_lock:
             for t in tasks.values():
+                logging.info(t.getDict().name)
                 if t.shouldRun():
+                    logging.info("Run task "+t.getDict().name)
                     await t.run()
         await asyncio.sleep(1)
 
@@ -241,7 +244,6 @@ def logout(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
         logging.info(response)
         if (len(response) == 0):
             raise HTTPException(status_code=404, detail="User not found")
-        #TODO delete auth token client side or db if you decide to add it from db
         close_connection(connection, cursor)
         return JSONResponse(content={"message": "User logged out successfully"}, status_code=200)
     except HTTPException as e:
@@ -400,7 +402,8 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
             return JSONResponse(content={"data": []}, status_code=200)
         reports = []
         for row in response:
-            reports.append(ReportResponse(id=row[0], name=row[1], type=row[2]))
+            rep = ReportResponse(id=row[0], name=row[1], type=row[2])
+            reports.append(rep.model_dump())
         close_connection(connection, cursor)
         return JSONResponse(content={"data": reports}, status_code=200)
     except Exception as e:
@@ -416,7 +419,7 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         if not response or response[0] is None:
             raise HTTPException(status_code=404, detail="Report not found")
         file_name = response[0][1]
-        ownerID = response[0][2]
+        ownerID = str(response[0][2])
         tmp_path = "/tmp/"+ownerID+"_"+file_name+".pdf"
         minio = get_minio_connection()
         download_object(minio, "reports", ownerID+"/"+file_name, tmp_path)
@@ -448,15 +451,26 @@ def call_ai_agent(input: str):
     response.raise_for_status()
     return response
 
+def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str, type: str = None):
+    connection, cursor = get_db_connection()
+    report_data = answer.data
+    obj_path = "/reports/"+userId+"/"+obj_name+".pdf"
+    create_pdf(report_data, tmp_path)
+    minio = get_minio_connection()
+    upload_object(minio, "reports", userId+"/"+obj_name+".pdf", tmp_path, "application/pdf")
+    query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
+    cursor.execute(query_insert, (obj_name+".pdf", type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
+    connection.commit()
+
 def create_pdf(text: str, path: str):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font('Arial', '', 12)
     pdf.cell(0, 100, text)
     pdf.output(name=path, dest="F")
-    
+
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
-def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Body()], is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
+def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Report, ScheduledReport], Body()], is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID FROM Users WHERE UserID = %s"
@@ -464,7 +478,15 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
         if not response:
             logging.error("User not found")
             raise HTTPException(status_code=404, detail="User not found")
-        userId = response[0][0]
+        userId = str(response[0][0])
+        period = ""
+        if is_scheduled:
+            now = time.time()
+            now_str = datetime.fromtimestamp(now).strftime("%d/%m/%Y")
+            start_str = datetime.fromtimestamp((now-params.recurrence.seconds)).strftime("%d/%m/%Y")
+            period = start_str+" - "+now_str
+        else:
+            period = params.period
         prompt = PromptTemplate(
             input_variables=["period", "kpi", "machines"],
             template=(
@@ -473,22 +495,15 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
             )        
         )
         filled_prompt = prompt.format(
-            period=params.period,
+            period=period,
             kpi=",".join(params.kpis),
             machines=",".join(params.machines)
         )
-        ai_response = call_ai_agent(filled_prompt).json()
-        logging.info(ai_response)
-        answer = Answer.model_validate(ai_response)
-        report_data = answer.textResponse
+        #ai_response = call_ai_agent(filled_prompt).json()
+        #logging.info(ai_response)
+        #answer = Answer.model_validate(ai_response)
         tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
-        obj_path = "/reports/"+userId+"/"+params.name+params.period+".pdf"
-        create_pdf(report_data, tmp_path)
-        minio = get_minio_connection()
-        upload_object(minio, "reports", userId+"/"+params.name+".pdf", tmp_path)
-        query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
-        cursor.execute(query_insert, (params.name+".pdf", params.type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
-        connection.commit()
+        create_report_pdf(Answer(textExplanation="test", textResponse="test", label="test"), userId, tmp_path, params.name+("_periodic" if is_scheduled else ""), "Periodic" if is_scheduled else params.type)
         close_connection(connection, cursor)
         if is_scheduled:
             return (params.name, params.email, tmp_path)
@@ -502,6 +517,9 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
         close_connection(connection, cursor)
         raise e
     except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
@@ -515,15 +533,19 @@ def generate_and_send_report(userId: str, email: str, params: ScheduledReport, a
 def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     schedules = []
     minio = get_minio_connection()
-    objects = minio.list_objects(bucket_name="/settings/"+"userId", )
-    matching_files = [obj.object_name for obj in objects if obj.object_name.endswith("_scheduling.json")]
+    objects = minio.list_objects(bucket_name="settings", recursive=True)
+    matching_files = []
+    for obj in objects:
+        logging.info(obj.object_name)
+        if obj.object_name.endswith("_scheduling.json") and (userId+"/") in obj.object_name:
+            matching_files.append(obj.object_name.split('/')[-1])
+    logging.info(matching_files)
     for file_name in matching_files:
-        logging.info(file_name)
-        tmp_path = f"/tmp/downloads/{file_name.split('/')[-1]}"
-        download_object(minio, "settings", "userId+/"+file_name, tmp_path)
-        with open(tmp_path, 'r') as file:
-            data = json.load(file)
-            schedules.append(data)
+        response = minio.get_object("settings", userId+"/"+file_name)
+        json_str = response.read().decode("utf-8")
+        logging.info(json_str)
+        sched = json.loads(json_str)
+        schedules.append(sched)
     return JSONResponse(content={"data": schedules}, status_code=200)
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
@@ -537,15 +559,20 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
             raise HTTPException(status_code=404, detail="User not found")
         email = response[0][1]
         close_connection(connection, cursor)
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json') as temp_file:
-            json.dump(params.model_dump(), temp_file, indent=4)
-            tmp_path = temp_file.name
-            logging.info(tmp_path)
-            minio = get_minio_connection()
-            #TODO update object if id is populated
-            upload_object(minio, "settings", userId+"/"+params.name+"_scheduling.json", tmp_path)
+        logging.info(params.id)
+        if params.id is None:
+            logging.info("Insert scheduling")
+            global last_task_id
+            last_task_id = last_task_id + 1
+            params.id = last_task_id
+        elif str(params.id) in tasks.keys():
+            logging.info("Update scheduling")
+            params.name = tasks.get(str(params.id)).getDict().name
+        json_str = params.model_dump_json()
+        minio = get_minio_connection()
+        minio.put_object("settings", userId+"/"+params.name+"_scheduling.json", BytesIO(json_str.encode("utf-8")), length=len(json_str),content_type="application/json")
         async with tasks_lock:
-            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds, start_date=params.startDate)
+            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds, json=params, start_date=params.startDate)
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
