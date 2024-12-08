@@ -42,6 +42,21 @@ jobs:
 
       - name: Run container for testing
         run: |
+          # Run the container in detached mode
           docker run --rm --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
-          sleep 60  # Attendi 60 secondi per verificarne la stabilità.
+          
+          # Wait for 60 seconds to test stability
+          sleep 60
+          
+          # Check the container status
+          if ! docker ps --filter "name=test-${{ matrix.service }}" --filter "status=running" | grep -q test-${{ matrix.service }}; then
+            echo "Container test-${{ matrix.service }} failed. Printing logs:"
+            docker logs test-${{ matrix.service }}
+            exit 1
+          fi
+          
+          # Stop the container after testing
           docker stop test-${{ matrix.service }}
+          docker logs test-${{ matrix.service }}
+          echo "Container test-${{ matrix.service }} passed."
+  
