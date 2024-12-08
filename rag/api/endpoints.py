@@ -1,5 +1,6 @@
 import httpx
 import json
+import os
 
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
@@ -18,10 +19,13 @@ from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
 from collections import deque
 from dotenv import load_dotenv
-from api_auth.api_auth import get_verify_api_key
+from api.api_auth.api_auth import get_verify_api_key
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 
 # History lenght parameter
 HISTORY_LEN = 10
@@ -29,13 +33,32 @@ HISTORY_LEN = 10
 # Load environment variables
 load_dotenv()
 
-graph = RdfGraph(
-    source_file="docs/sa_ontology.rdf",
-    serialization="xml",
-    standard="rdf"
-)
+def create_graph(source_file):
+    graph = RdfGraph(
+        source_file=source_file,
+        serialization="xml",
+        standard="rdf"
+    )
+    return graph
 
+class FileUpdateHandler(FileSystemEventHandler):
+    def on_modified(self, event):
+        if event.src_path.endswith(os.environ['KB_FILE_NAME']):
+            print(f"Detected change in {os.environ['KB_FILE_NAME']}. Reloading the graph...")
+            global graph
+            del graph
+            graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
+            graph.load_schema()
+            global history
+            history = deque(maxlen=HISTORY_LEN)
+
+graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
 graph.load_schema()
+
+event_handler = FileUpdateHandler()
+observer = Observer()
+observer.schedule(event_handler, os.environ['KB_FILE_PATH'], recursive=True)
+observer.start()
 
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 set_llm_cache(InMemoryCache())
@@ -362,7 +385,8 @@ async def handle_kb_q(question: Question, llm, graph, history):
     return response['result']
 
 @router.post("/chat", response_model=Answer)
-async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+#async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
     # Classify the question
     label, url = prompt_classifier(question)
 
@@ -458,3 +482,4 @@ async def ask_question(question: Question, api_key: str = Depends(get_verify_api
             data = json.dumps(response_json["bindings"], indent=2)
             
             return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data)
+        
