@@ -103,13 +103,10 @@ const Dashboard: React.FC = () => {
                 }
 
                 // Determine grid layout based on chart type
-                const isLineChart = entry.graph_type === 'line' || entry.graph_type === 'area';
-                const isSmallCard = entry.graph_type === 'spotlight';
+                const isSmallCard = entry.graph_type === 'pie' || entry.graph_type === 'donut';
 
                 // Dynamic grid class
-                const gridClass = isLineChart
-                    ? 'col-span-full' // Line/Area charts take full row
-                    : isSmallCard
+                const gridClass = isSmallCard
                         ? 'sm:col-span-1 lg:col-span-1' // Small cards fit three in a row
                         : 'col-span-auto '; // Bar and Pie charts share rows;
 
