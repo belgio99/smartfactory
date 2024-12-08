@@ -1,3 +1,9 @@
+"""
+@file kb.py
+@brief This file contains the implementation of the KB.
+@author Nicola Emmolo, Jacopo Raffi
+"""
+
 from owlready2 import *
 import sympy
 
@@ -19,9 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
-TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
+ONTOLOGY_PATH = "../Ontology/sa_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 
@@ -38,8 +42,8 @@ def get_kpi(kpi_id):
     Globals:
         onto (Ontology): The global ontology object is used to extract KPIs.
 
-    Returns:
-        dict: A dictionary containing the KPI data. The structure includes:
+    Returns: 
+        dict A dictionary containing the KPI data. The structure includes:
             - "Status" (int): 0 if successful, -1 if no machine data is found.
             - Additional keys corresponding to the KPI's data properties.
     """
@@ -513,7 +517,7 @@ def add_kpi(kpi_info):
                 machine.producesKPI.append(new_kpi)
 
             sync_reasoner()
-            onto.save(file = TMP_ONTOLOGY_PATH, format = "rdfxml")
+            onto.save(file = ONTOLOGY_PATH, format = "rdfxml")
         except Exception as error:
             print(error)
             return False
@@ -632,7 +636,7 @@ if __name__ == "__main__":
     except Exception as error:
         print(error)"""
     
-    """info = {
+    info = {
         "id": ["kpi_prova"],
         "description": ["KPI description"],
         "formula": ["operative_time + power_sum"],
@@ -640,7 +644,7 @@ if __name__ == "__main__":
         "forecastable": [True],
         "atomic": [False],
     }
-    kpi_info = KPI_Info(**info)
-    print(add_kpi(kpi_info))"""
+    #kpi_info = KPI_Info(**info)
+    print(add_kpi(info))
     
-    uvicorn.run(app, port=8000, host="0.0.0.0")
+    #uvicorn.run(app, port=8000, host="0.0.0.0")
