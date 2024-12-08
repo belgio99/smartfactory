@@ -16,7 +16,7 @@ const ChatInput: React.FC<ChatInputProps> = ({ newMessage, setNewMessage, handle
     };
 
     return (
-        <div className="chat-input flex p-2 border-t">
+        <div className="chat-input flex-1 p-2 border-t">
             <input
                 type="text"
                 className="input-field flex-grow border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"

@@ -135,12 +135,22 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
             )}
 
             {isChatOpen && (
-                <div className="w-96 h-96 bg-white rounded-lg shadow-lg flex flex-col">
-                    <div className="bg-blue-500 text-white px-4 py-2 flex justify-between items-center rounded-t-lg">
-                        <h3 className="text-lg font-semibold">Virtual Assistant</h3>
+                <div className="w-96 h-96 bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
+                    {/* Header Bar */}
+                    <div
+                        className="bg-blue-600 text-white px-4 py-3 flex justify-between rounded-t-lg transition duration-300">
+                        <div className="flex items-center px-2 gap-2">
+                            <img
+                                src={'/icons/bot.svg'}
+                                alt="Chat Icon"
+                                className="w-8 h-8"
+                            />
+                            <h3 className="text-base font-medium tracking-wide">AI Assistant</h3>
+                        </div>
                         <button
                             onClick={toggleChat}
-                            className="text-white text-xl font-bold hover:text-gray-300"
+                            className="text-white text-2xl font-bold hover:scale-110 hover:rotate-90 transition duration-300 ease-in-out"
+                            aria-label="Close chat"
                         >
                             ×
                         </button>
@@ -162,7 +172,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
                             </div>
                         ))}
                     </div>
-                    <div className="flex p-2 border-t">
+                    {/* Input Section */}
+                    <div className="p-2 border-t bg-gray-50 flex items-center">
                         <ChatInput
                             newMessage={newMessage}
                             setNewMessage={setNewMessage}
