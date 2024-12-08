@@ -315,17 +315,16 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
         if not response:
             raise HTTPException(status_code=401, detail="User not found")
         try:
-            if not password_context.verify(body.old_password, response[0][0]):
+            if not body.old_password == response[0][0]:
                 logging.error("Invalid old password")
                 return JSONResponse(content={"message": "Invalid old password"}, status_code=401)
         except ValueError as e:
-            logging.error("Password not hashed")
-            raise HTTPException(status_code=500, detail=f"Password not hashed: {str(e)}")
+            #logging.error("Password not hashed")
+            raise HTTPException(status_code=500, detail=f"ERROR: {str(e)}")
                 
-        hashed_password = password_context.hash(body.new_password)
         # Update user password in the database
         query_update = "UPDATE Users SET password = %s WHERE UserID = %s;"
-        cursor.execute(query_update, (hashed_password, userId))
+        cursor.execute(query_update, (body.new_password, userId))
         connection.commit()
         # check if updated correctly
         result = cursor.rowcount
