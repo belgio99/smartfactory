@@ -28,7 +28,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 # History lenght parameter
-HISTORY_LEN = 10
+HISTORY_LEN = 3
 
 # Load environment variables
 load_dotenv()
@@ -61,7 +61,7 @@ observer.schedule(event_handler, os.environ['KB_FILE_PATH'], recursive=True)
 observer.start()
 
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-set_llm_cache(InMemoryCache())
+#set_llm_cache(InMemoryCache())
 
 history = deque(maxlen=HISTORY_LEN)
 
@@ -408,7 +408,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         )
         llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
         # Update the history
-        history.append({'question': question.userInput, 'answer': llm_result.content})
+        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
         return Answer(textResponse=llm_result.content, textExplanation='', data='query')
 
     # Execute the handler
@@ -416,7 +416,7 @@ async def ask_question(question: Question): # to add or modify the services allo
 
     if label == 'kb_q':
         # Update the history
-        history.append({'question': question.userInput, 'answer': context})
+        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
         return Answer(textResponse=context, textExplanation='', data='query')
 
     # Generate the prompt and invoke the LLM for certain labels
@@ -440,7 +440,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         )
         llm_result = llm.invoke(prompt)
 
-        history.append({'question': question.userInput, 'answer': llm_result.content})
+        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
 
         explainer = RagExplainer(threshold = 20.0,)
 

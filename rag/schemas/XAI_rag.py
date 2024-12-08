@@ -170,32 +170,12 @@ class RagExplainer:
             # If the input is not valid JSON, return an empty list
             return []
 
-        # Helper function to format a dictionary as a readable key-value string
-        def format_object(obj: dict) -> str:
-            """
-            Converts a dictionary into a string representation with each key-value pair on a new line.
-
-            Args:
-                obj (dict): A dictionary object to format.
-
-            Returns:
-                str: A string representation of the dictionary.
-            """
-            # Initialize a list to store formatted lines
-            lines = []
-            # Loop through each key-value pair in the dictionary
-            for k, v in obj.items():
-                # Append the formatted string for each pair
-                lines.append(f'"{k}": "{v}"')
-            # Join the lines and return as a single string
-            return "\n   " + "\n   ".join(lines)
-
         # Handle cases where the JSON data is a list
         if isinstance(data, list):
             sentences = []  # Initialize a list to hold the formatted strings
             for item in data:
                 if isinstance(item, dict):  # Check if the list item is a dictionary
-                    formatted = format_object(item)  # Format the dictionary
+                    formatted = json.dumps(item, indent=0)  # Format the dictionary
                     # Only include the formatted string if it is sufficiently long
                     if len(formatted.strip()) >= 10:
                         sentences.append(formatted)
@@ -207,7 +187,7 @@ class RagExplainer:
 
         # Handle cases where the JSON data is a dictionary
         elif isinstance(data, dict):
-            formatted = format_object(data)  # Format the dictionary
+            formatted = json.dumps(data, indent=0)  # Format the dictionary
             # Return the formatted dictionary as a list if it's sufficiently long
             if len(formatted.strip()) >= 10:
                 return [formatted]
@@ -522,11 +502,30 @@ if __name__ == "__main__":
     ]
     explainer.add_to_context(french_context)
 
-    # Add German context
-    german_context = [
-        ("German Article", "Die industrielle Revolution veränderte Gesellschaften radikal.")
+    # Add formatted json context
+    json_formatted = [
+        ("Json formatted", '''
+[
+{
+"Machine name": "Laser Cutter",
+"KPI name": "power",
+"Value": "0,055",
+"Unit of Measure": "kW",
+"Date": "12/10/2024",
+"Forecast": false
+},
+{
+"Machine name": "Riveting Machine",
+"KPI name": "power",
+"Value": "0,07",
+"Unit of Measure": "kW",
+"Date": "12/10/2024",
+"Forecast": false
+}
+]
+''')
     ]
-    explainer.add_to_context(german_context)
+    explainer.add_to_context(json_formatted)
 
     # Add JSON context
     json_multilingual = [
@@ -542,6 +541,7 @@ if __name__ == "__main__":
         "Die industrielle Revolution hat die Gesellschaft verändert. "
         "Machine_A ha un Temperatura di 22 Gradi Celsius. "
         "El Sol es la estrella central del sistema solar. "
+        "Laser cutter"
     )
 
 
