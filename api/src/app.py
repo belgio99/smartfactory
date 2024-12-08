@@ -16,6 +16,7 @@ from notification_service import send_notification, retrieve_alerts
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
 from database.minio_connection import *
+from database.druid_connection import execute_druid_query
 from constants import *
 import logging
 from model.task import *
@@ -27,7 +28,7 @@ from pathlib import Path
 
 from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
-from dotenv import load_dotenv
+from model.historical import HistoricalQueryParams, HistoricalData
 # TODO: how to import modules from rag directory ??
 from model.agent import Answer
 from datetime import datetime, timedelta, timezone
@@ -712,6 +713,80 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
+    
+
+@app.post('/smartfactory/historical')
+def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve historical data.
+    This endpoint receives a set of parameters and retrieves historical data from the database based on those parameters.
+    Args:
+        historical_params (HistoricalQueryParams): The parameters for the historical data query.
+    Returns:
+        HistoricalData: The historical data retrieved from the database.
+    Raises:
+        HTTPException: If the query parameters are malformed or an unexpected error occurs.
+    """
+    
+    # check if group_time has valid values
+    if historical_params.group_time and historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
+        raise HTTPException(status_code=400, detail="Invalid group_time value")
+    
+    # check if necessary fields are not empty
+    if not historical_params.kpi or not historical_params.timeframe or not historical_params.machines:
+        raise HTTPException(status_code=400, detail="Missing required fields")
+
+    # substitute square brackets with parentheses in machine list
+    historical_params.machines = tuple(historical_params.machines) 
+
+    # remove commas from machines string in case it's a single one
+    if len(historical_params.machines) == 1:
+        machines = str(historical_params.machines).replace(",", "")
+    else:
+        machines = str(historical_params.machines)
+
+    try:
+        # Build the query body
+
+        # group_time is optional and has values: 
+        # 'P1D'for daily intervals
+        # 'P1W' for weekly intervals
+        # 'P1M' for monthly intervals.
+        
+        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND asset_id IN {} GROUP BY 
+        """.format(
+            historical_params.kpi, historical_params.timeframe["start_date"],
+            historical_params.timeframe["end_date"], machines
+            )
+        
+        # append optional group by time clause
+        if historical_params.group_time :
+            query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'),"""
+        
+        query += "name, __time"
+        
+        # Execute the query
+        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
+        if response:
+            print("Query response:", response)
+        else:
+            print("Failed to retrieve query response.")
+
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    return response
+
+@app.get("/smartfactory/dummy")
+async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Dummy endpoint for testing purposes.
+    Returns:
+        JSONResponse: A JSON response with a dummy message.
+    """
+    return JSONResponse(content={"message": "This is a dummy endpoint"}, status_code=200)
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")

@@ -65,6 +65,9 @@ MINIO_HOST = 'minio'
 MINIO_ADDRESS = ':9000'
 MINIO_CONSOLE_ADDRESS = ':9001'
 
+DRUID_INSERT_ENDPOINT = 'http://localhost:8081/druid/indexer/v1/task'
+DRUID_QUERY_ENDPOINT = 'http://router:8888/druid/v2/sql'
+
 SMTP_SERVER=host.docker.internal
 SMTP_PORT=11025
 SMTP_EMAIL=noreply@smartfactory.com
