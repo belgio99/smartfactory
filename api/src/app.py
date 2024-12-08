@@ -499,11 +499,11 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
             kpi=",".join(params.kpis),
             machines=",".join(params.machines)
         )
-        #ai_response = call_ai_agent(filled_prompt).json()
-        #logging.info(ai_response)
-        #answer = Answer.model_validate(ai_response)
+        ai_response = call_ai_agent(filled_prompt).json()
+        logging.info(ai_response)
+        answer = Answer.model_validate(ai_response)
         tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
-        create_report_pdf(Answer(textExplanation="test", textResponse="test", label="test"), userId, tmp_path, params.name+("_periodic" if is_scheduled else ""), "Periodic" if is_scheduled else params.type)
+        create_report_pdf(answer, userId, tmp_path, params.name+("_periodic" if is_scheduled else ""), "Periodic" if is_scheduled else params.type)
         close_connection(connection, cursor)
         if is_scheduled:
             return (params.name, params.email, tmp_path)
