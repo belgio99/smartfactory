@@ -21,6 +21,7 @@ import {
 import {KPI} from "../../api/DataStructures";
 import Trend from "./Trend";
 import {COLORS, formatTimeFrame, getColor} from "../../utils/chartUtil";
+import {DrillDownTooltip, LineTooltip, ScatterTooltip} from "./Tooltips";
 
 interface ChartProps {
     data: any[],
@@ -30,98 +31,11 @@ interface ChartProps {
     timeThreshold?: boolean
 }
 
-const DrillDownTooltip = ({active, payload, label, kpi}: any) => {
-    if (active && payload && payload.length) {
-
-        let name: string = payload[0].payload.name ? payload[0].payload.name : payload[0].name
-        return (
-            <div
-                style={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #ccc',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                }}
-            >
-                <p style={{
-                    color: payload.fill,
-                    margin: 0,
-                    fontWeight: 'normal'
-                }}>{`${name}: ${payload[0].value} ${kpi?.unit || ''}`}</p>
-            </div>
-        );
-    }
-    return null;
-};
-
-const ScatterTooltip = ({active, payload, kpi}: any) => {
-    if (active && payload && payload.length) {
-        const dataPoint = payload[0].payload; // Access the data point
-        const formattedDate = new Date(dataPoint.x).toLocaleString(); // Format the date
-        return (
-            <div
-                style={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #ccc',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                }}
-            >
-                <p style={{margin: 0, fontWeight: 'bold'}}>{formattedDate}</p>
-                <p
-                    style={{
-                        color: dataPoint.color, // Use the scatter dot color
-                        margin: 0,
-                    }}
-                >
-                    {`${dataPoint.machineId}: ${dataPoint.y.toFixed(2)} ${
-                        kpi?.unit || ''
-                    }`}
-                </p>
-            </div>
-        );
-    }
-    return null;
-};
-
-const LineTooltip = ({active, payload, label, kpi}: any) => {
-    if (active && payload && payload.length) {
-
-        return (
-            <div
-                style={{
-                    backgroundColor: '#fff',
-                    border: '1px solid #ccc',
-                    padding: '10px',
-                    borderRadius: '4px',
-                    boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
-                }}
-            >
-                <p style={{margin: 0, fontWeight: 'bold'}}>{formatTimeFrame(label)}</p>
-                {payload.map((entry: any, index: number) => (
-                    <p
-                        key={`tooltip-${index}`}
-                        style={{
-                            margin: 0,
-                            color: entry.stroke, // Match the line's color
-                        }}
-                    >
-                        {`${entry.name}: ${entry.value.toFixed(2)} ${kpi?.unit || ''}`}
-                    </p>
-                ))}
-            </div>
-        );
-    }
-    return null;
-};
-
 const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) => {
     if (!data || data.length === 0) {
         return (
             <p style={{textAlign: 'center', marginTop: '20px', color: '#555'}}>
-                No data available. Please select options and click "Generate Chart".
+                No data available for defined options. Please select a different set of options.
             </p>
         );
     }
@@ -173,25 +87,25 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                                 <ul style={{padding: 0, margin: 0}}>
                                     {props.payload && props.payload.map((entry, index) => (
                                         <li key={index} style={{display: 'inline-block', marginRight: 10}}>
-                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 5)}...
+                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 10)}...
                                         </li>
                                     ))}
                                 </ul>
                             )}
                         /> {Object.keys(data[0] || {})
-                            .filter((key) => key !== 'timestamp') // Exclude the timestamp key
-                            .map((machine, index) => (
-                                <Line
-                                    key={machine}
-                                    type="monotone"
-                                    dataKey={machine} // Use the machine's name as the key
-                                    stroke={COLORS[index % COLORS.length]}
-                                    strokeWidth={2}
-                                    dot={{r: 5}}
-                                    activeDot={{r: 8}}
-                                    name={machine}
-                                />
-                            ))}
+                        .filter((key) => key !== 'timestamp') // Exclude the timestamp key
+                        .map((machine, index) => (
+                            <Line
+                                key={machine}
+                                type="monotone"
+                                dataKey={machine} // Use the machine's name as the key
+                                stroke={COLORS[index % COLORS.length]}
+                                strokeWidth={2}
+                                dot={{r: 5}}
+                                activeDot={{r: 8}}
+                                name={machine}
+                            />
+                        ))}
                     </LineChart>
                 </ResponsiveContainer>
             );
@@ -334,7 +248,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                                 <ul style={{padding: 0, margin: 0}}>
                                     {props.payload && props.payload.map((entry, index) => (
                                         <li key={index} style={{display: 'inline-block', marginRight: 10}}>
-                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 5)}...
+                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 10)}...
                                         </li>
                                     ))}
                                 </ul>
@@ -381,7 +295,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                                 <ul style={{padding: 0, margin: 0}}>
                                     {props.payload && props.payload.map((entry, index) => (
                                         <li key={index} style={{display: 'inline-block', marginRight: 10}}>
-                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 5)}...
+                                            <span style={{color: entry.color}}>●</span> {entry.value.substring(0, 10)}...
                                         </li>
                                     ))}
                                 </ul>
@@ -409,6 +323,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                     </ScatterChart>
                 </ResponsiveContainer>
             );
+        //Unused due to incompatibility with the current data structure
         case "heatmap":
             const machines = Object.keys(data[0] || {}).filter((key) => key !== "timestamp"); // Extract machine IDs
 
@@ -440,7 +355,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         <Tooltip
                             content={<DrillDownTooltip kpi={kpi}/>}
                         />
-                        {machines.map((machine, machineIndex) => (
+                        {machines.map((machine) => (
                             <Bar key={machine} dataKey={machine} fillOpacity={1}>
                                 {data.map((entry, idx) => {
                                     const value = entry[machine];

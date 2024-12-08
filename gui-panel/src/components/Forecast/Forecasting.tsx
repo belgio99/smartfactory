@@ -35,6 +35,10 @@ class LimeData {
 
         return new LimeData(json.feature, json.importance);
     }
+
+    static decodeArray(json: Record<string, any>): LimeData[] {
+        return json.map(LimeData.decode);
+    }
 }
 
 class ForecastDataX {
@@ -59,12 +63,12 @@ class ForecastDataX {
     lowerBound: number[]
     upperBound: number[]
     confidenceScore: number[]
-    limeExplanation: LimeData[]
+    limeExplanation: LimeData[][]
     measureUnit: string
     datePrediction: string[]
     forecast: boolean
 
-    constructor(machineName: string, kpiName: string, predictedValue: number[], lowerBound: number[], upperBound: number[], confidenceScore: number[], limeExplanation: LimeData[], measureUnit: string, datePrediction: string[], forecast: boolean) {
+    constructor(machineName: string, kpiName: string, predictedValue: number[], lowerBound: number[], upperBound: number[], confidenceScore: number[], limeExplanation: LimeData[][], measureUnit: string, datePrediction: string[], forecast: boolean) {
         this.machineName = machineName;
         this.kpiName = kpiName;
         this.predictedValue = predictedValue;
@@ -76,7 +80,6 @@ class ForecastDataX {
         this.datePrediction = datePrediction;
         this.forecast = forecast;
     }
-
 
     static decode(json: Record<string, any>): ForecastDataX {
         if (typeof json.Machine_name !== "string") {
@@ -110,7 +113,7 @@ class ForecastDataX {
             throw new Error("Invalid type for Forecast");
         }
 
-        return new ForecastDataX(json.Machine_name, json.KPI_name, json.Predicted_value, json.Lower_bound, json.Upper_bound, json.Confidence_score, json.Lime_explaination.map(LimeData.decode), json.Measure_unit, json.Date_prediction, json.Forecast);
+        return new ForecastDataX(json.Machine_name, json.KPI_name, json.Predicted_value, json.Lower_bound, json.Upper_bound, json.Confidence_score, json.Lime_explaination.map(LimeData.decodeArray), json.Measure_unit, json.Date_prediction, json.Forecast);
     }
 }
 
@@ -155,8 +158,13 @@ const ForecastingPage: React.FC = () => {
     const kpis = dataManager.getKpiList();
     const machines = dataManager.getMachineList();
     return (
-        <div className="ForecastingPage max-w-4xl mx-auto p-6 bg-gray-100">
-            <h1 className="text-2xl font-bold mb-4 text-gray-800">KPI Forecasting</h1>
+        <div className="ForecastingPage max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg ">
+            <h1 className="text-2xl font-bold mb-4 text-gray-800">Data Forecasting</h1>
+            <div className="text-gray-800 mb-4 font-[450]">
+                <p className="text-sm">Forecast future data using historical data and autoregressive models.</p>
+                <p className="text-sm">Select the kpi and machine to view the forecast for the selected future
+                    timeframe.</p>
+            </div>
             <div className="flex items-center text-start space-x-4 mb-6">
                 <div className="w-1/2">
                     <KpiSelect
@@ -183,10 +191,10 @@ const ForecastingPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="bg-white p-6 border-2 rounded-lg shadow-md">
                 {loading ? (
                     <p className="text-gray-600 text-center">Loading forecast data...</p>
-                ) : (forecastData && timeFrame ? (
+                ) : (forecastData && forecastData.future.length > 0 && timeFrame ? (
                     <div>
                         <p className="text-sm text-gray-700 mb-4">
                             Forecasting data
@@ -203,7 +211,7 @@ const ForecastingPage: React.FC = () => {
                         />
                     </div>
                 ) : (
-                    <p className="text-gray-600 text-center">Select a KPI to view its forecast.</p>
+                    <p className="text-gray-600 text-center">Select a KPI and Machine to view its forecast.</p>
                 ))}
             </div>
         </div>

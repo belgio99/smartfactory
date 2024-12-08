@@ -6,6 +6,8 @@ import LoginForm from "./components/LoginForm";
 
 const App = () => {
 
+    // User authentication state ---  set to true for development purposes
+    //const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
     const [isAuthenticated, setIsAuthenticated] = useState(true);
     const [userId, setUserId] = useState('');
     const [username, setUsername] = useState('Test User');
@@ -88,7 +90,8 @@ const App = () => {
                 <Routes>
                     <Route
                         path="/*"
-                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site} email={email} />}
+                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}
+                                       email={email} onLogout={handleLogout}/>}
                     />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>

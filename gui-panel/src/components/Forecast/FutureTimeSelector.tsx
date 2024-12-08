@@ -61,12 +61,16 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
 
         if (value === "tomorrow") {
             setTimeFrame({past: getFiveDaysBefore(), future: getFutureTimeFrame(1), key: value});
+        } else if (value === "3days") {
+            setTimeFrame({past: getFiveDaysBefore(), future: getFutureTimeFrame(3), key: value});
         } else if (value === "5days") {
             setTimeFrame({past: getFiveDaysBefore(), future: getFutureTimeFrame(5), key: value});
         } else if (value === "nextWeek") {
             setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureWeekTimeFrame(), key: value});
         } else if (value === "next2Week") {
             setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureTimeFrame(14), key: value});
+        } else if (value === "next2Week") {
+            setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureTimeFrame(21), key: value});
         } else if (value === "nextMonth") {
             setTimeFrame({past: getPastMonthTimeFrame(), future: getFutureMonthTimeFrame(), key: value});
         }
@@ -92,9 +96,11 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
                 >
                     {!timeFrame && <option value="none">-- Select --</option>}
                     <option value="tomorrow">Tomorrow</option>
+                    <option value="3days">Next 3 Days</option>
                     <option value="5days">Next 5 Days</option>
                     <option value="nextWeek">Next Week</option>
                     <option value="next2Week">Next Two Weeks</option>
+                    <option value="next3Week">Next Three Weeks</option>
                     <option value="nextMonth">Next Month</option>
                 </select>
             </div>

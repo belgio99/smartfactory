@@ -13,9 +13,10 @@ interface HeaderProps {
     userAvatar: string;
     userName: string;
     role: string;
+    logoutHook?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, role}) => {
+const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, role, logoutHook}) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const pathSegments = path.split('/').filter(Boolean);
     return (
@@ -71,10 +72,10 @@ const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, role}) => {
                     </span>
                         {menuVisible && (
                             <div
-                                className="absolute w-48 mx-auto flex-col bg-white border border-gray-200 rounded">
+                                className="absolute right-0 top-8 w-auto mx-auto flex-col bg-white border-2 p-2 border-gray-200">
                                 <div
                                     className="right-0 mt-2 ">
-                                    <div className="flex items-center">
+                                    <div className="flex items-center px-1">
                                         <img alt={"userIcon"}
                                              src={'/icons/user.svg'}
                                         />
@@ -87,13 +88,17 @@ const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, role}) => {
                                     </div>
                                     <div
                                         className=" right-0 mt-2">
-                                        <div className="flex items-center">
+                                        <div className="flex items-center px-1">
                                             <img alt={"userIcon"}
-                                                 src={'/icons/user.svg'}
+                                                 src={'/icons/logout.svg'}
+                                                 className="w-5 h-5"
                                             />
                                             <button
-                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                onClick={() => alert("Logging out...")}
+                                                className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                onClick={() => {
+                                                    alert("Logging out...");
+                                                    logoutHook?.();
+                                                }}
                                             >
                                                 Logout
                                             </button>

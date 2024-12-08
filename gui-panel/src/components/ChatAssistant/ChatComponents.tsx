@@ -45,16 +45,16 @@ const MessageBubble: React.FC<MessageProps> = ({message, onNavigate}) => {
     return (
         <div
             className={classNames(
-                'w-fit max-w-[70%] px-4 py-2 rounded-lg text-sm text-start font-semibold shadow-md',
-                message.sender === 'user'
-                    ? 'bg-blue-200 text-white'
-                    : 'bg-gray-200 text-gray-800'
+                'w-fit max-w-[70%] px-4 py-2 rounded-lg text-start shadow-md',
+                message.sender === "user"
+                    ? 'bg-blue-200'
+                    : 'bg-gray-200'
             )}
         >
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-gray-600 font-semibold">
                 {message.sender === 'user' ? 'You' : 'Assistant'}
             </div>
-            <p>{message.content}</p>
+            <p className="text-gray-800 text-sm text-wrap break-words font-[450] ">{message.content}</p>
             {message.extraData && <ExtraDataButtons extraData={message.extraData} onNavigate={onNavigate}/>}
         </div>
     );

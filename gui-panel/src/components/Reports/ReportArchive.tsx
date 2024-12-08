@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom"; // React Router
 import {getReports} from "../../api/ApiService";
 
@@ -73,7 +73,7 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
         });
 
     return (
-        <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-50 rounded-lg shadow-lg">
+        <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-25 rounded-lg shadow-lg">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">Report Archive</h1>
 
             {/* Filter and Sort Controls */}
