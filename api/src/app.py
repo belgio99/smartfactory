@@ -567,18 +567,22 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], api_key: s
     if not userInput:
         logging.error("Empty input")
         raise HTTPException(status_code=500, detail="Empty user input")
-    # TODO: find where to store the env variables and how to retrieve them
     try:
         # Send the user input to the RAG API and get the response
         response = call_ai_agent(userInput)
-        # Send the response to the user 
         answer = response.json()
-        return answer
-
+        if answer["label"] == 'new_kpi': # TODO
+            # add new kpi
+           # insert_kpi(answer["data"], os.getenv("API_KEY"))
+           pass
+        elif answer["label"] == 'report':
+            # TODO: generate report
+            pass
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
+    return answer
 
 @app.get("/smartfactory/dummy")
 async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
