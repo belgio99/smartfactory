@@ -258,7 +258,7 @@ class RagExplainer:
             self.context_embeddings = (
                 np.concatenate((self.context_embeddings, new_embeddings.cpu()), axis=0)
                 if self.context_embeddings is not None
-                else new_embeddings
+                else new_embeddings.cpu()
             )
 
     def add_to_context(self, extra_context: List[Tuple[str, str]]):
