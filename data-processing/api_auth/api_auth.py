@@ -13,7 +13,7 @@ SECRET_KEY = 'fJ0KSAxFqFiAFPxpAw7QdlUINm8yo7EB'   # DUMMY KEY, PLEASE USE os.get
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # change this value accordingly to your requirements
 
-API_KEYS_FILE_PATH = './src/api_auth/api_keys.json'
+API_KEYS_FILE_PATH = './api_auth/api_keys.json'
 
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

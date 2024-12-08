@@ -6,24 +6,27 @@ import LoginForm from "./components/LoginForm";
 
 const App = () => {
     // User authentication state ---  set to true for development purposes
-    const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
+    //const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userId, setUserId] = useState('');
     const [username, setUsername] = useState('Test User');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('Tester');
     const [site, setSite] = useState('');
+    const [email, setEmail] = useState('');
 
     // Loading state to track if data is still being initialized
     const [loading, setLoading] = useState(true);
 
     // Method to handle the login event
-    const handleLogin = (userId: string, username: string, token: string, role: string, site: string) => {
+    const handleLogin = (userId: string, username: string, token: string, role: string, site: string, email: string) => {
         setIsAuthenticated(true);
         setUserId(userId);
         setUsername(username);
         setToken(token);
         setRole(role);
         setSite(site);
+        setEmail(email);
     };
 
     // Method to handle the logout event
@@ -34,6 +37,7 @@ const App = () => {
         setToken(null);
         setRole('');
         setSite('');
+        setEmail('');
     };
 
     // Initialize data and set loading to false once done
@@ -85,7 +89,7 @@ const App = () => {
                 <Routes>
                     <Route
                         path="/*"
-                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site} />}
+                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site} email={email} />}
                     />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
