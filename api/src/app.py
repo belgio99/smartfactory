@@ -463,39 +463,44 @@ def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str,
 
 def create_pdf(text: str, appendix: str, path: str):
     pdf = FPDF()
-    pdf.set_font('Arial', '', 12)
-    pdf.add_page()
-    lines = text.split("\n")
-    for line in lines:
-        if len(line) > 0:
-            pdf.multi_cell(190, 5, line)
-        else:
-            pdf.ln()
-    pdf.add_page()
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(190, 5, "Explanation")
-    pdf.ln()
-    pdf.ln()
-    pdf.set_font('Arial', '', 12)
-    appendix = appendix.replace("\n", "ACAPO")
-    appendix = json.loads(appendix)
-    for obj in appendix:
-        if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
-            pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
-            pdf.ln()
-            pdf.cell(190, 5, "Context:")
-            lines = obj["context"].split("ACAPO")
-            for line in lines:
-                if len(line) > 0:
-                    pdf.multi_cell(190, 5, line)
-                else:
-                    pdf.ln()
-            pdf.ln()
-            pdf.set_text_color(0,0,255)
-            pdf.cell(190, 5, "Source: "+str(obj["source_name"]))
-            pdf.set_text_color(0,0,0)
-            pdf.ln()
-            pdf.ln()
+    try:
+        pdf.set_font('Arial', '', 12)
+        pdf.add_page()
+        lines = text.split("\n")
+        for line in lines:
+            if len(line) > 0:
+                pdf.multi_cell(190, 5, line)
+            else:
+                pdf.ln()
+        pdf.add_page()
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(190, 5, "Explanation")
+        pdf.ln()
+        pdf.ln()
+        pdf.set_font('Arial', '', 12)
+        appendix = appendix.replace("\n", "ACAPO")
+        appendix = json.loads(appendix)
+        for obj in appendix:
+            if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
+                pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
+                pdf.ln()
+                pdf.cell(190, 5, "Context:")
+                lines = obj["context"].split("ACAPO")
+                for line in lines:
+                    if len(line) > 0:
+                        pdf.multi_cell(190, 5, line)
+                    else:
+                        pdf.ln()
+                pdf.ln()
+                pdf.set_text_color(0,0,255)
+                pdf.cell(190, 5, "Source: "+str(obj["source_name"]))
+                pdf.set_text_color(0,0,0)
+                pdf.ln()
+                pdf.ln()
+    except Exception as e:
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+        print(exc_type, fname, exc_tb.tb_lineno)
     pdf.output(name=path, dest="F")
 
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
