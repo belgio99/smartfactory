@@ -517,9 +517,14 @@ def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["
     schedules = []
     minio = get_minio_connection()
     objects = minio.list_objects(bucket_name="/settings/"+"userId", )
-    for ob in objects:
-        logging.info(ob)
-    #TODO get schedules from DB
+    matching_files = [obj.object_name for obj in objects if obj.object_name.endswith("_scheduling.json")]
+    for file_name in matching_files:
+        logging.info(file_name)
+        tmp_path = f"/tmp/downloads/{file_name.split('/')[-1]}"
+        download_object(minio, "/settings/"+"userId", file_name, tmp_path)
+        with open(tmp_path, 'r') as file:
+            data = json.load(file)
+            schedules.append(data)
     return JSONResponse(content={"data": schedules}, status_code=200)
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)

@@ -17,7 +17,7 @@ class Task(object):
         self.function(*(self.args))
         self.next_run += self.delay
 
-class SchedulingFrequency(Enum):
+class SchedulingFrequency(str, Enum):
     TEST = "test"
     Daily = "Daily"
     Weekly = "Weekly"
