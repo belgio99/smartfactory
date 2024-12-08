@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-import datetime
+from datetime import datetime
 
 class Task(object):
     def __init__(self, func, delay, start_date, args=()):
@@ -17,7 +17,7 @@ class Task(object):
         self.function(*(self.args))
         self.next_run += self.delay
 
-class SchedulingFrequency(Enum):
+class SchedulingFrequency(str, Enum):
     TEST = "test"
     Daily = "Daily"
     Weekly = "Weekly"

@@ -419,7 +419,7 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         ownerID = response[0][2]
         tmp_path = "/tmp/"+ownerID+"_"+file_name+".pdf"
         minio = get_minio_connection()
-        download_object(minio, "/reports/"+ownerID, file_name, tmp_path)
+        download_object(minio, "reports", ownerID+"/"+file_name, tmp_path)
         close_connection(connection, cursor)
         return FileResponse(
             path=tmp_path,
@@ -485,7 +485,7 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Report, Bo
         obj_path = "/reports/"+userId+"/"+params.name+params.period+".pdf"
         create_pdf(report_data, tmp_path)
         minio = get_minio_connection()
-        upload_object(minio, "/reports/"+userId, params.name+".pdf", tmp_path)
+        upload_object(minio, "reports", userId+"/"+params.name+".pdf", tmp_path)
         query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
         cursor.execute(query_insert, (params.name+".pdf", params.type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
         connection.commit()
@@ -516,9 +516,14 @@ def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["
     schedules = []
     minio = get_minio_connection()
     objects = minio.list_objects(bucket_name="/settings/"+"userId", )
-    for ob in objects:
-        logging.info(ob)
-    #TODO get schedules from DB
+    matching_files = [obj.object_name for obj in objects if obj.object_name.endswith("_scheduling.json")]
+    for file_name in matching_files:
+        logging.info(file_name)
+        tmp_path = f"/tmp/downloads/{file_name.split('/')[-1]}"
+        download_object(minio, "settings", "userId+/"+file_name, tmp_path)
+        with open(tmp_path, 'r') as file:
+            data = json.load(file)
+            schedules.append(data)
     return JSONResponse(content={"data": schedules}, status_code=200)
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
@@ -538,7 +543,7 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
             logging.info(tmp_path)
             minio = get_minio_connection()
             #TODO update object if id is populated
-            upload_object(minio, "/settings/"+userId, params.name+"_scheduling.json", tmp_path)
+            upload_object(minio, "settings", userId+"/"+params.name+"_scheduling.json", tmp_path)
         async with tasks_lock:
             tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds, start_date=params.startDate)
     except HTTPException as e:
