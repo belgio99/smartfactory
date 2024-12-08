@@ -605,7 +605,16 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
         dict: The status of the operation.
     """
 
-    result = add_kpi(kpi_info)
+    kpi_info_dict = {
+        "id": [kpi_info.id],
+        "description": [kpi_info.description],
+        "formula": [kpi_info.formula],
+        "unit_measure": [kpi_info.unit_measure],
+        "forecastable": [kpi_info.forecastable],
+        "atomic": [kpi_info.atomic],
+    }
+
+    result = add_kpi(kpi_info_dict)
     if not result:
         return {"Status": -1, "message": "KPI not added"}
     return {"Status": 0, "message": "KPI added"}
