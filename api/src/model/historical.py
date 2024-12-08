@@ -11,14 +11,9 @@ class HistoricalQueryParams(BaseModel):
             end_date (str): The end date of the timeframe.
         }.
         machines (list(str)): machines of which the data is collected.
-        group_by (str): The group by value.
         group_time: optional (str): The time interval for grouping.
-        group_category: optional (str): The category for grouping.
-        aggregations: {
-            operation (str): The operation to perform, ex "SUM".
-            field (str): The field to perform the operation on.
-            }
     """
+
     kpi: str
     timeframe: dict
     machines: list
@@ -26,4 +21,8 @@ class HistoricalQueryParams(BaseModel):
     
 
 class HistoricalData(BaseModel):
+    """
+    Represents the historical data obstained from the database.
+    """
+    
     data: dict

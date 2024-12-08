@@ -626,14 +626,12 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
             historical_params.timeframe["end_date"], machines
             )
         
-        # append optional group by time clause. if present, group by time first
+        # append optional group by time clause
         if historical_params.group_time :
-            query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'), name, __time"""
-        else:
-            query += "name, __time"
+            query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'),"""
         
-        print("Query:", query)
-
+        query += "name, __time"
+        
         # Execute the query
         response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
         if response:
