@@ -256,7 +256,7 @@ class RagExplainer:
             new_embeddings = self.embedding_model.encode(new_context_sentences, convert_to_tensor=True)
             # Concatenate new embeddings with existing ones
             self.context_embeddings = (
-                np.concatenate((self.context_embeddings, new_embeddings), axis=0)
+                np.concatenate((self.context_embeddings, new_embeddings.cpu()), axis=0)
                 if self.context_embeddings is not None
                 else new_embeddings
             )
