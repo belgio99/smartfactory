@@ -39,13 +39,17 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
     }
 
     try {
-      await changePassword(userId, oldPassword, newPassword);
+      console.log(oldPassword, newPassword);
+      const hashedOldPassword = await hashPassword(oldPassword);
+      const hashedNewPassword = await hashPassword(newPassword);
+      await changePassword(userId, hashedOldPassword, hashedNewPassword);
+      console.log(userId, hashedOldPassword, hashedNewPassword);
       //await changePassword(userId, username, token, role, site, await hashPassword(oldPassword), await hashPassword(newPassword));
       setPasswordChangeSuccess(true);
       // Dopo un breve delay, chiudiamo il dialog
       setTimeout(() => {
         setIsDialogOpen(false);
-      }, 2000);
+      }, 15000);
     } catch (error: any) {
       // Gestione dell'errore, ad esempio se l'oldPassword non è corretta
       setErrorMessage(error?.message || 'The old password is incorrect.');
