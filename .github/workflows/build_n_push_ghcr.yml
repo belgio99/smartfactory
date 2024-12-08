@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [database, kb, data-processing, api, rag, gui-panel, kpi-engine]  # Lista completa dei servizi.
+        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Lista completa dei servizi.
 
     steps:
       - name: Checkout code
