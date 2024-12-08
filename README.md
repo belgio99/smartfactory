@@ -38,11 +38,11 @@ To get started with SmartFactory, follow these steps:
    ```bash
    cd smartfactory
    ```
-4. Spin up using Docker:
+3. Spin up using Docker:
    ```bash
    docker compose up --profile "*" -d
    ```
-5. SmartFactory GUI will be available at `http://localhost:8080`.
+4. SmartFactory GUI will be available at `http://localhost:8000`.
 
 ## Contributing
 
