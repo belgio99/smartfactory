@@ -283,14 +283,14 @@ services:
     env_file:
       - kpi-engine/.env
 
-  vault:
+  vault: #it is in dev mode!
     image: hashicorp/vault
     container_name: vault
     volumes:
       - vault_data:/vault/file
     environment:
       VAULT_ADDR: "http://0.0.0.0:8200"
-      VAULT_STORAGE_BACKEND: "file"  # Using file storage backend (you can also use Consul)
+      VAULT_STORAGE_BACKEND: "file"  
     ports:
       - "8200:8200"
     profiles:
@@ -298,7 +298,7 @@ services:
     logging:
       driver: "json-file"
       options:
-        max-file: "1"    # Mantiene solo un file di log
+        max-file: "1"    
 
 
 

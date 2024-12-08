@@ -50,10 +50,9 @@ def get_root_token():
     
     # Search the logs for the root token (it should look like 'Root Token: s.abcdef1234567890')
     log_output = result.stdout.decode()
-    match = re.search(r'Root Token:\s*([a-zA-Z0-9.]+)', log_output)
-    
-    if match:
-        return match.group(1)
+    matches = re.findall(r'Root Token:\s*([a-zA-Z0-9.]+)', log_output)
+    if matches:        
+        return matches[-1]  # Get the last match
     else:
         raise Exception("Root token not found in Vault logs")
 

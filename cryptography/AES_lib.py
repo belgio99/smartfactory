@@ -2,12 +2,13 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
 
-from api.src.model.user import *
+#from api.src.model.user import *
 from vault_lib import create_client, store_key_in_vault, retrieve_key_from_vault
 
 default_aes_path = "aes-key"
 default_aes_name = "aes_key"
 
+'''
 def login_encrypt(log:Login)-> tuple:
     """
     Encrypt data using AES GCM mode.
@@ -84,20 +85,20 @@ def aes_decrypt(encrypted_register: Register, iv) -> Register:
         derypted_data[attribute] = decrypted_value
     register = Register(**derypted_data)
     return register
+'''
 
 def create_and_store_aes_key():
     '''
     Create a random key for AES encryption and store it in default path of Vault
     '''
     try:
-        client = create_client()
         aes_key = get_random_bytes(32)  # 256-bit AES key
-        store_key_in_vault(client, aes_key, default_aes_path, default_aes_name)
+        store_key_in_vault(aes_key, default_aes_path, default_aes_name)
         print("Encryption key created and stored succesfully")    
     except Exception as e: 
         print("Error during the creation and storage of the key: %s", e)
         raise
-    return
+    return 
 
 def get_aes_key():
     try:
