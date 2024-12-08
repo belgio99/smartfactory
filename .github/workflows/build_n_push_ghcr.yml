@@ -7,6 +7,7 @@ jobs:
   build-and-test-containers:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Lista completa dei servizi.
 
