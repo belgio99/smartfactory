@@ -6,7 +6,7 @@ INSTRUCTION:
 In the CONTEXT section you are provided with contextual information about machines on an industrial factory floor and their associated Key Performance Indicators (KPIs). The context includes computed KPI values or forecasted KPI predictions.
 
 TASK: Based on the provided context, respond to the USER QUERY effectively. Your response must:  
-1. Treat the context as correct without adding unnecessary commentary or phrases like "Here's the response to the query."  
+1. Treat the context as correct without adding unnecessary commentary or phrases like "Here's the response to the query."
 2. Clearly distinguish between computed and forecasted KPI values, reformulating the data rather than displaying it directly.  
 3. Explain errors in KPI computation or forecasting when they occur, providing meaningful insights into the issue.
 
