@@ -1,7 +1,7 @@
 from kpi_dataframe_filter import kpi_dataframe_filter
 from kpi_data_extraction import kpi_dataframe_data_extraction
 import pandas as pd
-import requests
+import requests, os
 from sympy import symbols, parse_expr
 
 class kpi_engine:
@@ -121,7 +121,7 @@ class kpi_engine:
         fd = df
 
         # kpi_formula = extract formula through API and kpi_id
-        # response = requests.get("{os.getenv("BASE_URL")}/kb/retrieve/{kpi_id}")
+        # response = requests.get(f"{os.getenv('BASE_URL')}/kb/retrieve/{kpi_id}")
         # formula = response.get("atomic_formula")
         # unit_of_measure = response.get("unit_measure")
         formula = '((cycles_sum - bad_cycles_sum) / cycles_sum) * (working_time_sum / (working_time_sum + idle_time_sum))'
