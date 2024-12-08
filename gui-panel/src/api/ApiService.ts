@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { userInfo } from 'os';
-import { Point } from 'recharts/types/shape/Curve';
 
 const BASE_URL = 'https://api-smartfactory.thebelgionas.synology.me'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -202,7 +200,7 @@ export const login = async (
 
 /**
  * API POST used to register a new user
- * @param username sring - Username of the user
+ * @param username string - Username of the user
  * @param email string - Email of the user
  * @param password string - Password of the user
  * @param role string - Role of the user
@@ -597,28 +595,7 @@ export const scheduleReport = async (requestData: ScheduleRequest): Promise<any>
 
 /**
  * API GET used to get the scheduled reports
- * @param reprotId string - The ID of the report
- * @returns Promise<Report[]> - The list of scheduled reports
- */
-export const downloadReport = async (reportId: string): Promise<Blob> => {
-  try {
-      const response = await axios.get(`${BASE_URL}/smartfactory/reports/download/${reportId}`, {
-          headers: {
-              'x-api-key': API_KEY,
-          },
-          responseType: 'blob', // Specify the response type as Blob (binary data)
-      });
-
-      return response.data; // Return the bob for pdf file
-  } catch (error: any) {
-      console.error('Error downloading the report:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Failed to download the report');
-  }
-};
-
-/**
- * API GET used to get the scheduled reports
- * @param reprotId string - The ID of the report
+ * @param reportId string - The ID of the report
  * @returns Promise<Report[]> - The list of scheduled reports
  */
 export const downloadReport = async (reportId: string): Promise<Blob> => {
