@@ -1,6 +1,6 @@
 import time
 from enum import Enum
-import datetime
+from datetime import datetime
 
 class Task(object):
     def __init__(self, func, delay, start_date, args=()):
