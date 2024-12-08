@@ -456,7 +456,7 @@ class RagExplainer:
         seen_references = set()  # Tracks unique references
 
         # Generate embeddings for the response segments
-        response_embeddings = self.embedding_model.encode(response_segments, convert_to_tensor=True)
+        response_embeddings = self.embedding_model.encode(response_segments, convert_to_tensor=True).cpu()
 
         # Compute similarity scores between response embeddings and context embeddings
         similarity_matrix = cosine_similarity(response_embeddings, self.context_embeddings)
