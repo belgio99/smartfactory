@@ -3,10 +3,11 @@ import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
 import {simulateChartData} from "../../api/QuerySimulator";
 import FilterOptions, {Filter} from "../Selectors/FilterOptions";
-import TimeFrameSelector, {TimeFrame} from "../Selectors/TimeSelect"
+import {TimeFrame} from "../Selectors/TimeSelect"
 import PersistentDataManager from "../../api/PersistentDataManager";
 import KpiSelect from "../Selectors/KpiSelect";
 import GraphTypeSelector from "../Selectors/GraphTypeSelector";
+import AdvancedTimeSelect from "../Selectors/AdvancedTimeSelect";
 
 
 const KpiSelector: React.FC<{
@@ -38,7 +39,7 @@ const KpiSelector: React.FC<{
                 />
 
                 {/* Time Frame Selector */}
-                <TimeFrameSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame}/>
+                <AdvancedTimeSelect timeFrame={timeFrame} setTimeFrame={setTimeFrame}/>
 
 
                 {/* Graph Type Selector */}
@@ -66,7 +67,11 @@ const KpiSelector: React.FC<{
 const DataView: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
     const [kpi, setKpi] = useState<KPI>(dataManager.getKpiList()[0]);
-    const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: "hour"});
+    const [timeFrame, setTimeFrame] = useState<TimeFrame>({
+        from: new Date(2024, 3, 1),
+        to: new Date(2024, 10, 19),
+        aggregation: "month"
+    });
     const [graphType, setGraphType] = useState('pie');
     const [filters, setFilters] = useState<Filter>(new Filter('All', []));
     const [chartData, setChartData] = useState<any[]>([]);

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://0.0.0.0:10040'; // API URL
+const BASE_URL = 'https://api-smartfactory.thebelgionas.synology.me'; // API URL
+//const BASE_URL = 'http://0.0.0.0:10040'; // API URL
 const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
 
 
@@ -118,6 +119,37 @@ interface KPIValue {
   value: string;
 }
 
+/**
+ * Interface ScheduleRequest
+ * @param userId string - The ID of the user scheduling the report
+ * @param params ScheduleParams - Additional parameters for the report
+ * @param period number - The scheduling frequency
+ * @param startDate string - The start date of the report
+ * @param email string - The email of the report
+ * @param kpis string[] - The KPIs of the report
+ * @param machines string[] - The machines of the report
+ */
+interface ScheduleParams {
+  id: string;
+  status: boolean;
+  name: string;
+  recurrence: string;  // es: "Daily", "Weekly", ecc.
+  startDate: string;   // es: "2024-12-10T00:00:00Z"
+  email: string;
+  kpis: string[];
+  machines: string[];
+}
+
+/**
+ * Interface ScheduleRequest
+ * @param user_id string - The ID of the user scheduling the report
+ * @param params ScheduleParams - Additional parameters for the report
+ */
+interface ScheduleRequest {
+  user_id?: string;
+  params: ScheduleParams;
+}
+
 ///
 ///
 ///
@@ -168,7 +200,7 @@ export const login = async (
 
 /**
  * API POST used to register a new user
- * @param username sring - Username of the user
+ * @param username string - Username of the user
  * @param email string - Email of the user
  * @param password string - Password of the user
  * @param role string - Role of the user
@@ -203,6 +235,39 @@ export const register = async (
   } catch (error: any) {
     console.error('Register API error:', error);
     throw new Error(error.response?.data?.message || 'Registration failed');
+  }
+};
+
+/**
+ * API POST used to change the password of the user
+ * @param userId string - The user ID
+ * @param oldPassword string - The old password of the user
+ * @param newPassword string - The new password of the user
+ * @returns UserInfo - The user information
+ */
+export const changePassword = async (
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<UserInfo> => { 
+  try {
+    const response = await axios.put<UserInfo>(
+      `${BASE_URL}/smartfactory/user/${userId}`,
+      {
+        old_password: oldPassword,
+        new_password: newPassword
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        }
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Change Password API error:', error);
+    throw new Error(error.response?.data?.message || 'Change Password failed');
   }
 };
 
@@ -497,5 +562,54 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
   } catch (error: any) {
     console.error('Retrieve Dashboard Settings API error:', error);
     throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
+  }
+};
+
+/**
+ * API POST used to schedule a report generation.
+ * @param userId string - The ID of the user scheduling the report.
+ * @param params object - Additional parameters for the report (e.g., name, type, site, email, startDate, kpis, machines).
+ * @param period number - The scheduling frequency (e.g., in seconds).
+ * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
+ */
+export const scheduleReport = async (requestData: ScheduleRequest): Promise<any> => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/smartfactory/reports/schedule`,
+      requestData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
+
+    return response.data;
+
+  } catch (error: any) {
+    console.error('Error to create the schedule API:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Error to create the schedule');
+  }
+};
+
+/**
+ * API GET used to get the scheduled reports
+ * @param reportId string - The ID of the report
+ * @returns Promise<Report[]> - The list of scheduled reports
+ */
+export const downloadReport = async (reportId: string): Promise<Blob> => {
+  try {
+      const response = await axios.get(`${BASE_URL}/smartfactory/reports/download/${reportId}`, {
+          headers: {
+              'x-api-key': API_KEY,
+          },
+          responseType: 'blob', // Specify the response type as Blob (binary data)
+      });
+
+      return response.data; // Return the bob for pdf file
+  } catch (error: any) {
+      console.error('Error downloading the report:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to download the report');
   }
 };

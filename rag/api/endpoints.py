@@ -4,7 +4,7 @@ import json
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from schemas.promptmanager import PromptManager
 from chains.ontology_rag import DashboardGenerationChain, GeneralQAChain, KPIGenerationChain
 from schemas.models import Question, Answer
@@ -18,6 +18,7 @@ from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
 from collections import deque
 from dotenv import load_dotenv
+from api_auth.api_auth import get_verify_api_key
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -361,7 +362,7 @@ async def handle_kb_q(question: Question, llm, graph, history):
     return response['result']
 
 @router.post("/chat", response_model=Answer)
-async def ask_question(question: Question):
+async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     # Classify the question
     label, url = prompt_classifier(question)
 

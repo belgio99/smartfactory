@@ -1,8 +1,9 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {interactWithAgent} from '../../api/ApiService';
 import ChatInput from './ChatInput';
 import MessageBubble, {XAISources} from "./ChatComponents";
+import XAIEX from "../../api/mockData/XAIEX";
 
 export interface Message {
     id: number;
@@ -20,16 +21,28 @@ export interface ChatAssistantProps {
 
 const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([]);
+    const [messages, setMessages] = useState<Message[]>([{
+        id: 0,
+        sender: 'assistant',
+        content: `Hello ${username}! How can I help you today?`
+    }]);
     const [newMessage, setNewMessage] = useState('');
     const navigate = useNavigate();
     const [isTyping, setIsTyping] = useState(false);
+    const containerRef = useRef<HTMLDivElement | null>(null);
 
     const toggleChat = () => setIsChatOpen((prev) => !prev);
 
     const handleNavigation = (target: string, metadata: any) => {
         navigate(target, {state: {metadata}});
     };
+
+    // Effect to scroll to the bottom when messages change
+    useEffect(() => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    }, [messages]); // Runs every time `messages` changes
 
     const handleSendMessage = () => {
         if (!newMessage.trim()) return;
@@ -54,11 +67,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
                         sender: 'assistant',
                         content: 'This is an example dashboard.',
                         extraData: {
-                            explanation: [
-                                new XAISources("This is a sample dashboard that shows some key metrics.", "context", "source_name", 0.9, "original_context"),
-                                new XAISources("You can click on the 'View Dashboard' button to see more details.", "context", "source_name", 0.9, "original_context"),
-                                new XAISources("You can also click on the 'View Explanation' button to see an explanation of the data.", "context", "source_name", 0.9, "original_context"),
-                            ],
+                            explanation: XAIEX,
                             dashboardData: {
                                 target: '/dashboard/new',
                                 metadata: {
@@ -126,7 +135,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
 
 
     return (
-        <div className="fixed bottom-2 right-2 z-50">
+        <div className="fixed bottom-1.5 right-2 z-50">
             {!isChatOpen && (
                 <button
                     className="border border-gray-400 text-black w-fit h-fit pt-3 pb-3 p-4 bg-white-600 rounded-full shadow-md flex items-center justify-center hover:scale-110 transition-transform"
@@ -138,12 +147,23 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
             )}
 
             {isChatOpen && (
-                <div className="w-96 h-96 bg-white rounded-lg shadow-lg flex flex-col">
-                    <div className="bg-blue-500 text-white px-4 py-2 flex justify-between items-center rounded-t-lg">
-                        <h3 className="text-lg font-semibold">Virtual Assistant</h3>
+                <div
+                    className=" w-96 h-[600] min-h-[20vh] max-h-[90vh] bg-white rounded-lg shadow-xl border border-gray-200 flex flex-col">
+                    {/* Header Bar */}
+                    <div
+                        className="bg-blue-500 text-white px-4 py-3 flex justify-between rounded-t-lg transition duration-300">
+                        <div className="flex items-center px-2 gap-2">
+                            <img
+                                src={'/icons/bot.svg'}
+                                alt="Chat Icon"
+                                className="w-8 h-8"
+                            />
+                            <h3 className="text-base font-medium tracking-wide">AI Assistant</h3>
+                        </div>
                         <button
                             onClick={toggleChat}
-                            className="text-white text-xl font-bold hover:text-gray-300"
+                            className="text-white text-2xl font-bold hover:scale-110 hover:rotate-90 transition duration-300 ease-in-out"
+                            aria-label="Close chat"
                         >
                             ×
                         </button>
@@ -152,7 +172,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
                         Disclaimer: This is an AI-powered assistant. Responses may not always be accurate. Verify
                         important information.
                     </div>
-                    <div className="flex-grow p-4 overflow-y-auto bg-gray-50 space-y-2">
+                    <div ref={containerRef}
+                         className="flex-grow p-4 overflow-y-auto bg-gray-50 space-y-2">
                         {messages.map((message) => (
                             <div
                                 key={message.id}
@@ -165,7 +186,8 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
                             </div>
                         ))}
                     </div>
-                    <div className="flex p-2 border-t">
+                    {/* Input Section */}
+                    <div className="p-2 border-t bg-gray-50 flex items-center">
                         <ChatInput
                             newMessage={newMessage}
                             setNewMessage={setNewMessage}
