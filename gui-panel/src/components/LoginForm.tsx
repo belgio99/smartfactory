@@ -5,6 +5,7 @@ import { userInfo } from 'os';
 import { login } from './../api/ApiService';
 // Security service
 import { hashPassword } from '../api/security/securityService';
+import { Console } from 'console';
 
 interface LoginFormProps {
   onLogin: (userId: string, username: string, token: string, role: string, site: string, email: string) => void;  
@@ -31,9 +32,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
       // Check if is an email
       const isEmail = username.includes('@'); // Determina se l'input è un'email
       // Call the login API
+      const hashedPassword = await hashPassword(password);
       // Pass the username, isEmail and hashed password
-      //const loginResponse = await login(username, isEmail, await hashPassword(password));
-      const loginResponse = await login(username, isEmail, password);
+      const loginResponse = await login(username, isEmail, hashedPassword);
+      console.log(username, isEmail, hashedPassword);
+      //const loginResponse = await login(username, isEmail, password);
       console.log(loginResponse);
       // If the login is successful, call the onLogin function
       if (loginResponse) {
