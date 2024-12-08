@@ -12,6 +12,7 @@ from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.base import BasePromptTemplate
 from pydantic import Field
+import re
 
 from langchain_community.chains.graph_qa.prompts import (
     SPARQL_GENERATION_SELECT_PROMPT,
@@ -24,6 +25,15 @@ from langchain_community.graphs.rdf_graph import RdfGraph
 import warnings
 warnings.filterwarnings("ignore")
 
+def trim_query(query):
+    # Match everything before the WHERE clause and the WHERE clause content itself, considering nested braces
+    pattern = r"^(.*?)(WHERE\s*{(?:[^{}]*|{[^{}]*})*})"
+    match = re.search(pattern, query, re.DOTALL)  # re.DOTALL allows '.' to match newline characters
+    
+    if match:
+        return match.group(1) + match.group(2)  # Return everything before WHERE and the WHERE clause content
+    
+    return query  # If no WHERE clause is found, return the original query
 
 class GraphSparqlQAChain(Chain):
     """Question-answering against an RDF or OWL graph by generating SPARQL statements.
@@ -166,8 +176,9 @@ class GraphSparqlQAChain(Chain):
             {"prompt": prompt, "schema": self.graph.get_schema}, callbacks=callbacks
         )
 
-        generated_sparql = generated_sparql.replace("`", "")
-        generated_sparql = "\n".join(generated_sparql.split("\n")[1:])
+        generated_sparql = generated_sparql.replace("`", "").replace("sparql", "").strip()
+        generated_sparql = "\n".join(generated_sparql.split("\n")[0:])
+        generated_sparql = trim_query(generated_sparql)
 
         _run_manager.on_text("Generated SPARQL:", end="\n", verbose=self.verbose)
         _run_manager.on_text(
@@ -182,7 +193,7 @@ class GraphSparqlQAChain(Chain):
                 str(context), color="green", end="\n", verbose=self.verbose
             )
             result = self.qa_chain(
-                {"prompt": prompt, "context": context},
+                {"prompt": prompt, "context": context, "query": generated_sparql},
                 callbacks=callbacks,
             )
             res = result[self.qa_chain.output_key]
