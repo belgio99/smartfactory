@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom"; // React Router
 import {getReports} from "../../api/ApiService";
+import {downloadReport} from "../../api/ApiService";
 
 type Report = {
     id: string;
@@ -16,6 +17,50 @@ interface ReportArchiveProps {
     role: string;
     site: string;
 }
+
+/**
+ * This method downloads and create a new tab for the report
+ * @param reportId string - reportID of the report to download
+ */
+const handleView = async (reportId: string) => {
+    try {
+        const blob = await downloadReport(reportId); // Usa la tua API già implementata
+        const fileURL = URL.createObjectURL(blob);
+
+        // Apri il file in una nuova scheda
+        window.open(fileURL, "_blank");
+        console.log(`Report ID ${reportId} aperto in una nuova scheda.`);
+    } catch (error) {
+        console.error("Errore durante l'apertura del report:", error);
+        alert("Errore durante l'apertura del report");
+    }
+};
+
+/**
+ * This method downloads the report
+ * @param reportId string - reportID of the report to download
+ * @param title string - title of the report to download
+ */
+const handleDownload = async (reportId: string, title: string) => {
+    try {
+        const blob = await downloadReport(reportId); // Usa la tua API già implementata
+        const fileName = `${title}.pdf`;
+        const fileURL = URL.createObjectURL(blob);
+
+        // Salva il file
+        const anchor = document.createElement("a");
+        anchor.href = fileURL;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(fileURL);
+
+        console.log(`Report "${title}" downloaded successfully`);
+    } catch (error) {
+        console.error("Error during the download: ", error);
+        alert("An error occurred during the download. Please try again later.");
+    }
+};
+
 
 
 const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, role, site}) => {
@@ -129,10 +174,10 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                             <div className="p-4 border-t border-gray-200">
                                 <p className="text-gray-600 mb-4 font-normal text-start ">{report.description}</p>
                                 <div className="flex space-x-4">
-                                    <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                                    <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm" onClick={() => handleView(report.id)}>
                                         View
                                     </button>
-                                    <button className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm">
+                                    <button className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm" onClick={() => handleDownload(report.id, report.title)}>
                                         Download
                                     </button>
                                 </div>
@@ -141,6 +186,7 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                     </div>
                 ))}
             </div>
+            
         </div>
     );
 };
