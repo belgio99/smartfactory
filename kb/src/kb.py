@@ -48,7 +48,7 @@ def get_kpi(kpi_id):
             - Additional keys corresponding to the KPI's data properties.
     """
 
-    query = f'*{kpi_id}'
+    query = f'*#{kpi_id}'
     results = onto.search(iri = query)
     json_d = {'Status': -1} # default status
 
@@ -387,7 +387,7 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
         dict: The status of the pair. {Status: 0} and the info of the pair if the pair exists, {Status: -1} otherwise.
     """
 
-    query = f'*{machine_id}'
+    query = f'*{machine_id.lower().replace(" ", "_")}'
     result = onto.search_one(iri = query)
     json_d = {'Status': -1} # default status
 
