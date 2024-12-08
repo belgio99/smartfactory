@@ -8,6 +8,7 @@ volumes:
   druid_shared: {}
   db: {}
   minio_data: {}
+  kb: {}
 
 services:
   postgres:
@@ -197,6 +198,8 @@ services:
       context: ./kb
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
+    volumes:
+      - kb:/kb
     platform: linux/amd64
     ports: 
       - "10010:8000"
@@ -204,7 +207,7 @@ services:
       - kb
       - not-db-init
     env_file:
-      - kb/.env
+      - database/.env
     
   data-processing:
     build:
@@ -256,6 +259,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - rag/.env
+    volumes:
+      - kb:/docs/kb
     ports: 
       - "10050:8000"
     profiles:
