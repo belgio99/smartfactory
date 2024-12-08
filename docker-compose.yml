@@ -273,7 +273,7 @@ services:
       context: ./gui-panel
       dockerfile: Dockerfile
     ports: 
-      - "10060:8000"
+      - "10060:8080"
     profiles:
       - gui-panel
       - not-db-init
