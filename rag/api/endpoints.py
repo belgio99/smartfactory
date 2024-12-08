@@ -18,7 +18,7 @@ from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
 from collections import deque
 from dotenv import load_dotenv
-from api_auth.api_auth import get_verify_api_key
+from .api_auth.api_auth import get_verify_api_key
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
