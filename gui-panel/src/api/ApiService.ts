@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { userInfo } from 'os';
-import { Point } from 'recharts/types/shape/Curve';
 
 const BASE_URL = 'https://api-smartfactory.thebelgionas.synology.me'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -121,6 +119,37 @@ interface KPIValue {
   value: string;
 }
 
+/**
+ * Interface ScheduleRequest
+ * @param userId string - The ID of the user scheduling the report
+ * @param params ScheduleParams - Additional parameters for the report
+ * @param period number - The scheduling frequency
+ * @param startDate string - The start date of the report
+ * @param email string - The email of the report
+ * @param kpis string[] - The KPIs of the report
+ * @param machines string[] - The machines of the report
+ */
+interface ScheduleParams {
+  id: string;
+  status: boolean;
+  name: string;
+  recurrence: string;  // es: "Daily", "Weekly", ecc.
+  startDate: string;   // es: "2024-12-10T00:00:00Z"
+  email: string;
+  kpis: string[];
+  machines: string[];
+}
+
+/**
+ * Interface ScheduleRequest
+ * @param user_id string - The ID of the user scheduling the report
+ * @param params ScheduleParams - Additional parameters for the report
+ */
+interface ScheduleRequest {
+  user_id?: string;
+  params: ScheduleParams;
+}
+
 ///
 ///
 ///
@@ -171,7 +200,7 @@ export const login = async (
 
 /**
  * API POST used to register a new user
- * @param username sring - Username of the user
+ * @param username string - Username of the user
  * @param email string - Email of the user
  * @param password string - Password of the user
  * @param role string - Role of the user
@@ -543,27 +572,11 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
  * @param period number - The scheduling frequency (e.g., in seconds).
  * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
  */
-export const scheduleReport = async (
-  userId: string,
-  params: {
-    name: string;
-    type: "test" | "daily" | "weekly" | "monthly" | "yearly";
-    site: string;
-    email: string;
-    startDate: string;
-    kpis: string[];
-    machines: string[];
-  },
-  period: "test" | "daily" | "weekly" | "monthly" | "yearly"
-): Promise<void> => {
+export const scheduleReport = async (requestData: ScheduleRequest): Promise<any> => {
   try {
-    await axios.post(
+    const response = await axios.post(
       `${BASE_URL}/smartfactory/reports/schedule`,
-      {
-        userId,
-        params,
-        period,
-      },
+      requestData,
       {
         headers: {
           "Content-Type": "application/json",
@@ -571,15 +584,18 @@ export const scheduleReport = async (
         },
       }
     );
+
+    return response.data;
+
   } catch (error: any) {
-    console.error("Schedule Report API error:", error);
-    throw new Error(error.response?.data?.message || "Failed to schedule report generation");
+    console.error('Error to create the schedule API:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Error to create the schedule');
   }
 };
 
 /**
  * API GET used to get the scheduled reports
- * @param reprotId string - The ID of the report
+ * @param reportId string - The ID of the report
  * @returns Promise<Report[]> - The list of scheduled reports
  */
 export const downloadReport = async (reportId: string): Promise<Blob> => {

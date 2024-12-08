@@ -43,7 +43,7 @@ jobs:
       - name: Run container for testing
         run: |
           # Run the container in detached mode
-          docker run --rm --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          docker run --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
           
           # Wait for 60 seconds to test stability
           sleep 60
