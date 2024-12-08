@@ -2,8 +2,8 @@ import axios from 'axios';
 import { userInfo } from 'os';
 import { Point } from 'recharts/types/shape/Curve';
 
-//const BASE_URL = 'https://api-smartfactory.thebelgionas.synology.me'; // API URL
-const BASE_URL = 'http://0.0.0.0:10040'; // API URL
+const BASE_URL = 'https://api-smartfactory.thebelgionas.synology.me'; // API URL
+//const BASE_URL = 'http://0.0.0.0:10040'; // API URL
 const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
 
 
@@ -592,5 +592,26 @@ export const scheduleReport = async (requestData: ScheduleRequest): Promise<any>
   } catch (error: any) {
     console.error('Error to create the schedule API:', error.response?.data || error.message);
     throw new Error(error.response?.data?.message || 'Error to create the schedule');
+  }
+};
+
+/**
+ * API GET used to get the scheduled reports
+ * @param reprotId string - The ID of the report
+ * @returns Promise<Report[]> - The list of scheduled reports
+ */
+export const downloadReport = async (reportId: string): Promise<Blob> => {
+  try {
+      const response = await axios.get(`${BASE_URL}/smartfactory/reports/download/${reportId}`, {
+          headers: {
+              'x-api-key': API_KEY,
+          },
+          responseType: 'blob', // Specify the response type as Blob (binary data)
+      });
+
+      return response.data; // Return the bob for pdf file
+  } catch (error: any) {
+      console.error('Error downloading the report:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Failed to download the report');
   }
 };
