@@ -512,4 +512,4 @@ async def ask_question(question: Question): # to add or modify the services allo
             
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
             data = json.dumps(response_json["bindings"], indent=2)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data)
