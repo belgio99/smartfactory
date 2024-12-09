@@ -62,7 +62,7 @@ To get started with SmartFactory, follow these steps:
    ```bash
    docker compose up --profile "*" -d
    ```
-4. SmartFactory GUI will be available at `http://localhost:8000`.
+4. SmartFactory GUI will be available at `http://localhost:10060`.
 
 ## Contributing
 
