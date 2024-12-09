@@ -15,6 +15,7 @@ volumes:
   backrest_config: {}
   backrest_cache: {}
   target_volume: {}
+  vault_data: {}
 
 services:
   postgres:
@@ -326,4 +327,21 @@ services:
       - not-db-init
     env_file:
       - database/backrest/.env
+     
+  vault: #it is in dev mode!
+    image: hashicorp/vault
+    container_name: vault
+    volumes:
+      - vault_data:/vault/file
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_STORAGE_BACKEND: "file"  
+    ports:
+      - "8200:8200"
+    profiles:
+      - database
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
 
