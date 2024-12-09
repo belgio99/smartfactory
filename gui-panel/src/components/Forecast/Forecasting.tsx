@@ -120,7 +120,7 @@ class ForecastDataX {
 const ForecastingPage: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
     const [loading, setLoading] = useState(false);
-    const [selectedKpi, setSelectedKpi] = useState<KPI>(new KPI("none", "None", "None Selected", "", "")); // Update to store the entire KPI object
+    const [selectedKpi, setSelectedKpi] = useState<KPI>(new KPI("none", "None", "None Selected", "", "", true)); // Update to store the entire KPI object
     const [selectedMachine, setSelectedMachine] = useState<Machine>(new Machine("None Selected", "None", "None ")); // Update to store the entire Machine object
     const [forecastData, setForecastData] = useState<{ past: any[], future: ForecastData[] }>({past: [], future: []});
     const [timeFrame, setTimeFrame] = useState<{ past: TimeFrame; future: TimeFrame; key: string } | null>(null);
@@ -155,14 +155,14 @@ const ForecastingPage: React.FC = () => {
 
     const formatDate = (date: Date) => date.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
 
-    const kpis = dataManager.getKpiList();
+    const kpis = dataManager.getKpiList().filter(kpi => kpi.forecastable);
     const machines = dataManager.getMachineList();
     return (
         <div className="ForecastingPage max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg ">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">Data Forecasting</h1>
             <div className="text-gray-800 mb-4 font-[450]">
-                <p className="text-sm">Forecast future data using historical data and autoregressive models.</p>
-                <p className="text-sm">Select the kpi and machine to view the forecast for the selected future
+                <p className="text-base">Forecast future data using historical data and autoregressive models.</p>
+                <p className="text-base">Select the kpi and machine to view the forecast for the selected future
                     timeframe.</p>
             </div>
             <div className="flex items-center text-start space-x-4 mb-6">

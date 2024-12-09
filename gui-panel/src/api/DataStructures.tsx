@@ -71,13 +71,15 @@ export class KPI {
     name: string; // displayed name
     description: string; // description
     unit: string;
+    forecastable: boolean;
 
-    constructor(id: string, type: string, name: string, value: string, unit: string) {
+    constructor(id: string, type: string, name: string, value: string, unit: string, forecastable: boolean) {
         this.id = id;
         this.type = type;
         this.name = name;
         this.description = value;
         this.unit = unit;
+        this.forecastable = forecastable;
     }
 
     static encode(instance: KPI): Record<string, any> {
@@ -86,6 +88,7 @@ export class KPI {
             name: instance.name,
             description: instance.description,
             unit: instance.unit,
+            forecastable: instance.forecastable,
         };
     }
 
@@ -95,14 +98,14 @@ export class KPI {
             typeof json.type !== "string" ||
             typeof json.name !== "string" ||
             typeof json.description !== "string" ||
-            typeof json.unit !== "string"
+            typeof json.unit !== "string" ||
+            typeof json.forecastable !== "boolean"
         ) {
             throw new Error("Invalid JSON structure for KPI");
         }
-        return new KPI(json.id, json.type, json.name, json.description, json.unit);
+        return new KPI(json.id, json.type, json.name, json.description, json.unit, json.forecastable);
     }
 
-    // Decode a group of KPIs into an array of KPI objects
     static decodeGroups(groups: Record<string, Record<string, any>>): KPI[] {
         const kpis: KPI[] = [];
 
@@ -112,10 +115,14 @@ export class KPI {
                     typeof metricData.id !== "string" ||
                     typeof metricData.description !== "string" ||
                     typeof metricData.unit_measure !== "string" ||
-                    typeof metricData.type !== "string" // Ensure type exists in metricData
+                    typeof metricData.type !== "string" ||
+                    typeof metricData.forecastable !== "boolean"
                 ) {
                     throw new Error(`Invalid KPI structure in group ${groupName}, metric ${metricName}`);
                 }
+
+                // if the metricName contains _med or _std set forecastable to false
+                metricData.forecastable = metricData.forecastable && !metricName.includes("_med") && !metricName.includes("_std");
 
                 // reformat kpi name with regex
                 // if followed by _avg, _min, _max, _sum, _med change it to (Avg), (Min), (Max), (Sum), (Med)
@@ -134,14 +141,13 @@ export class KPI {
                 // EnergyKPI -> Energy KPI
                 metricData.type = metricData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
 
-
-                // Create a KPI instance for each metric
                 const kpi = new KPI(
                     metricData.id,
                     metricData.type, // The type is now directly provided in the JSON
                     metricName, // Metric name as the display name
                     metricData.description,
-                    metricData.unit_measure // Use unit_measure for unit
+                    metricData.unit_measure, // Use unit_measure for unit
+                    metricData.forecastable // Forecastable flag
                 );
                 kpis.push(kpi);
             });
@@ -149,7 +155,6 @@ export class KPI {
 
         return kpis;
     }
-
 }
 
 export class Schedule {
@@ -253,6 +258,29 @@ export class DashboardEntry {
         }
         return new DashboardEntry(json.kpi, json.graph_type)
     }
+
+    static decodeChat(json: Record<string, any>): DashboardEntry {
+        // decode a json onbject like
+        // "bar_chart": "power_consumption_efficiency"
+        // into a DashboardEntry object
+
+        // Extract the graph_type name from the key
+        let graph_type = Object.keys(json)[0];
+        const kpi = json[graph_type];
+
+        console.log("Decoding chat json", json, "into", kpi, graph_type);
+        // remove _chart from the graph_type
+        graph_type = graph_type.replace(/_chart/g, "");
+
+        if (!supportedGraphTypes.includes(graph_type)) {
+            console.log("Unsupported graph type for DashboardEntry, defaulting to Line", graph_type);
+            graph_type = "line";
+        }
+        if (typeof kpi !== "string") {
+            throw new Error("Invalid JSON structure for DashboardEntry : KPI name is not a string");
+        }
+        return new DashboardEntry(kpi, graph_type);
+    }
 }
 
 export class DashboardLayout {
@@ -320,7 +348,11 @@ export class DashboardFolder {
         };
     }
 
-    // Decode a JSON object to a DashboardFolder instance
+    /**
+     * Decode a JSON object to a DashboardFolder instance
+     * @param json - JSON object to decode
+     * @returns - Decoded DashboardFolder instance
+     **/
     static decode(json: Record<string, any>): DashboardFolder {
         if (
             typeof json.id !== "string" ||
@@ -343,4 +375,15 @@ export class DashboardFolder {
         return new DashboardFolder(json.id, json.name, children);
     }
 
+    /**
+     * Encode a list of DashboardFolder and DashboardLayout objects into a JSON object wrapped in a root node
+     * @param dashboards - List of DashboardFolder and DashboardLayout objects
+     * @returns - Encoded JSON object
+     **/
+    static encodeTree(dashboards: (DashboardFolder | DashboardLayout)[]): Record<string, any> {
+        // create a json object with the root node as the key
+        // and the children as the value
+        let root = new DashboardFolder("root", "root", dashboards);
+        return DashboardFolder.encode(root);
+    }
 }

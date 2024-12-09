@@ -173,41 +173,51 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 /> </LineChart>
         </ResponsiveContainer>
         {/* Explanation Chart */}
-        {selectedExplanationData && <div className="mt-4">
-            <h3 className="text-lg font-semibold mb-2 text-gray-800">
-                Explanation for Selected Point
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                    data={selectedExplanationData}
-                    layout="vertical"
-                    margin={{top: 20, right: 20, left: 20, bottom: 20}}
-                >
-                    <CartesianGrid strokeDasharray="3 3"/>
-                    <XAxis
-                        type="number"
-                        tick={{fill: "#666"}}
-                        domain={[-maxAbsValue * 1.1, maxAbsValue * 1.1]} // Adds 10% padding
-                    />
-                    <ReferenceLine x={0} stroke="#000"/>
+        {selectedExplanationData && selectedPoint ? <div className="mt-4">
+                <h3 className="text-lg font-semibold mb-2 text-gray-800">
+                    Explanation of prediction for date: {formatTimeFrame(data[selectedPoint + breakpoint].timestamp,)}
+                </h3>
+                <ResponsiveContainer width="100%" height={300}>
+                    <BarChart
+                        data={selectedExplanationData}
+                        layout="vertical"
+                        margin={{top: 20, right: 20, left: 20, bottom: 20}}
+                    >
+                        <CartesianGrid strokeDasharray="3 3"/>
+                        <XAxis
+                            type="number"
+                            tick={{fill: "#666"}}
+                            domain={[-maxAbsValue * 1.1, maxAbsValue * 1.1]} // Adds 10% padding
+                        />
+                        <ReferenceLine x={0} stroke="#000"/>
 
-                    <YAxis
-                        type="category"
-                        dataKey="feature"
-                        tick={{fill: "#666"}}
-                        width={150}
-                    />
-                    <Tooltip/>
-                    <Legend/>
-                    <Bar
-                        dataKey="importance"
-                        fill={COLORS[0]}
-                        isAnimationActive={false}
-                        name="Importance"
-                    />
-                </BarChart>
-            </ResponsiveContainer>
-        </div>}
+                        <YAxis
+                            type="category"
+                            dataKey="feature"
+                            tick={{fill: "#666"}}
+                            width={150}
+                        />
+                        <Tooltip/>
+                        <Legend/>
+                        <Bar
+                            dataKey="importance"
+                            fill={COLORS[0]}
+                            isAnimationActive={false}
+                            name="Importance"
+                        />
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+            :
+            <div>
+                {/* Prompt the user to click on a predicted point to see the explanation */}
+                <div className="mt-4 text-center text-gray-600">
+                    <p className="text-base">Click on a predicted point to see the
+                        explanation. </p>
+                    <p className="text-base">Hover to see the forecasted values, bounds and
+                        confidence. </p>
+                </div>
+            </div>}
     </div>;
 };
 
