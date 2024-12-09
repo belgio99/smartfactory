@@ -31,13 +31,18 @@ druid_url = "http://router:8888/druid/v2/sql"
 query_body = {
         "query": "SELECT * FROM \"timeseries\""
     }
-try:
-    response = requests.post(druid_url, headers=headers, json=query_body)
-    response.raise_for_status()  # Raise an error for bad status codes
-    df = response.json()  # Return the JSON response
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
-    exit()
+
+success = False
+while not success:
+    try:
+        response = requests.post(druid_url, headers=headers, json=query_body)
+        response.raise_for_status()  # Raise an error for bad status codes
+        df = response.json()  # Return the JSON response
+        success = True
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred: {e}")
+        time.sleep(30)
+
 df = pd.DataFrame.from_dict(df, orient='columns')
 
 df.rename(columns={"__time": "time"}, inplace=True)
