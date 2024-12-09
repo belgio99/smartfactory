@@ -60,28 +60,41 @@ def execute_druid_query(body):
         print(f"An error occurred: {e}")
         return None
 
+# def data_load(machine,kpi):
+#   # Controlla gli ultimi tre caratteri
+#   # Tipi di aggregazione validi
+#   kpi_types = {"sum", "min", "max", "avg"}
+
+#   kpi_name = ''
+#   data_type = ''
+#   if kpi[-3:] in kpi_types:
+#       # Trova l'ultimo underscore
+#       split_index = kpi.rfind("_")
+      
+#       # Dividi il nome del KPI
+#       kpi_name = kpi[:split_index]  # Parte prima dell'underscore
+#       data_type = kpi[split_index + 1:]  # Parte dopo l'underscore
+#   query_body = {
+#         "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi_name}'"
+#   } # Execute the query
+#   response = execute_druid_query(query_body)
+#   avg_r = []
+#   avg_t = []
+#   for r in response:
+#     avg_r.append(r[data_type])
+#     avg_t.append(r['__time'])
+#   return avg_t,avg_r
 def data_load(machine,kpi):
   # Controlla gli ultimi tre caratteri
   # Tipi di aggregazione validi
-  kpi_types = {"sum", "min", "max", "avg"}
-
-  kpi_name = ''
-  data_type = ''
-  if kpi[-3:] in kpi_types:
-      # Trova l'ultimo underscore
-      split_index = kpi.rfind("_")
-      
-      # Dividi il nome del KPI
-      kpi_name = kpi[:split_index]  # Parte prima dell'underscore
-      data_type = kpi[split_index + 1:]  # Parte dopo l'underscore
   query_body = {
-        "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi_name}'"
+        "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi}'"
   } # Execute the query
   response = execute_druid_query(query_body)
   avg_r = []
   avg_t = []
   for r in response:
-    avg_r.append(r[data_type])
+    avg_r.append(r['avg'])
     avg_t.append(r['__time'])
   return avg_t,avg_r
 
