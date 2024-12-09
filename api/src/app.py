@@ -493,7 +493,7 @@ def create_pdf(text: str, appendix: str, path: str):
         pdf.set_font('Arial', '', 12)
         appendix = json.loads(appendix)
         for obj in appendix:
-            if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
+            if obj.get("context", None) is not None and obj.get("reference_number", None) is not None and obj.get("source_name", None) is not None:
                 pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
                 pdf.ln()
                 pdf.cell(190, 5, "Context:")
