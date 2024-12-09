@@ -491,19 +491,24 @@ def create_pdf(text: str, appendix: str, path: str):
         pdf.ln()
         pdf.ln()
         pdf.set_font('Arial', '', 12)
-        appendix = appendix.replace("\n", "ACAPO")
         appendix = json.loads(appendix)
         for obj in appendix:
             if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
                 pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
                 pdf.ln()
                 pdf.cell(190, 5, "Context:")
-                lines = obj["context"].split("ACAPO")
-                for line in lines:
-                    if len(line) > 0:
-                        pdf.multi_cell(190, 5, line)
-                    else:
+                if obj["source_name"] == "Json Data":
+                    json_context = json.loads(obj["context"])
+                    for key in json_context.keys():
+                        pdf.cell(190, 5, key+": "+json_context.get(key))
                         pdf.ln()
+                else:
+                    lines = obj["context"].split("\n")
+                    for line in lines:
+                        if len(line) > 0:
+                            pdf.multi_cell(190, 5, line)
+                        else:
+                            pdf.ln()
                 pdf.ln()
                 pdf.set_text_color(0,0,255)
                 pdf.cell(190, 5, "Source: "+str(obj["source_name"]))
