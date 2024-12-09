@@ -12,6 +12,7 @@ export interface Message {
     extraData?: {
         explanation?: XAISources[];
         dashboardData?: { target: string; metadata: any };
+        report?: { userId: string; reportId: string };
     };
 }
 
@@ -71,14 +72,9 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                             explanation: XAIEX,
                             dashboardData: {
                                 target: '/dashboard/new',
-                                metadata: {
-                                    title: 'Dashboard',
-                                    data: [
-                                        {name: 'Sales', value: 100},
-                                        {name: 'Revenue', value: 1000},
-                                        {name: 'Customers', value: 10},
-                                    ],
-                                },
+                                metadata:
+                                    JSON.parse("[\n  {\n    \"line\": \"power_consumption_efficiency\"\n  },\n  {\n    \"area\": \"power_consumption_efficiency\"\n  },\n  {\n    \"barv\": \"power_consumption_efficiency\"\n  },\n  {\n    \"barh\": \"power_consumption_efficiency\"\n  }\n]")
+                                ,
                             },
                         }
                     },
@@ -95,11 +91,34 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
             setIsTyping(true);
             interactWithAgent(userId, userMessage.content)
                 .then((response) => {
+                    let extraData = {};
+                    if (response.label) {
+                        switch (response.label) {
+                            case 'dashboard':
+                                extraData = {
+                                    explanation: XAIEX, //TODO: decode explanation string
+                                    dashboardData: {
+                                        target: '/dashboard/new',
+                                        metadata: response.data,
+                                    },
+                                };
+                                break;
+                            case 'report':
+                                extraData = {
+                                    explanation: XAIEX, //TODO: decode explanation string
+                                    report: {
+                                        userId: userId,
+                                        reportId: response.data,
+                                    },
+                                };
+                        }
+                    }
+
                     const assistantMessage: Message = {
                         id: messages.length + 2,
                         sender: 'assistant',
                         content: response.textResponse,
-                        extraData: {}, //TODO: decode extra data
+                        extraData: extraData, //TODO: decode extra data in the right way
                     };
                     setMessages((prev) => [...prev, assistantMessage]);
                 })

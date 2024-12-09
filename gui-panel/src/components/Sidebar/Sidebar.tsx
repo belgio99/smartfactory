@@ -8,7 +8,19 @@ export const pointIcon: string = 'https://cdn.builder.io/api/v1/image/assets/TEM
 export const folderIcon: string = "/icons/folder.svg";
 const DashboardSidebar: React.FC = () => {
 
-    const dataManager = PersistentDataManager.getInstance();
+    const [dataManagerVersion, setDataManagerVersion] = useState(0);
+    let dataManager = PersistentDataManager.getInstance();
+
+    useEffect(() => {
+        // Refresh the data manager when a change occurs
+        const refresh = () => setDataManagerVersion(prevVersion => prevVersion + 1);
+
+        // Subscribe to changes
+        dataManager.subscribe(refresh);
+
+        // Cleanup on unmount
+        return () => dataManager.unsubscribe(refresh);
+    }, []);
 
     const sectionsItems = [
         /*
@@ -99,7 +111,7 @@ const DashboardSidebar: React.FC = () => {
             try {
                 // Format the data for the sidebar
                 const formattedDashboards = formatDashboards(dataManager.getDashboards());
-
+                console.log('Fetching dashboards:', formattedDashboards);
                 setDashboards(formattedDashboards);
             } catch (error) {
                 console.error('Failed to fetch dashboards:', error);
@@ -107,7 +119,14 @@ const DashboardSidebar: React.FC = () => {
         };
 
         fetchDashboards();
-    }, [dataManager]);
+    }, [dataManagerVersion]);
+
+    useEffect(() => {
+        // set loading and refresh the local dataManager
+        console.log('Refreshing data manager...');
+        dataManager = PersistentDataManager.getInstance();
+    }, [dataManagerVersion]);
+
 
     const [dashboardsItems, setDashboards] = useState<
         SidebarItemProps[]

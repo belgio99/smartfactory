@@ -1,6 +1,7 @@
 //in this file we store the temporary memory the data loaded from json and save to json the files for persistency
-import {KPI, Machine, DashboardFolder, DashboardLayout} from "./DataStructures";
+import {DashboardFolder, DashboardLayout, KPI, Machine} from "./DataStructures";
 import axios from "axios";
+import EventEmitter from "events";
 
 export async function loadFromApi<T>(apiEndpoint: string, decoder: (json: Record<string, any>) => T): Promise<T[]> {
     try {
@@ -48,15 +49,19 @@ export async function loadFromLocal<T>(filePath: string, decoder: (json: Record<
     }
 }
 
+type DataManagerChangeCallback = () => void;
+
 // DataManager.ts
 class DataManager {
-    private static instance: DataManager | null = null;
+    static instance: DataManager | null = null;
 
     private kpiList: KPI[] = [];
     private machineList: Machine[] = [];
     private dashboards: (DashboardFolder | DashboardLayout)[] = [];
+    events = new EventEmitter();
 
-    private constructor() {} // Prevent external instantiation
+    private constructor() {
+    } // Prevent external instantiation
 
     static getInstance(): DataManager {
         if (!DataManager.instance) {
@@ -108,10 +113,25 @@ class DataManager {
         return this.dashboards;
     }
 
+    subscribe(callback: DataManagerChangeCallback) {
+        this.events.on('change', callback);
+    }
+
+    unsubscribe(callback: DataManagerChangeCallback) {
+        this.events.off('change', callback);
+    }
+
+    /**
+     * Invalidates all data caches by re-initializing the data manager.
+     */
     invalidateCaches(): void {
-        this.kpiList = [];
-        this.machineList = [];
-        this.dashboards = [];
+        // make a copy of the current instance
+        let instance = DataManager.instance;
+        this.initialize().then(r => console.log("Data caches invalidated."), e => {
+            console.error("Error invalidating caches:", e);
+            console.error("Reverting to previous instance.");
+            DataManager.instance = instance;
+        });
     }
 
     /**
@@ -154,6 +174,33 @@ class DataManager {
         // Return a new empty dashboard layout if not found
         return new DashboardLayout("notFound", "Error Layout", []);
     }
+
+    /**
+     * Adds a new dashboard to the data manager.
+     * @param dashboard
+     * @param dashboardFolder
+     */
+    addDashboard(dashboard: DashboardLayout, dashboardFolder: DashboardFolder): void {
+        // locate the folder
+        const folder = this.dashboards.find((d) => d.id === dashboardFolder.id);
+
+        // if the folder is found, add the dashboard to its children
+        if (folder instanceof DashboardFolder) {
+            folder.children.push(dashboard);
+        } else {
+            // otherwise, add the new folder to the root level
+            dashboardFolder.children.push(dashboard);
+            this.dashboards.push(dashboardFolder);
+        }
+
+        console.log("Dashboard added: ", dashboard, dashboardFolder);
+        console.log("New dashboard tree: ", this.dashboards);
+        // api call to save the new dashboard tree structure
+        const json = DashboardFolder.encodeTree(this.dashboards);
+
+        this.events.emit('change');
+    }
+
 }
 
 export default DataManager;
