@@ -1,12 +1,14 @@
 import httpx
+import json
 
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from schemas.promptmanager import PromptManager
 from chains.ontology_rag import DashboardGenerationChain, GeneralQAChain, KPIGenerationChain
 from schemas.models import Question, Answer
+from schemas.XAI_rag import RagExplainer
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
@@ -16,6 +18,7 @@ from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
 from collections import deque
 from dotenv import load_dotenv
+from .api_auth.api_auth import get_verify_api_key
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -80,7 +83,7 @@ def toDate(data):
 
 # function which classify input prompt in one among six labels 
 # if label == "predictions" or label == "kpi_calc", it will also return the url to communicate
-def prompt_classifier(input):
+def prompt_classifier(input: Question):
 
     # Format the history
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
@@ -110,7 +113,7 @@ def prompt_classifier(input):
         suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
         input_variables=["history", "text_input"]
     )
-    prompt = few_shot_prompt.format(history=history_context, text_input=input.text)
+    prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
 
     # Query generation
@@ -121,7 +124,7 @@ def prompt_classifier(input):
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-
+        
         esempi = [
             {"testo": "Predict for tomorrow the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on last week data", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, weeks=1, days=1" },
             {"testo": "Predict the future Power Consumption Efficiency for Riveting Machine 2 over the next 5 days","data": f"Power Consumption Efficiency, Riveting Machine 2, NULL, days=5"},
@@ -145,7 +148,7 @@ def prompt_classifier(input):
             input_variables=["history", "text_input"]
         )
 
-        prompt = few_shot_prompt.format(history=history_context, text_input=input.text)
+        prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
 
         data = llm.invoke(prompt)
         data=data.content.strip("\n").split(": ")[1].split(", ")
@@ -313,36 +316,42 @@ async def ask_predictor_engine(url):
 
 async def handle_predictions(url):
     response = await ask_predictor_engine(url)
-    return response['data']
+    # from list of json to string
+    response = ",".join(json.dumps(obj) for obj in response['data'])
+    return response
 
-async def handle_new_kpi(question, llm, graph, history):
+async def handle_new_kpi(question: Question, llm, graph, history):
     kpi_generation = KPIGenerationChain(llm, graph, history)
-    response = kpi_generation.chain.invoke(question.text)
+    response = kpi_generation.chain.invoke(question.userInput)
     return response['result']
 
 async def handle_report(url):
     predictor_response = await ask_predictor_engine(url)
     kpi_response = await ask_kpi_engine(url)
-    return predictor_response['data'] + kpi_response['data']
+    # from list of json to string
+    predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
+    kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
+    return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
 
-async def handle_dashboard(question, llm, graph, history):
+async def handle_dashboard(question: Question, llm, graph, history):
     with open("docs/gui_elements.txt", "r") as f:
         gui_elements = f.read()
     dashboard_generation = DashboardGenerationChain(llm, graph, history)
-    response = dashboard_generation.chain.invoke(question.text)
-    return response['result'] + '\n' + gui_elements
+    response = dashboard_generation.chain.invoke(question.userInput)
+    return 'KB_CONTEXT:' + response['result'] + '\n GUI_CONTEXT:' + gui_elements
 
 async def handle_kpi_calc(url):
     response = await ask_kpi_engine(url)
-    return response['data']
+    response = ",".join(json.dumps(obj) for obj in response['data'])
+    return response
 
-async def handle_kb_q(question, llm, graph, history):
+async def handle_kb_q(question: Question, llm, graph, history):
     general_qa = GeneralQAChain(llm, graph, history)
-    response = general_qa.chain.invoke(question.text)
+    response = general_qa.chain.invoke(question.userInput)
     return response['result']
 
-@router.post("/ask", response_model=Answer)
-async def ask_question(question: Question):
+@router.post("/chat", response_model=Answer)
+async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     # Classify the question
     label, url = prompt_classifier(question)
 
@@ -362,31 +371,68 @@ async def ask_question(question: Question):
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-        llm_result = llm.invoke(history_context + "\n\n" + question.text)
+        llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
         # Update the history
-        history.append({'question': question.text, 'answer': llm_result.content})
-        return Answer(text=llm_result.content)
+        history.append({'question': question.userInput, 'answer': llm_result.content})
+        return Answer(textResponse=llm_result.content, textExplanation='', data='query')
 
     # Execute the handler
     context = await handlers[label]()
 
     if label == 'kb_q':
         # Update the history
-        history.append({'question': question.text, 'answer': context})
-        return Answer(text=context)
+        history.append({'question': question.userInput, 'answer': context})
+        return Answer(textResponse=context, textExplanation='', data='query')
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
-        # Format the history
+        # Prepare the history context from previous chat
         history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
-        prompt = prompt_manager.get_prompt(label)
-        formatted_prompt = prompt.format(_HISTORY_=history_context, _CONTEXT_=context, _USER_QUERY_=question.text)
-        llm_result = llm.invoke(formatted_prompt)
+        # Prepare the prompt and invoke the LLM
+        prompt = prompt_manager.get_prompt(label).format(
+            _HISTORY_=history_context,
+            _CONTEXT_=context,
+            _USER_QUERY_=question.userInput
+        )
+        llm_result = llm.invoke(prompt)
 
-        # Update the history
-        history.append({'question': question.text, 'answer': llm_result.content})
+        prompt = prompt_manager.get_prompt('translate').format(
+            _HISTORY_='',
+            _CONTEXT_=llm_result.content,
+            _USER_QUERY_=question.userInput
+        )
+        llm_result = llm.invoke(prompt)
 
-        return Answer(text=llm_result.content)
+        history.append({'question': question.userInput, 'answer': llm_result.content})
 
+        explainer = RagExplainer()
+
+        if label == 'predictions':
+            # Response: Chat response, Explanation: TODO, Data: No data to send            
+            explainer.add_to_context([("Predictor", context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data='')
+
+        if label == 'kpi_calc':
+            # Response: Chat response, Explanation: TODO, Data: No data to send            
+            explainer.add_to_context([("KPI Engine", context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data='')
+
+        if label == 'new_kpi':
+            # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
+            explainer.add_to_context([("Knowledge Base", context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data=context)
+
+        if label == 'report':
+            # Response: No chat response, Explanation: TODO, Data: Report in str format
+            pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
+            explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data=llm_result.content)
+
+        if label == 'dashboard':
+            # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
+            # TODO: separare il chat response dal binding nel prompt
+            kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
+            explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
+            return Answer(textResponse=llm_result.content, textExplanation='', data=llm_result.content)

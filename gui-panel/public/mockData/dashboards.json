@@ -6,16 +6,24 @@
     "name": "Overview Dashboard",
     "views": [
       {
-        "kpi": "1",
+        "kpi": "consumption_avg",
         "graph_type": "line"
       },
       {
-        "kpi": "4",
+        "kpi": "bad_cycles_sum",
         "graph_type": "barv"
       },
       {
-        "kpi": "7",
+        "kpi": "offline_time_avg",
+        "graph_type": "donut"
+      },
+      {
+        "kpi": "good_cycles_avg",
         "graph_type": "pie"
+      },
+      {
+        "kpi": "consumption_min",
+        "graph_type": "stacked_bar"
       }
     ]
   },
@@ -28,15 +36,15 @@
         "name": "Testboard #1",
         "views": [
           {
-            "kpi": "14",
+            "kpi": "energy_cost_per_unit",
             "graph_type": "hist"
           },
           {
-            "kpi": "17",
+            "kpi": "consumption_max",
             "graph_type": "scatter"
           },
           {
-            "kpi": "1",
+            "kpi": "cost_max",
             "graph_type": "area"
           }
         ]
@@ -46,11 +54,11 @@
         "name": "Testboard #2",
         "views": [
           {
-            "kpi": "10",
+            "kpi": "idle_time_avg",
             "graph_type": "pie"
           },
           {
-            "kpi": "9",
+            "kpi": "working_time_sum",
             "graph_type": "donut"
           }
         ]
@@ -60,15 +68,15 @@
         "name": "Testboard #3",
         "views": [
           {
-            "kpi": "18",
+            "kpi": "machine_utilization_rate",
             "graph_type": "barh"
           },
           {
-            "kpi": "19",
+            "kpi": "consumption_min",
             "graph_type": "stacked_bar"
           },
           {
-            "kpi": "20",
+            "kpi": "cost_avg",
             "graph_type": "barv"
           }
         ]

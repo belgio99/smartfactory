@@ -18,7 +18,7 @@ def get_minio_connection():
         secure=False  # Set to False if not using HTTPS
     )
 
-def upload_object(client: Minio, bucket_name: str, object_name: str, file_path: str):
+def upload_object(client: Minio, bucket_name: str, object_name: str, file_path: str, content_type: str):
     """
     Uploads a file to the Minio object storage service.
 
@@ -36,7 +36,7 @@ def upload_object(client: Minio, bucket_name: str, object_name: str, file_path: 
         print("Bucket not found, creating one.")
     # Upload the file
     try:
-        client.fput_object(bucket_name, object_name, file_path)
+        client.fput_object(bucket_name, object_name, file_path, content_type=content_type)
         print(f"'{file_path}' is successfully uploaded as object '{object_name}' to bucket '{bucket_name}'.")
         return True
     except S3Error as exc:

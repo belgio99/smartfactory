@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
-import FilterOptions from "../KpiSelector/FilterOptions";
-import {getKpiList} from "../../api/PersistentDataManager";
+import FilterOptions from "../Selectors/FilterOptions";
+import PersistentDataManager from "../../api/PersistentDataManager";
+import {KPI} from "../../api/DataStructures";
 
 interface ModalProps {
     isOpen: boolean;
@@ -10,7 +11,15 @@ interface ModalProps {
     onClose: () => void;
 }
 
+const recurrenceOptions = {
+    Daily: { seconds: 86400 },
+    Weekly: { seconds: 604800 },
+    Monthly: { seconds: 2592000 },
+    Yearly: { seconds: 31536000 },
+};
+
 const ScheduleModal: React.FC<ModalProps> = ({isOpen, schedule, onSave, onClose}) => {
+    const dataManager = PersistentDataManager.getInstance();
     const [formData, setFormData] = useState<Partial<Schedule>>(schedule);
     const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
@@ -90,36 +99,54 @@ const ScheduleModal: React.FC<ModalProps> = ({isOpen, schedule, onSave, onClose}
                     <option value="Yearly">Yearly</option>
                 </select>
 
-                <label className="block mb-2 text-sm font-medium text-gray-700">KPIs</label>
+                <label className="block mb-2 text-sm font-bold text-gray-700">KPI to Include</label>
                 <div className="border rounded p-3 mb-1">
-                    {getKpiList().map((kpi) => (
-                        <div key={kpi.id} className="flex items-center mb-2">
-                            <input
-                                type="checkbox"
-                                id={`kpi-${kpi.id}`}
-                                value={kpi.id}
-                                checked={formData.kpis?.includes(kpi.name) || false}
-                                onChange={(e) => {
-                                    const selectedKpis = formData.kpis || [];
-                                    if (e.target.checked) {
-                                        // Add KPI to the list
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            kpis: [...selectedKpis, kpi.name],
-                                        }));
-                                    } else {
-                                        // Remove KPI from the list
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            kpis: selectedKpis.filter((id) => id !== kpi.name),
-                                        }));
-                                    }
-                                }}
-                                className="mr-2 h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
-                            />
-                            <label htmlFor={`kpi-${kpi.id}`} className="text-sm text-gray-700">
-                                {kpi.name}
-                            </label>
+                    {Object.entries(
+                        dataManager.getKpiList().reduce((groups, kpi) => {
+                            if (!groups[kpi.type]) {
+                                groups[kpi.type] = [];
+                            }
+                            groups[kpi.type].push(kpi);
+                            return groups;
+                        }, {} as Record<string, KPI[]>)
+                    ).map(([type, kpis]) => (
+                        <div key={type} className="mb-4">
+                            {/* Section Header */}
+                            <h3 className="text-sm font-bold text-gray-800 mb-2">{type}</h3>
+
+                            {/* KPI Checkboxes */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 font-semibold">
+                                {kpis.map((kpi) => (
+                                    <div key={kpi.id} className="flex items-center text-start mb-2">
+                                        <input
+                                            type="checkbox"
+                                            id={`kpi-${kpi.id}`}
+                                            value={kpi.id}
+                                            checked={formData.kpis?.includes(kpi.name) || false}
+                                            onChange={(e) => {
+                                                const selectedKpis = formData.kpis || [];
+                                                if (e.target.checked) {
+                                                    // Add KPI to the list
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        kpis: [...selectedKpis, kpi.name],
+                                                    }));
+                                                } else {
+                                                    // Remove KPI from the list
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        kpis: selectedKpis.filter((name) => name !== kpi.name),
+                                                    }));
+                                                }
+                                            }}
+                                            className="mr-2 h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <label htmlFor={`kpi-${kpi.id}`} className="text-sm text-gray-700">
+                                            {kpi.name}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     ))}
                 </div>

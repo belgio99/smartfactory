@@ -1,28 +1,33 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import SidebarSection from './SidebarSection';
 import {DashboardFolder, DashboardLayout} from "../../api/DataStructures";
 import {SidebarItemProps} from "./SidebarItem";
-import {getDashboardList} from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/PersistentDataManager";
 
 export const pointIcon: string = 'https://cdn.builder.io/api/v1/image/assets/TEMP/e4f31bc08d7f9cce9aa4820b2adc97643d3b0c001526273b80178ee6bf890b69?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130';
 export const folderIcon: string = "/icons/folder.svg";
 const DashboardSidebar: React.FC = () => {
 
+    const dataManager = PersistentDataManager.getInstance();
+
     const sectionsItems = [
+        /*
         {
             icon: '/icons/user.svg',
             text: 'User Settings',
             path: '/user-settings'
         },
-        {
-            icon: '/icons/log.svg',
-            text: 'Reports',
-            path: '/reports'
-        },
+         */
+        {icon: '/icons/kpi.svg', text: 'KPIs', path: '/kpis'},
         {
             icon: 'https://cdn.builder.io/api/v1/image/assets/TEMP/a71c21e7b5dfbcb7b600377b94bb0ba6e150f444fca7a9c978d6d84a0e3b8cea?placeholderIfAbsent=true&apiKey=346cd8710f5247b5a829262d8409a130',
             text: 'Data View',
             path: '/data-view'
+        },
+        {
+            icon: '/icons/log.svg',
+            text: 'Reports',
+            path: '/reports'
         },
         {
             icon: '/icons/log.svg',
@@ -35,71 +40,65 @@ const DashboardSidebar: React.FC = () => {
             path: '/production-lines'
         },
          */
-        {icon: '/icons/kpi.svg', text: 'KPIs', path: '/kpis'},
         {icon: '/icons/forecast.svg', text: 'Forecasting', path: '/forecasts'},
     ];
 
-    const formatDashboards = (folders: (DashboardFolder | DashboardLayout)[]): SidebarItemProps[] => {
-        const formatted: SidebarItemProps[] = [];
+    const formatDashboards = useCallback(
+        (folders: (DashboardFolder | DashboardLayout)[]): SidebarItemProps[] => {
+            const formatted: SidebarItemProps[] = [];
 
-        folders.forEach((content) => {
-            let currentPath = `/dashboards/${content.id}`;
+            folders.forEach((content) => {
+                let currentPath = `/dashboards/${content.id}`;
 
-            if (content instanceof DashboardLayout) {
-                // Add pointer (endpoint) items
-                formatted.push({
-                    text: content.name,
-                    path: `${currentPath}`,
-                    icon: pointIcon,
-                    folder: false
-                });
-            } else
-
-            // Add the folder item with its children
-            formatted.push({
-                text: content.name,
-                path: currentPath,
-                icon: folderIcon,
-                folder: true,
-                children: content.children.map((child) => {
-                    if (child instanceof DashboardFolder) {
-                        // Process nested folders
-                        return {
-                            text: child.name,
-                            path: `${currentPath}/${child.id}`,
-                            icon: folderIcon,
-                            folder: true,
-                            children: formatDashboards([child]), // Recursive children formatting
-                        };
-                    } else {
-                        // Add pointer (endpoint) items
-                        return {
-                            text: child.name,
-                            path: `${currentPath}/${child.id}`,
-                            icon: pointIcon,
-                            folder: false,
-                        };
-                    }
-                }),
+                if (content instanceof DashboardLayout) {
+                    // Add pointer (endpoint) items
+                    formatted.push({
+                        text: content.name,
+                        path: `${currentPath}`,
+                        icon: pointIcon,
+                        folder: false,
+                    });
+                } else {
+                    // Add the folder item with its children
+                    formatted.push({
+                        text: content.name,
+                        path: currentPath,
+                        icon: folderIcon,
+                        folder: true,
+                        children: content.children.map((child) => {
+                            if (child instanceof DashboardFolder) {
+                                // Process nested folders
+                                return {
+                                    text: child.name,
+                                    path: `${currentPath}/${child.id}`,
+                                    icon: folderIcon,
+                                    folder: true,
+                                    children: formatDashboards([child]), // Recursive children formatting
+                                };
+                            } else {
+                                // Add pointer (endpoint) items
+                                return {
+                                    text: child.name,
+                                    path: `${currentPath}/${child.id}`,
+                                    icon: pointIcon,
+                                    folder: false,
+                                };
+                            }
+                        }),
+                    });
+                }
             });
-        });
 
-        return formatted;
-    };
-
+            return formatted;
+        },
+        [] // Add dependencies here, if any are needed
+    );
 
     useEffect(() => {
         const fetchDashboards = async () => {
             try {
-                // Fetch the JSON data
-                //const response = await fetch('/mockData/dashboards.json'); // Adjust path as needed
-                // const data = await response.json();
-
-                // Decode the JSON into DashboardFolder instances
-                const folderData = getDashboardList();
-
                 // Format the data for the sidebar
-                const formattedDashboards = formatDashboards(folderData);
+                const formattedDashboards = formatDashboards(dataManager.getDashboards());
 
                 setDashboards(formattedDashboards);
             } catch (error) {
@@ -108,7 +107,7 @@ const DashboardSidebar: React.FC = () => {
         };
 
         fetchDashboards();
-    }, []);
+    }, [dataManager]);
 
     const [dashboardsItems, setDashboards] = useState<
         SidebarItemProps[]
