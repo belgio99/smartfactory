@@ -5,8 +5,9 @@ export class Machine {
     line?: string;
     site?: string;
     type: string;
+    description?: string;
 
-    constructor(machineId: string, type: string, site?: string, line?: string) {
+    constructor(machineId: string, type: string, description: string, site?: string, line?: string) {
         this.machineId = machineId;
         if (line) this.site = site;
         if (line) this.line = line;
@@ -17,35 +18,61 @@ export class Machine {
         return {
             machineId: instance.machineId,
             type: instance.type,
-            site: instance?.site,
-            productionLine: instance?.line,
+            description: instance.description,
         };
     }
 
     static decode(json: Record<string, any>): Machine {
         if (
-            typeof json.machineId !== "string" ||
-            (json.site && typeof json.site !== "string") ||
+            typeof json.id !== "string" ||
             typeof json.type !== "string" ||
-            (json.productionLine && typeof json.productionLine !== "string")
+            typeof json.description !== "string"
         ) {
             console.log(json);
             throw new Error("Invalid JSON structure for Machine");
         }
-        return new Machine(json.machineId, json.type, json.site, json.productionLine);
+        return new Machine(json.id, json.type, json.description);
     }
 
+    static decodeGroups(groups: Record<string, Record<string, any>>): Machine[] {
+        const machines: Machine[] = [];
+
+        Object.entries(groups).forEach(([groupName, machinesInGroup]) => {
+            Object.entries(machinesInGroup).forEach(([machineName, machineData]) => {
+                if (
+                    typeof machineData.id !== "string" ||
+                    typeof machineData.type !== "string" ||
+                    typeof machineData.description !== "string"
+                ) {
+                    throw new Error(`Invalid machine structure in group ${groupName}, machine ${machineName}`);
+                }
+
+                // Reformat machine name with regex
+                // Split by Machine, for example "MachineA" -> "Machine A"
+                const machineType: string = machineData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+                // Add machine object to the result array
+                machines.push({
+                    machineId: machineData.id,
+                    type: machineType, // Type is directly provided in the new format
+                    description: machineData.description
+                });
+            });
+        });
+
+        return machines;
+    }
 }
 
 
 export class KPI {
-    id: number; // internal id
+    id: string; // internal id
     type: string; // category
     name: string; // displayed name
     description: string; // description
     unit: string;
 
-    constructor(id: number, type: string, name: string, value: string, unit: string) {
+    constructor(id: string, type: string, name: string, value: string, unit: string) {
         this.id = id;
         this.type = type;
         this.name = name;
@@ -64,7 +91,7 @@ export class KPI {
 
     static decode(json: Record<string, any>): KPI {
         if (
-            typeof json.id !== "number" ||
+            typeof json.id !== "string" ||
             typeof json.type !== "string" ||
             typeof json.name !== "string" ||
             typeof json.description !== "string" ||
@@ -75,80 +102,55 @@ export class KPI {
         return new KPI(json.id, json.type, json.name, json.description, json.unit);
     }
 
+    // Decode a group of KPIs into an array of KPI objects
+    static decodeGroups(groups: Record<string, Record<string, any>>): KPI[] {
+        const kpis: KPI[] = [];
+
+        Object.entries(groups).forEach(([groupName, metrics]) => {
+            Object.entries(metrics).forEach(([metricName, metricData]) => {
+                if (
+                    typeof metricData.id !== "string" ||
+                    typeof metricData.description !== "string" ||
+                    typeof metricData.unit_measure !== "string" ||
+                    typeof metricData.type !== "string" // Ensure type exists in metricData
+                ) {
+                    throw new Error(`Invalid KPI structure in group ${groupName}, metric ${metricName}`);
+                }
+
+                // reformat kpi name with regex
+                // if followed by _avg, _min, _max, _sum, _med change it to (Avg), (Min), (Max), (Sum), (Med)
+                // replace _ with space and capitalize first letter of each word
+
+                metricName = metricName.replace(/_avg/g, " (Avg)")
+                    .replace(/_min/g, " (Min)")
+                    .replace(/_max/g, " (Max)")
+                    .replace(/_sum/g, " (Sum)")
+                    .replace(/_med/g, " (Med)")
+                    .replace(/_std/g, " (Std)")
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+                // metric type reformatted to have the "KPI" suffix divided by a space
+                // EnergyKPI -> Energy KPI
+                metricData.type = metricData.type.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+
+                // Create a KPI instance for each metric
+                const kpi = new KPI(
+                    metricData.id,
+                    metricData.type, // The type is now directly provided in the JSON
+                    metricName, // Metric name as the display name
+                    metricData.description,
+                    metricData.unit_measure // Use unit_measure for unit
+                );
+                kpis.push(kpi);
+            });
+        });
+
+        return kpis;
+    }
+
 }
-
-export class KPIGroup {
-    category: string; // Top-level category (e.g., Energy)
-    subcategory: string; // Subcategory name (e.g., Consumption)
-    unit: string; // Unit of measurement for this group
-    metrics: KPIOptions[]; // Array of detailed metric options
-
-    constructor(category: string, subcategory: string, unit: string, metrics: KPIOptions[]) {
-        this.category = category;
-        this.subcategory = subcategory;
-        this.unit = unit;
-        this.metrics = metrics;
-    }
-
-    static encode(instance: KPIGroup): Record<string, any> {
-        return {
-            category: instance.category,
-            subcategory: instance.subcategory,
-            unit: instance.unit,
-            metrics: instance.metrics.map(KPIOptions.encode),
-        };
-    }
-
-    static decode(json: Record<string, any>): KPIGroup {
-        if (
-            typeof json.category !== "string" ||
-            typeof json.subcategory !== "string" ||
-            typeof json.unit !== "string" ||
-            !Array.isArray(json.metrics)
-        ) {
-            throw new Error("Invalid JSON structure for KPIGroup");
-        }
-
-        const metrics = json.metrics.map(KPIOptions.decode);
-        return new KPIGroup(json.category, json.subcategory, json.unit, metrics);
-    }
-}
-export class KPIOptions {
-    id: string; // Unique identifier for the metric
-    name: string; // Metric name (e.g., avg, min, max)
-    description: string; // Detailed description of the metric
-    forecastable: boolean; // Indicates if the metric is forecastable
-
-    constructor(id: string, name: string, description: string, forecastable: boolean) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.forecastable = forecastable;
-    }
-
-    static encode(instance: KPIOptions): Record<string, any> {
-        return {
-            id: instance.id,
-            name: instance.name,
-            description: instance.description,
-            forecastable: instance.forecastable,
-        };
-    }
-
-    static decode(json: Record<string, any>): KPIOptions {
-        if (
-            typeof json.id !== "string" ||
-            typeof json.name !== "string" ||
-            typeof json.description !== "string" ||
-            typeof json.forecastable !== "boolean"
-        ) {
-            throw new Error("Invalid JSON structure for KPIOptions");
-        }
-
-        return new KPIOptions(json.id, json.name, json.description, json.forecastable);
-    }
-}
-
 
 export class Schedule {
     id: number;
@@ -226,10 +228,10 @@ export class Schedule {
 const supportedGraphTypes = ["line", "area", "barv", "barh", "pie", "donut", "scatter", "hist", "stacked_bar"];
 
 export class DashboardEntry {
-    kpi: number;
+    kpi: string;
     graph_type: string;
 
-    constructor(kpi: number, graph_type: string) {
+    constructor(kpi: string, graph_type: string) {
         this.kpi = kpi;
         this.graph_type = graph_type;
     }
@@ -242,7 +244,7 @@ export class DashboardEntry {
     }
 
     static decode(json: Record<string, any>): DashboardEntry {
-        if (
+        if (typeof json.kpi !== "string" ||
             typeof json.graph_type !== "string") {
             throw new Error("Invalid JSON structure for DashboardEntry");
         }

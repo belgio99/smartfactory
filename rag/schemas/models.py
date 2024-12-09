@@ -1,7 +1,11 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 class Question(BaseModel):
-  text: str
+  userInput: str
 
 class Answer(BaseModel):
-  text: str
+  textResponse: str
+  textExplanation: str
+  data: Optional[str] = ''

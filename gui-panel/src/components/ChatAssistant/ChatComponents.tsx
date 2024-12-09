@@ -1,107 +1,187 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import classNames from 'classnames';
 import {Message} from "./ChatAssistant";
 
-interface MessageProps {
-    message: Message;
+export class XAISources {
+    // base it off the explanation interface
+    response_segment: number;
+    context?: string;
+    source_name?: string;
+    original_context?: string;
+
+    constructor(response_segment: number, context?: string, source_name?: string, original_context?: string) {
+        this.response_segment = response_segment;
+        this.context = context;
+        this.source_name = source_name;
+        this.original_context = original_context;
+    }
+
+    static decode(json: Record<string, any>): XAISources {
+        //typechecks
+        if (typeof json.reference_number !== "number") {
+            console.log(json.reference_number);
+            throw new Error("Invalid type for reference_number");
+        }
+        if (json.context && typeof json.context !== "string") {
+            throw new Error("Invalid type for context");
+        }
+        if (json.source_name && typeof json.source_name !== "string") {
+            throw new Error("Invalid type for source_name");
+        }
+        if (json.original_context && typeof json.original_context !== "string") {
+            throw new Error("Invalid type for original_context");
+        }
+
+        return new XAISources(json.reference_number, json.context, json.source_name, json.original_context);
+    }
 }
 
-const MessageBubble: React.FC<MessageProps> = ({ message }) => {
+interface MessageProps {
+    message: Message;
+    onNavigate: (target: string, metadata: any) => void;
+}
+
+const MessageBubble: React.FC<MessageProps> = ({message, onNavigate}) => {
     return (
         <div
             className={classNames(
-                'message-bubble',
-                message.sender === 'user' ? 'user-message' : 'assistant-message'
+                'w-fit max-w-[70%] px-4 py-2 rounded-lg text-start shadow-md',
+                message.sender === "user"
+                    ? 'bg-blue-200'
+                    : 'bg-gray-200'
             )}
         >
-            <p>{message.content}</p>
-            {message.extraData && <MessageContent extraData={message.extraData} />}
+            <div className="text-xs text-gray-600 font-semibold">
+                {message.sender === 'user' ? 'You' : 'Assistant'}
+            </div>
+            <p className="text-gray-800 text-sm text-wrap break-words font-[450] ">{message.content}</p>
+            {message.extraData && <ExtraDataButtons extraData={message.extraData} onNavigate={onNavigate}/>}
+        </div>
+    );
+};
+
+interface ExtraDataProps {
+    extraData: {
+        explanation?: XAISources[];
+        dashboardData?: { target: string; metadata: any };
+    };
+    onNavigate: (target: string, metadata: any) => void;
+}
+
+const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => {
+    const [isExplanationOpen, setIsExplanationOpen] = useState(false);
+
+    const toggleExplanation = () => setIsExplanationOpen((prev) => !prev);
+
+    const metadata = extraData.dashboardData;
+    const [activeSource, setActiveSource] = useState<string | null>(null);
+    const openSourceInModal = (source: string | undefined) => {
+        if (source) setActiveSource(source);
+    };
+    const closeModal = () => setActiveSource(null);
+
+    return (
+        <div className="mt-2 space-y-2">
+
+            {/* Dashboard Navigation Button */}
+            {metadata && (
+                <button
+                    onClick={() => onNavigate("dashboards/new", metadata.metadata)}
+                    className="inline-block px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-lg text-sm shadow-md focus:outline-none"
+                >
+                    Go to Dashboard
+                </button>
+            )}
+            {/* Explanation Button */}
+            {extraData.explanation && (
+                <div>
+                    <button
+                        onClick={toggleExplanation}
+                        className="inline-block px-2 py-1 text-xs underline text-blue-500 focus:outline-none"
+                    >
+                        {isExplanationOpen ? "Hide Explanation" : "View Sources"}
+                    </button>
+                    {isExplanationOpen && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                            <div
+                                className="bg-white max-h-[95vh] min-h-[50vh] rounded-lg shadow-lg p-4 max-w-lg w-full">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h3 className="text-lg font-bold text-gray-800">Explanation</h3>
+                                    <button
+                                        onClick={toggleExplanation}
+                                        className="text-gray-600 hover:text-gray-800"
+                                        aria-label="Close"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                <div>
+                                    {activeSource && (
+                                        <div
+                                            className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                                            <div
+                                                className="bg-white min-h-fit rounded-lg shadow-lg p-4 max-w-lg w-full">
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h3 className="text-lg font-bold text-gray-800">Source Details</h3>
+                                                    <button
+                                                        onClick={closeModal}
+                                                        className="text-gray-600 hover:text-gray-800"
+                                                        aria-label="Close"
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                                <div
+                                                    className="overflow-y-auto flex-wrap text-wrap max-h-[80vh] min-h-[40vh] text-gray-700">
+                                                    <pre
+                                                        className="whitespace-pre-wrap overflow-x-hidden">{activeSource}</pre>
+                                                </div>
+                                                <div className="mt-4 text-right">
+                                                    <button
+                                                        onClick={closeModal}
+                                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                    >
+                                                        Close
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Loop through the explanation segments */}
+                                {extraData.explanation.map((segment, index) => (
+                                    <div key={index} className="mb-4">
+                                        <div
+                                            className="font-semibold text-lg">{"[" + segment.response_segment + "]"}</div>
+                                        {segment.context && (
+                                            <pre
+                                                className="italic text-wrap text-gray-700 mb-2">Context: {segment.context}</pre>
+                                        )}
+                                        {segment.source_name && (
+                                            <pre className="text-blue-600 mb-2 cursor-pointer"
+                                                 onClick={() => openSourceInModal(segment?.original_context)}>
+                                                Source: {segment.source_name}
+                                            </pre>
+                                        )}
+                                    </div>
+                                ))}
+
+                                <div className="mt-4 text-right">
+                                    <button
+                                        onClick={toggleExplanation}
+                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
         </div>
     );
 };
 
 export default MessageBubble;
-
-interface MessageContentProps {
-    extraData: {
-        type: string;
-        additionalContent?: string;
-        sources?: string[];
-    };
-}
-
-const MessageContent: React.FC<MessageContentProps> = ({ extraData }) => {
-    const [showSources, setShowSources] = useState(false);
-
-    const toggleSources = () => {
-        setShowSources((prev) => !prev);
-    };
-
-    return (
-        <div>
-            {extraData.additionalContent && <div className="additional-content">{extraData.additionalContent}</div>}
-            {extraData.sources && (
-                <div className="sources-section">
-                    <button onClick={toggleSources} className="view-sources-button">
-                        {showSources ? 'Hide Sources' : 'View Sources'}
-                    </button>
-                    {showSources && <SourcesList sources={extraData.sources} />}
-                </div>
-            )}
-        </div>
-    );
-};
-
-
-interface SourcesListProps {
-    sources: string[];
-}
-
-const SourcesList: React.FC<SourcesListProps> = ({ sources }) => {
-    return (
-        <ul className="sources-list">
-            {sources.map((source, index) => (
-                <li key={index}>
-                    <a href={source} target="_blank" rel="noopener noreferrer" className="source-link">
-                        {source}
-                    </a>
-                </li>
-            ))}
-        </ul>
-    );
-};
-
-interface ChatInputProps {
-    newMessage: string;
-    setNewMessage: React.Dispatch<React.SetStateAction<string>>;
-    handleSendMessage: (message: string) => void;
-}
-
-const ChatInput: React.FC<ChatInputProps> = ({ newMessage, setNewMessage, handleSendMessage }) => {
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            handleSendMessage(newMessage);
-            setNewMessage('');
-        }
-    };
-
-    return (
-        <div className="chat-input">
-            <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                className="input-field"
-            />
-            <button
-                onClick={() => handleSendMessage(newMessage)}
-                className="send-button"
-            >
-                Send
-            </button>
-        </div>
-    );
-};
-

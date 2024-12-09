@@ -1,23 +1,95 @@
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom"; // React Router
+import {getReports} from "../../api/ApiService";
+import {downloadReport} from "../../api/ApiService";
 
 type Report = {
-    id: number;
+    id: string;
     title: string;
     description: string;
 };
 
-const ReportArchive: React.FC = () => {
-    const navigate = useNavigate(); // React Router hook for navigation
+interface ReportArchiveProps {
+    // Props
+    userId: string;
+    username: string;
+    token: string;
+    role: string;
+    site: string;
+}
 
-    // Getter method for the list of reports
-    const getReportList = (): Report[] => [
-        { id: 1, title: "Quarterly Report Q1", description: "Summary and details of Q1 performance." },
-        { id: 2, title: "Quarterly Report Q2", description: "Summary and details of Q2 performance." },
-        { id: 3, title: "Annual Report 2023", description: "Comprehensive analysis of the year 2023." },
-        { id: 4, title: "Quarterly Report Q3", description: "Summary and details of Q3 performance." },
-        { id: 5, title: "Annual Report 2022", description: "Comprehensive analysis of the year 2022." },
-    ];
+/**
+ * This method downloads and create a new tab for the report
+ * @param reportId string - reportID of the report to download
+ */
+const handleView = async (reportId: string) => {
+    try {
+        const blob = await downloadReport(reportId); // Usa la tua API già implementata
+        const fileURL = URL.createObjectURL(blob);
+
+        // Apri il file in una nuova scheda
+        window.open(fileURL, "_blank");
+        console.log(`Report ID ${reportId} aperto in una nuova scheda.`);
+    } catch (error) {
+        console.error("Errore durante l'apertura del report:", error);
+        alert("Errore durante l'apertura del report");
+    }
+};
+
+/**
+ * This method downloads the report
+ * @param reportId string - reportID of the report to download
+ * @param title string - title of the report to download
+ */
+const handleDownload = async (reportId: string, title: string) => {
+    try {
+        const blob = await downloadReport(reportId); // Usa la tua API già implementata
+        const fileName = `${title}.pdf`;
+        const fileURL = URL.createObjectURL(blob);
+
+        // Salva il file
+        const anchor = document.createElement("a");
+        anchor.href = fileURL;
+        anchor.download = fileName;
+        anchor.click();
+        URL.revokeObjectURL(fileURL);
+
+        console.log(`Report "${title}" downloaded successfully`);
+    } catch (error) {
+        console.error("Error during the download: ", error);
+        alert("An error occurred during the download. Please try again later.");
+    }
+};
+
+
+
+const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, role, site}) => {
+    const navigate = useNavigate(); // React Router hook for navigation
+    var getReportList; // Variable to get the list of reports
+
+    // Take from API the list of reports
+    // While waiting for the API response, show loading spinner
+    const [loading, setLoading] = useState(true);
+    const [reports, setReports] = useState<Report[]>([]);
+
+    useEffect(() => {
+        getReports(userId).then((reports) => {
+            setReports(reports);
+            setLoading(false);
+        });
+    }, [userId]);
+
+    // If no reports are available, show mock data
+    if(reports.length === 0) {
+        const getReportList = (): Report[] => [
+            { id: "1", title: "Quarterly Report Q1", description: "Summary and details of Q1 performance." },
+            { id: "2", title: "Quarterly Report Q2", description: "Summary and details of Q2 performance." },
+            { id: "3", title: "Annual Report 2023", description: "Comprehensive analysis of the year 2023." },
+            { id: "4", title: "Quarterly Report Q3", description: "Summary and details of Q3 performance." },
+            { id: "5", title: "Annual Report 2022", description: "Comprehensive analysis of the year 2022." },
+        ];
+        setReports(getReportList());
+    }
 
     const [expanded, setExpanded] = useState<number | null>(null);
     const [filter, setFilter] = useState<string>(""); // For filtering reports by title
@@ -27,13 +99,13 @@ const ReportArchive: React.FC = () => {
         setExpanded((prev) => (prev === id ? null : id));
     };
 
-    const handleManageSchedules = () => {
+    const handleManageSchedules = (): void => {
         // Navigate to the recurring schedules page
         navigate("/reports/schedules");
     };
 
     // Filtering and sorting the reports
-    const filteredReports = getReportList()
+    const filteredReports = reports
         .filter((report) =>
             report.title.toLowerCase().includes(filter.toLowerCase())
         )
@@ -46,7 +118,7 @@ const ReportArchive: React.FC = () => {
         });
 
     return (
-        <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-50 rounded-lg shadow-lg">
+        <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-25 rounded-lg shadow-lg">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">Report Archive</h1>
 
             {/* Filter and Sort Controls */}
@@ -93,19 +165,19 @@ const ReportArchive: React.FC = () => {
                     >
                         <div
                             className="flex items-center justify-between p-4 cursor-pointer"
-                            onClick={() => toggleAccordion(report.id)}
+                            onClick={() => toggleAccordion(Number(report.id))}
                         >
                             <span className="font-medium text-gray-700">{report.title}</span>
-                            <span className="text-gray-500">{expanded === report.id ? "▲" : "▼"}</span>
+                            <span className="text-gray-500">{expanded === Number(report.id) ? "▲" : "▼"}</span>
                         </div>
-                        {expanded === report.id && (
+                        {expanded === Number(report.id) && (
                             <div className="p-4 border-t border-gray-200">
                                 <p className="text-gray-600 mb-4 font-normal text-start ">{report.description}</p>
                                 <div className="flex space-x-4">
-                                    <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm">
+                                    <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm" onClick={() => handleView(report.id)}>
                                         View
                                     </button>
-                                    <button className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm">
+                                    <button className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm" onClick={() => handleDownload(report.id, report.title)}>
                                         Download
                                     </button>
                                 </div>
@@ -114,6 +186,7 @@ const ReportArchive: React.FC = () => {
                     </div>
                 ))}
             </div>
+            
         </div>
     );
 };

@@ -1,23 +1,37 @@
-import apiClient from '../apiClient';
+import bcrypt from 'bcryptjs';
 
-// Esempio di hashing password (simulato dall'API)
-export const hashPassword = async (password: string) => {
+/**
+ * Methods for hashing and verifying passwords.
+ * @param password string - The password needed to be hashed.
+ * @returns Promise will return the hashed password.
+ */
+export const hashPassword = async (password: string): Promise<string> => {
   try {
-    const response = await apiClient.post('/security/hash', { password });
-    return response.data; // Contiene l'hash generato
+    const saltString = 'a'.repeat(16) + 'e'.repeat(6);
+    const customSalt = `$2b$12$${saltString}`;
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, customSalt);
+    return hashedPassword;
   } catch (error) {
-    console.error('Errore nella richiesta API:', error);
-    throw error;
+    console.error('Error hashing password:', error);
+    throw new Error('Failed to hash password');
   }
 };
 
-// Esempio di login sicuro
-export const secureLogin = async (username: string, password: string) => {
+/**
+ * Method used to verify password with hashed password.
+ * @param password string - Password needs to verify.
+ * @param hashedPassword string - HashPassword will be check with password.
+ * @returns Promise returns true if password is correct, false otherwise.
+ */
+export const verifyPassword = async (
+  password: string,
+  hashedPassword: string
+): Promise<boolean> => {
   try {
-    const response = await apiClient.post('/auth/login', { username, password });
-    return response.data; // Contiene i dettagli del login
+    return await bcrypt.compare(password, hashedPassword);
   } catch (error) {
-    console.error('Errore durante il login:', error);
-    throw error;
+    console.error('Error verifying password:', error);
+    throw new Error('Failed to verify password');
   }
 };

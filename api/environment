@@ -61,11 +61,25 @@ POSTGRES_PORT=5432
 
 MINIO_ROOT_USER = 'minio_user'
 MINIO_ROOT_PASSWORD = 'minio_password'
-MINIO_HOST = 'localhost'
+MINIO_HOST = 'minio'
 MINIO_ADDRESS = ':9000'
 MINIO_CONSOLE_ADDRESS = ':9001'
 
+DRUID_INSERT_ENDPOINT = 'http://localhost:8081/druid/indexer/v1/task'
+DRUID_QUERY_ENDPOINT = 'http://router:8888/druid/v2/sql'
+
 SMTP_SERVER=host.docker.internal
-SMTP_PORT=1025
+SMTP_PORT=11025
 SMTP_EMAIL=noreply@smartfactory.com
 SMTP_PASSWORD=SmartAppPassword123
+
+RAG_API_ENDPOINT = 'http://rag:8000/agent/chat'
+API_KEY = '06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7'
+
+# KPI Engine API endpoint
+KPI_ENGINE_HOST=kpi-engine
+KPI_ENGINE_PORT=8000
+
+# Knowledge Base API endpoint
+KB_HOST=kb
+KB_PORT=8000

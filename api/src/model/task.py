@@ -1,12 +1,17 @@
 import time
 from enum import Enum
-
+from datetime import datetime
 class Task(object):
-    def __init__(self, func, delay, args=()):
+    def __init__(self, func, delay, start_date, json, args=()):
+        self.json = json
         self.args = args
         self.function = func
         self.delay = delay
-        self.next_run = time.time() + self.delay
+        date_object = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+        self.next_run = date_object.timestamp()
+
+    def getDict(self):
+        return self.json
 
     def shouldRun(self):
         return time.time() >= self.next_run
@@ -15,24 +20,24 @@ class Task(object):
         self.function(*(self.args))
         self.next_run += self.delay
 
-class SchedulingFrequency(Enum):
+class SchedulingFrequency(str, Enum):
     TEST = "test"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    YEARLY = "yearly"
+    Daily = "Daily"
+    Weekly = "Weekly"
+    Monthly = "Monthly"
+    Yearly = "Yearly"
 
     @property
     def seconds(self):
         """Map each frequency name to its corresponding period in seconds."""
         if self == SchedulingFrequency.TEST:
             return 10  # 10 seconds just for test
-        if self == SchedulingFrequency.DAILY:
+        if self == SchedulingFrequency.Daily:
             return 86400  # 24 hours
-        elif self == SchedulingFrequency.WEEKLY:
+        elif self == SchedulingFrequency.Weekly:
             return 604800  # 7 days
-        elif self == SchedulingFrequency.MONTHLY:
-            return 2592000  # 30 days (approximate)
-        elif self == SchedulingFrequency.YEARLY:
+        elif self == SchedulingFrequency.Monthly:
+            return 2592000  # 30 days
+        elif self == SchedulingFrequency.Yearly:
             return 31536000  # 1 year
         return None
