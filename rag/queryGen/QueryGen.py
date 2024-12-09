@@ -43,7 +43,7 @@ class QueryGenerator:
             print(row["id"])
             self.kpi_res.append(str(row["id"]))
         res = graph.query(machine_query)
-
+        print()
         self.machine_res = []
         for row in res:
             print(row["id"])
@@ -127,7 +127,8 @@ class QueryGenerator:
             # machines == ["NULL"] => no usage of the Machine_Name key
             if not("NULL" in date):
                 obj["Date_Start"] = date[0]
-                obj["Date_Finish"] = date[1]  
+                obj["Date_Finish"] = date[1] 
+            print(kpis) 
             kpis = ast.literal_eval(kpis)
             if not("NULL" in machines):
                 # transform the string containing the array of machines in an array of string
@@ -163,7 +164,7 @@ class QueryGenerator:
             RULES:
             1. Match IDs:
                 -Look for any terms in the query that match IDs from LIST_1 or LIST_2.
-                -If a match contains a type without a specific number, return all machines of that type. Example: 'Testing Machine' -> ['Testing Machine 1', 'Testing Machine 2', 'Testing Machine 3'].
+                -If a match contains a machine type without a specific number, return all machines of that type. Example: 'Testing Machine' -> ['Testing Machine 1', 'Testing Machine 2', 'Testing Machine 3'].
             2. Determine Time Window:
                 -if there is time window described by exact dates, use them, otherwise return the expression which individuates the time window: 'last/next X days/weeks/months' using the format <last/next, X, days/weeks/months>
                 -If no time window is specified, use NULL.
@@ -173,6 +174,7 @@ class QueryGenerator:
                 -Allow for minor spelling or formatting mistakes in the matched expression and correct them as done in the examples below.
             3. Handle Errors:
                 -Allow for minor spelling or formatting mistakes in the input.
+                -If there is ambiguity matching a kpi, if exist, you can match USER QUERY with the one which ends with '_avg'
             4. Output Format:
                 -For each unique combination of machine IDs and KPIs, return a tuple in this format: ([matched LIST_1 IDs], [matched LIST_2 IDs], time window).
                 
@@ -195,14 +197,14 @@ class QueryGenerator:
             INPUT: Calculate using data from the last 2 weeks the cost_idle_std Low capacity cutting machine 1 and Assemby Machine 2. Calculate for the same machines also offline time med using data from the past month.
             OUTPUT: ([Low Capacity Cutting Machine 1, Assembly Machine 2], [cost_idle_std], <last, 2, weeks>), ([Low Capacity Cutting Machine 1, Assembly Machine 2], [offline_time_med], <last, 1, months>)
 
-            INPUT: Can you calculate cost_idle_avg for Assembly machine 1 based on yesterday data, the same kpi dor Assembly machine 2 for last week and offline time med for low capacity cutting machine 1?
+            INPUT: Can you calculate cost idle for Assembly machine 1 based on yesterday data, the same kpi dor Assembly machine 2 for last week and offline time med for low capacity cutting machine 1?
             OUTPUT: ([Assembly Machine 1], [cost_idle_avg], {YESTERDAY}), ([Assembly Machine 2], [cost_idle_avg], <last, 1, weeks>), ([Low Capacity Cutting Machine 1], [offline_time_med], NULL)
 
             INPUT: Predict offline time med for Assembly machine for {(self.TODAY + relativedelta(days=5)).strftime('%Y/%m/%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y/%m/%d')} and the same kpis for all machines.
             OUTPUT: ([Assembly Machine 1, Assembly Machine 2], [offline_time_med], {(self.TODAY + relativedelta(days=5)).strftime('%Y-%m-%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y-%m-%d')}), ([NULL], [cost_idle_avg, offline_time_med], NULL)
 
-            INPUT: Predict for all the assembly machine the cost idle average and offline_time med for the next 3 weeks and for low capacity cutting machne the cost_idle_std for March 2025. predict also for Assembly machine 1 the cost_idle std for the next two days.
-            OUTPUT: ([Assembly Machine 1, Assembly Machine 2], [cost_idle_avg, offline_time_med], <next, 3, weeks>), ([Low Capacity Cutting Machine 1], [cost_idle_std], 2025-03-01 -> 2025-03-31), ([Assembly Machine 1], [cost_idle_std], <next, 2, days>)
+            INPUT: Predict for all the assembly machine the cost idle average and offline_time med for the next 3 weeks and for low capacity cutting machne the cost_idle_std for March 2025. predict also for Assembly machine 1 the cost_idle  for the next two days.
+            OUTPUT: ([Assembly Machine 1, Assembly Machine 2], [cost_idle_avg, offline_time_med], <next, 3, weeks>), ([Low Capacity Cutting Machine 1], [cost_idle_std], 2025-03-01 -> 2025-03-31), ([Assembly Machine 1], [cost_idle_avg], <next, 2, days>)
             '
             """
         else:
@@ -211,8 +213,10 @@ class QueryGenerator:
 
         data = self.llm.invoke(query)
         data = data.content.strip("\n")
-        json_obj = self._json_parser(data)
+        print()
         print(data)
+        json_obj = self._json_parser(data)
+        
         print("\n")
         print(json_obj)
 

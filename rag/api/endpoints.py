@@ -125,7 +125,7 @@ def prompt_classifier(input: Question):
         input (Question): The user input question to be classified.
     
     Returns:
-        tuple: A tuple containing the label and the corresponding URL (if applicable).
+        tuple: A tuple containing the label and the extracted json_obj from the input (if applicable).
     """
     # Format the conversation history
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
@@ -162,9 +162,9 @@ def prompt_classifier(input: Question):
     if label == "predictions" or label == "kpi_calc" or label == "report":
         json_request=query_gen.query_generation(input, label)
         
-    return [label,json_request]
+    return label,json_request
 
-async def ask_kpi_engine(url):
+async def ask_kpi_engine(json_body):
     """
     Function to query the KPI engine for machine data.
 
@@ -172,13 +172,14 @@ async def ask_kpi_engine(url):
     and returns the data about machine power consumption.
 
     Args:
-        url (str): The URL endpoint for the KPI engine API.
+        json_body (str): the json used to communicate with the KPI engine API.
 
     Returns:
         dict: A dictionary containing the success status and the KPI data.
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
+    # kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
     kpi_engine_url = "https://kpi.engine.com/api"  
 
     mock_response = httpx.Response(
@@ -203,10 +204,10 @@ async def ask_kpi_engine(url):
     
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
-            response = await client.get(url)
+            response = await client.get("url")
 
-    # async with httpx.AsyncClient() as client: TO-DO
-    #     response = await client.get(url)
+    #async with httpx.AsyncClient() as client:
+    #    response = await client.post(kpi_engine_url,json=json_body)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
@@ -310,7 +311,7 @@ async def handle_new_kpi(question: Question, llm, graph, history):
     response = kpi_generation.chain.invoke(question.userInput)
     return response['result']
 
-async def handle_report(url):
+async def handle_report(json_obj):
     """
     Handles the generation of a report by querying both the predictor and KPI engines.
 
@@ -322,8 +323,9 @@ async def handle_report(url):
     Returns:
         str: A formatted report string containing both KPI and prediction data.
     """
+    url =""
     predictor_response = await ask_predictor_engine(url)
-    kpi_response = await ask_kpi_engine(url)
+    kpi_response = await ask_kpi_engine(json_obj)
     predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
     kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
     return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
@@ -352,7 +354,7 @@ async def handle_dashboard(question: Question, llm, graph, history):
     response = dashboard_generation.chain.invoke(question.userInput)
     return 'KB_CONTEXT:' + response['result'] + '\n GUI_CONTEXT:' + gui_elements
 
-async def handle_kpi_calc(url):
+async def handle_kpi_calc(json_body):
     """
     Handles KPI calculations by querying the KPI engine.
 
@@ -365,7 +367,7 @@ async def handle_kpi_calc(url):
     Returns:
         str: A string containing the KPI calculation data in a formatted form.
     """
-    response = await ask_kpi_engine(url)
+    response = await ask_kpi_engine(json_body)
     response = ",".join(json.dumps(obj) for obj in response['data'])
     return response
 
@@ -427,17 +429,17 @@ async def ask_question(question: Question): # to add or modify the services allo
         question_language, question.userInput = translated_question.split("-", 1)
 
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
-
         # Classify the question
-        label, url = prompt_classifier(question)
-
+        label, json_body = prompt_classifier(question)
+        #mock url
+        url=""
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(url),
             'new_kpi': lambda: handle_new_kpi(question, llm, graph, history),
-            'report': lambda: handle_report(url),
+            'report': lambda: handle_report(json_body),
             'dashboard': lambda: handle_dashboard(question, llm, graph, history),
-            'kpi_calc': lambda: handle_kpi_calc(url),
+            'kpi_calc': lambda: handle_kpi_calc(json_body),
             'kb_q': lambda: handle_kb_q(question, llm, graph, history),
         }
 
