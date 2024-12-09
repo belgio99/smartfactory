@@ -11,8 +11,15 @@ In the CONTEXT section you are provided  with a list of JSON with:
 TASK: Using the information provided, generates a structured response that satisfies the USER QUERY, mapping the most relevant KPIs to the most appropriate graphical elements.
 
 ANSWER FORMAT: a json with the following two fields: 
-- bindings: A list of 4-8 associations graphical_element_ID - KPI_ID, mapping the best graphical elements to the most relevant KPIs for the user's needs. E.g.: {{‘bar_chart’: ‘consumption’, ‘line_chart’: ‘maintenance’, ...}}
+- bindings: A list of 4-8 associations graphical_element_ID - KPI_ID, mapping the best graphical elements to the most relevant KPIs for the user's needs. The list should contain one object for each binding E.g.: [{{‘bar_chart’: ‘consumption’}}, {{‘line_chart’: ‘maintenance’}}...]
 - textualResponse: A short and focused description summarising the choices made to associate graphical elements to KPIs, avoiding redundant explanations.
+
+REQUIREMENTS:
+- each graphical element should bind at most one KPI, so select the best ones
+- you must create at least 4 associations in the bindings list 
+- you must create no more then 8 
+- you can repeat KPI in different bindings with different graphical elements
+- you can repeat graphical elements in different bindings with different KPIs
 
 CONTEXT: 
 {_CONTEXT_}
