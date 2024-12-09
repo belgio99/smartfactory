@@ -1,7 +1,6 @@
 import pandas as pd
 
 class kpi_dataframe_filter:
-
     
     def filter_dataframe_by_machine(df, machine_id):
         """
@@ -82,7 +81,8 @@ class kpi_dataframe_filter:
         string comparison or datetime operations.
         """
         if start_period > end_period:
-            raise ValueError("Error: start_time cannot come after end_time.")
+            return ValueError("Error: start_time cannot come after end_time.")
+
         return df[(df['time'] >= start_period) & (df['time'] <= end_period)]
 
 
@@ -126,4 +126,6 @@ class kpi_dataframe_filter:
         fd = kpi_dataframe_filter.filter_dataframe_by_typology(fd, machine_type)
         fd = kpi_dataframe_filter.filter_dataframe_by_kpi(fd, kpi)
         fd = kpi_dataframe_filter.filter_dataframe_by_time(fd, start_period, end_period)
+        if fd.empty: 
+            return ValueError("Error: filter values are too restricted: no items are retrived")
         return fd
