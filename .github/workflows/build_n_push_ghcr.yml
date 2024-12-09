@@ -38,53 +38,53 @@ jobs:
           platforms: linux/amd64
 
       - name: Run container for testing
-      run: |
-        # Directory containing service-specific .env files
-        SERVICE_DIR="./${{ matrix.service }}"
-        
-        # Combine all .env files in the service directory into a temporary .env file
-        TEMP_ENV_FILE="./temp-${{ matrix.service }}.env"
-        rm -f "$TEMP_ENV_FILE" # Ensure no leftover temporary file
-        touch "$TEMP_ENV_FILE"
-        
-        if ls "$SERVICE_DIR"/*.env 1> /dev/null 2>&1; then
-          for env_file in "$SERVICE_DIR"/*.env; do
-            cat "$env_file" >> "$TEMP_ENV_FILE"
-            echo "" >> "$TEMP_ENV_FILE" # Add a blank line
-          done
-        fi
-        
-        # Add extra environment variable for RAG service
-        if [ "${{ matrix.service }}" = "rag" ]; then
-          echo "" >> "$TEMP_ENV_FILE" # Add a blank line before appending
-          echo "RAG_ENV=${{ secrets.RAG_ENV }}" >> "$TEMP_ENV_FILE"
-        fi
-        
-        # Determine if an env file exists and set the --env-file option
-        if [ -s "$TEMP_ENV_FILE" ]; then
-          ENV_OPTION="--env-file $TEMP_ENV_FILE"
-        else
-          ENV_OPTION=""
-        fi
-        
-        # Run the container in detached mode
-        docker run $ENV_OPTION --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
-        
-        # Wait for 60 seconds to test stability
-        sleep 60
-        
-        # Check the container status
-        if ! docker ps --filter "name=test-${{ matrix.service }}" --filter "status=running" | grep -q test-${{ matrix.service }}; then
-          echo "Container test-${{ matrix.service }} failed. Printing logs:"
+        run: |
+          # Directory containing service-specific .env files
+          SERVICE_DIR="./${{ matrix.service }}"
+          
+          # Combine all .env files in the service directory into a temporary .env file
+          TEMP_ENV_FILE="./temp-${{ matrix.service }}.env"
+          rm -f "$TEMP_ENV_FILE" # Ensure no leftover temporary file
+          touch "$TEMP_ENV_FILE"
+          
+          if ls "$SERVICE_DIR"/*.env 1> /dev/null 2>&1; then
+            for env_file in "$SERVICE_DIR"/*.env; do
+              cat "$env_file" >> "$TEMP_ENV_FILE"
+              echo "" >> "$TEMP_ENV_FILE" # Add a blank line
+            done
+          fi
+          
+          # Add extra environment variable for RAG service
+          if [ "${{ matrix.service }}" = "rag" ]; then
+            echo "" >> "$TEMP_ENV_FILE" # Add a blank line before appending
+            echo "RAG_ENV=${{ secrets.RAG_ENV }}" >> "$TEMP_ENV_FILE"
+          fi
+          
+          # Determine if an env file exists and set the --env-file option
+          if [ -s "$TEMP_ENV_FILE" ]; then
+            ENV_OPTION="--env-file $TEMP_ENV_FILE"
+          else
+            ENV_OPTION=""
+          fi
+          
+          # Run the container in detached mode
+          docker run $ENV_OPTION --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          
+          # Wait for 60 seconds to test stability
+          sleep 60
+          
+          # Check the container status
+          if ! docker ps --filter "name=test-${{ matrix.service }}" --filter "status=running" | grep -q test-${{ matrix.service }}; then
+            echo "Container test-${{ matrix.service }} failed. Printing logs:"
+            docker logs test-${{ matrix.service }}
+            exit 1
+          fi
+          
+          # Stop the container after testing
+          docker stop test-${{ matrix.service }}
           docker logs test-${{ matrix.service }}
-          exit 1
-        fi
-        
-        # Stop the container after testing
-        docker stop test-${{ matrix.service }}
-        docker logs test-${{ matrix.service }}
-        echo "Container test-${{ matrix.service }} passed."
-        
-        # Clean up temporary .env file
-        rm -f "$TEMP_ENV_FILE"
+          echo "Container test-${{ matrix.service }} passed."
+          
+          # Clean up temporary .env file
+          rm -f "$TEMP_ENV_FILE"
   
