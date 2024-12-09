@@ -1,0 +1,53 @@
+name: Generate Python Documentation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Checkout the repository
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    # Get the list of changed files
+    - name: Determine changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v45.0.4
+      with:
+        files: "**/*.py"
+
+    # Check if there are any Python files changed
+    - name: Check if .py files were modified
+      if: steps.changed-files.outputs.any_changed == 'false'
+      run: echo "No Python files changed. Skipping documentation generation." && exit 0
+
+    # Install required tools
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz texlive-latex-base texlive-latex-extra texlive-fonts-recommended ghostscript
+
+    # Run Doxygen using the existing Doxyfile
+    - name: Run Doxygen
+      working-directory: ./docs
+      run: doxygen Doxyfile
+
+    # Compile the LaTeX output to PDF
+    - name: Generate PDF from LaTeX
+      working-directory: ./docs/latex
+      run: |
+        pdflatex refman.tex
+        pdflatex refman.tex # Run twice for proper indexing
+
+    # Upload PDF as an artifact
+    - name: Upload documentation artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: python-documentation
+        path: docs/latex/refman.pdf
