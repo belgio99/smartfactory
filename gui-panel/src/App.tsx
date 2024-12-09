@@ -9,8 +9,8 @@ const App = () => {
 
     // User authentication state ---  set to true for development purposes
     //const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
-    const [isAuthenticated, setIsAuthenticated] = useState(true);
-    const [userId, setUserId] = useState('0');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [userId, setUserId] = useState('');
     const [username, setUsername] = useState('Test User');
     const [token, setToken] = useState<string | null>(null);
     const [role, setRole] = useState('Tester');
