@@ -16,6 +16,13 @@
 
 SmartFactory is an innovative solution for automating factory operations. It leverages cutting-edge technologies such as AI, signal processing and RAG to streamline processes, provide insights, and create comprehensive dashboards from Industry 4.0 machinery data.
 
+<p align="center">
+   <img src="docs/assets/dashboard.png" alt="Dashboard Screenshot">
+</p>
+<p align="center">
+   SmartFactory Dashboard page
+</p>
+
 ## Components
 
 SmartFactory consists of the following components:
