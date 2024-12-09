@@ -1,13 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom"; // React Router
-import {getReports} from "../../api/ApiService";
-import {downloadReport} from "../../api/ApiService";
+import {downloadReport, getReports} from "../../api/ApiService";
 import ReportModal from "./InstantModal";
 
 type Report = {
     id: string;
     title: string;
-    description: string;
 };
 
 interface ReportArchiveProps {
@@ -110,11 +108,11 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
     // If no reports are available, show mock data
     if (reports.length === 0) {
         const getReportList = (): Report[] => [
-            {id: "1", title: "Quarterly Report Q1", description: "Summary and details of Q1 performance."},
-            {id: "2", title: "Quarterly Report Q2", description: "Summary and details of Q2 performance."},
-            {id: "3", title: "Annual Report 2023", description: "Comprehensive analysis of the year 2023."},
-            {id: "4", title: "Quarterly Report Q3", description: "Summary and details of Q3 performance."},
-            {id: "5", title: "Annual Report 2022", description: "Comprehensive analysis of the year 2022."},
+            {id: "1", title: "Monthly Report Q1"},
+            {id: "2", title: "Quarterly Report Q2"},
+            {id: "3", title: "Annual Report 2023"},
+            {id: "4", title: "Monthly Report Q3"},
+            {id: "5", title: "Annual Report 2022"},
         ];
         setReports(getReportList());
     }
@@ -149,6 +147,11 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
         <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-25 rounded-lg shadow-lg">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">Report Manager</h1>
 
+            <div className="flex items-center space-x-4 mb-6 text-gray-700">
+                In this section you can view, download, and generate reports. To see, create and edit the recurrent
+                report schedules click on "Manage Schedules".
+            </div>
+
             {/* Filter and Sort Controls */}
             <div className="mb-6 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
                 <div className="flex items-center space-x-4 flex-1">
@@ -180,7 +183,7 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                             className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow text-sm"
                             onClick={handleManageSchedules}
                         >
-                            Manage Recurring Schedules
+                            Manage Schedules
                         </button>
                     </div>
                     <div>
@@ -219,22 +222,15 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
             </div>
 
             {/* Report List */}
-            <div className="space-y-4">
+            <div className="space-y-4 flex-col">
                 {filteredReports.map((report) => (
                     <div
                         key={report.id}
-                        className="bg-white border border-gray-200 rounded-lg shadow-sm"
+                        className="bg-white border flex border-gray-200 rounded-lg shadow-sm"
                     >
-                        <div
-                            className="flex items-center justify-between p-4 cursor-pointer"
-                            onClick={() => toggleAccordion(Number(report.id))}
-                        >
-                            <span className="font-medium text-gray-700">{report.title}</span>
-                            <span className="text-gray-500">{expanded === Number(report.id) ? "▲" : "▼"}</span>
-                        </div>
-                        {expanded === Number(report.id) && (
+
                             <div className="p-4 border-t border-gray-200">
-                                <p className="text-gray-600 mb-4 font-normal text-start ">{report.description}</p>
+                                <p className="text-gray-600 mb-4 font-normal text-start ">{report.title}</p>
                                 <div className="flex space-x-4">
                                     <button
                                         className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
@@ -248,7 +244,7 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                                     </button>
                                 </div>
                             </div>
-                        )}
+
                     </div>
                 ))}
             </div>

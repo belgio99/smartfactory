@@ -7,7 +7,7 @@
     "email": "mock@company.com",
     "startDate": "2024-12-01",
     "kpis": [
-      "energy_cost_max",
+      "energy_cost_per_unit",
       "power_consumption_efficiency"
     ],
     "machines": [
@@ -24,7 +24,7 @@
     "startDate": "2024-01-01",
     "kpis": [
       "consumption_sum",
-      "energy_cost_max",
+      "energy_cost_per_unit",
       "power_consumption_efficiency"
     ],
     "machines": [

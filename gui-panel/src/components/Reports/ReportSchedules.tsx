@@ -35,7 +35,7 @@ const SchedulesList: React.FC<SchedulesListProps> = ({schedules, onEdit, onDelet
                             <p className="text-sm text-gray-500">Recurrence: {schedule.recurrence}</p>
                             <p className="text-sm text-gray-500">Email: {schedule.email}</p>
                             <p className="text-sm text-gray-500">Start Date: {schedule.startDate}</p>
-                            <p className="text-sm text-gray-500">KPIs: {schedule.kpis.map(mapKpiIdToName)}</p>
+                            <p className="text-sm text-gray-500">KPIs: {schedule.kpis.map(mapKpiIdToName).join(", ")}</p>
                             <p className="text-sm text-gray-500">Machines: {schedule.machines.join(", ")}</p>
                         </div>
                         <div className="flex space-x-2">

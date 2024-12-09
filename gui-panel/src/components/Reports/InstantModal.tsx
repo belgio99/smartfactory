@@ -97,10 +97,9 @@ const ReportModal: React.FC<ModalProps> = ({isOpen, reportData, onSave, onClose}
                     onChange={handleInputChange}
                     className="w-full p-2 mb-4 border border-gray-300 rounded"
                 >
-                    <option value="Daily">Daily</option>
-                    <option value="Weekly">Weekly</option>
-                    <option value="Monthly">Monthly</option>
-                    <option value="Yearly">Yearly</option>
+                    <option value="Week">Weekly</option>
+                    <option value="Month">Monthly</option>
+                    <option value="Year">Yearly</option>
                 </select>
                 {validationErrors.period && <p className="text-red-500 text-sm">{validationErrors.period}</p>}
 
