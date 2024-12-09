@@ -4,7 +4,6 @@ import styles from '../styles/LoginForm.module.css';
 import {login, register, UserInfo} from '../api/ApiService';
 // Security service
 import {hashPassword} from '../api/security/securityService';
-import { log } from 'console';
 
 interface LoginFormProps {
     onLogin: (userId: string, username: string, token: string, role: string, site: string, email: string) => void;
@@ -77,7 +76,7 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
             // Call the register API
             const registerResponse = await register(username, email, hashedPassword, role, site);
             //
-            console.log('Regisration response:', registerResponse);
+            console.log('Registration response:', registerResponse);
             //
             // Call the login API after the registration
             const loginResponse = await login(username, isEmail, hashedPassword);
@@ -99,7 +98,7 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
                 setError('Error during registration. Please try again.');
             }
         } catch (err) {
-            setError('Error during registration. Please try again.');
+            setError('Error during registration. Please try again.' + err);
         } finally {
             setLoading(false);
         }

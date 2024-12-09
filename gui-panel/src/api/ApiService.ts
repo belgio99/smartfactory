@@ -192,7 +192,7 @@ export const login = async (
     return response.data;
   } catch (error: any) {
     console.error('Login API error:', error.response || error.message);
-    throw new Error(error.response?.data?.message || 'Login failed');
+    throw new Error(error.response?.data?.message || 'Login failed, couldn\'t reach the server');
   }
 };
 
@@ -234,7 +234,7 @@ export const register = async (
     return response.data;
   } catch (error: any) {
     console.error('Register API error:', error);
-    throw new Error(error.response?.data?.message || 'Registration failed');
+    throw new Error(error.response?.data?.message || "Couldn\'t reach the server");
   }
 };
 
