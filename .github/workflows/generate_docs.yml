@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
 
 jobs:
   generate-docs:
@@ -22,10 +23,14 @@ jobs:
       with:
         files: "**/*.py"
 
-    # Check if there are any Python files changed
-    - name: Check if .py files were modified
-      if: steps.changed-files.outputs.any_changed == 'false'
-      run: echo "No Python files changed. Skipping documentation generation." && exit 0
+    # Check if .py files were modified or if the trigger is manual
+    - name: Check conditions for running
+      if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+      run: |
+        if [[ "${{ steps.changed-files.outputs.any_changed }}" == "false" ]]; then
+          echo "No Python files changed. Skipping documentation generation."
+          exit 0
+        fi
 
     # Install required tools
     - name: Install dependencies
@@ -45,9 +50,14 @@ jobs:
         pdflatex refman.tex
         pdflatex refman.tex # Run twice for proper indexing
 
+    # Rename the output PDF
+    - name: Rename PDF
+      working-directory: ./docs/latex
+      run: mv refman.pdf api_docs.pdf
+
     # Upload PDF as an artifact
     - name: Upload documentation artifact
       uses: actions/upload-artifact@v3
       with:
         name: python-documentation
-        path: docs/latex/refman.pdf
+        path: docs/latex/api_docs.pdf
