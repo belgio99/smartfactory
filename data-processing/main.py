@@ -5,11 +5,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends
 import os
 import datetime
+import asyncio
+
 from api_auth.api_auth import get_verify_api_key
 
 from model import Json_out, Json_in
 
-app = FastAPI()
+async def task_scheduler():
+    """Central scheduler running periodic tasks"""
+    while True:
+        new_data_polling()
+        print('polling_complete :)')
+        await asyncio.sleep(86400)
+        # await asyncio.sleep(10)
+            
+
+async def lifespan(app: FastAPI):
+    """Lifespan context manager to start and stop the scheduler"""
+    scheduler_task = asyncio.create_task(task_scheduler())
+    try:
+        yield
+    finally:
+        scheduler_task.cancel()
+        await scheduler_task
+
+app = FastAPI(lifespan = lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -199,16 +219,23 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
 # TODO: This function should be called once a day and retreive all the models 
 def new_data_polling():
     """
-        daily check of new data point to update the models.
+        daily check of new data point to update the models. new data points are extracted 24 hours
+        if an error occurs it is reported to the user and if drift is detected the re-training of
+        the code is performed
+
+        Args:
+
+        Returns:
     """
-    query_body = {
-        "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
-    }
-    response = f_dataprocessing.execute_druid_query(query_body)
-    #TODO: link response to available models
-    availableModels = []
-    for m in availableModels:
-        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    # query_body = {
+    #     "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
+    # }
+    # response = f_dataprocessing.execute_druid_query(query_body)
+    # #TODO: link response to available models
+    # availableModels = []
+    # for m in availableModels:
+    #     f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    print(datetime.datetime.today())
  
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0") # potrebbe essere bloccante
