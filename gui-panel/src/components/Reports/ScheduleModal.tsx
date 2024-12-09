@@ -1,8 +1,7 @@
 import React, {useEffect, useState} from "react";
-import {Schedule} from "../../api/DataStructures";
+import {KPI, Schedule} from "../../api/DataStructures";
 import FilterOptions from "../Selectors/FilterOptions";
 import PersistentDataManager from "../../api/PersistentDataManager";
-import {KPI} from "../../api/DataStructures";
 
 interface ModalProps {
     isOpen: boolean;
@@ -122,20 +121,20 @@ const ScheduleModal: React.FC<ModalProps> = ({isOpen, schedule, onSave, onClose}
                                             type="checkbox"
                                             id={`kpi-${kpi.id}`}
                                             value={kpi.id}
-                                            checked={formData.kpis?.includes(kpi.name) || false}
+                                            checked={formData.kpis?.includes(kpi.id) || false}
                                             onChange={(e) => {
                                                 const selectedKpis = formData.kpis || [];
                                                 if (e.target.checked) {
                                                     // Add KPI to the list
                                                     setFormData((prev) => ({
                                                         ...prev,
-                                                        kpis: [...selectedKpis, kpi.name],
+                                                        kpis: [...selectedKpis, kpi.id],
                                                     }));
                                                 } else {
                                                     // Remove KPI from the list
                                                     setFormData((prev) => ({
                                                         ...prev,
-                                                        kpis: selectedKpis.filter((name) => name !== kpi.name),
+                                                        kpis: selectedKpis.filter((name) => name !== kpi.id),
                                                     }));
                                                 }
                                             }}

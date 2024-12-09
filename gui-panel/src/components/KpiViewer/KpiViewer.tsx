@@ -45,14 +45,26 @@ const KpiViewer = () => {
                             className="flex items-center justify-between p-4 cursor-pointer"
                             onClick={() => toggleAccordion(kpi.id)}
                         >
-                            <span className="font-medium text-gray-800">{kpi.name}</span>
+                            <div className="flex items-center">
+                                <span className="font-medium text-gray-800">{kpi.name}</span>
+                                {kpi.forecastable && (
+                                    <img
+                                        src="/icons/forecast.svg"
+                                        alt="Forecasting Icon"
+                                        className="ml-2 w-4 h-4" // Aggiusta le dimensioni e il margine a tuo piacimento
+                                    />
+                                )}
+                            </div>
                             <span className="text-gray-600 text-sm">{kpi.type}</span>
                         </div>
                         {expanded === kpi.id && (
                             <div className="p-4  text-start border-t border-gray-200 font-semibold">
-                                <p className="mb-2">{kpi.description}</p>
+                                <p className="mb-2 text-base ">{kpi.description}</p>
                                 <p className="text-sm text-gray-500">
                                     Metric Used: {kpi.unit}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                    {kpi.forecastable ? "This KPI supports Forecasting features" : "Forecasting features are not available for this KPI"}
                                 </p>
                             </div>
                         )}

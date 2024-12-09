@@ -25,7 +25,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
     const compatibleMachineTypes = useMemo(() => {
         const machineTypes = dataManager.getMachineList().map((data) => data.type);
         return ['All', 'Custom Machine Set', ...new Set(machineTypes)];
-    }, []);
+    }, [dataManager]);
 
     // Filter machines based on the selected machine type
     const filteredMachines = useMemo(() => {
@@ -36,7 +36,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
         } else {
             return dataManager.getMachineList().filter((machine) => machine.type === filter.machineType);
         }
-    }, [filter.machineType]);
+    }, [filter.machineType, dataManager]);
 
     // Update machineIds when machineType changes
     useEffect(() => {
@@ -44,7 +44,7 @@ const FilterOptions: React.FC<FilterOptionsProps> = ({filter, onChange}) => {
             const machineIds = filteredMachines.map((machine) => machine.machineId);
             onChange({...filter, machineIds}); // Propagate change to parent
         }
-    }, [filter.machineType, filteredMachines, onChange]);
+    }, [filter.machineType, filteredMachines]);
 
     const handleModalSave = (machineIds: string[]) => {
         onChange({...filter, machineIds}); // Only update machineIds directly for custom sets
