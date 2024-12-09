@@ -10,7 +10,7 @@ class Json_in_el(BaseModel):
 class Json_in(BaseModel):
     value: List[Json_in_el]
 
-class Json_out(BaseModel):
+class Json_out_el(BaseModel):
     Machine_name: str
     KPI_name: str
     Predicted_value: Optional[List[float]]
@@ -21,3 +21,6 @@ class Json_out(BaseModel):
     Measure_unit: str
     Date_prediction: List[str]
     Forecast: bool
+
+class Json_out(BaseModel):
+    value: List[Json_out_el]

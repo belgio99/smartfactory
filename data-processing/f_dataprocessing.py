@@ -1,4 +1,3 @@
-# from XAI_forecasting import forecastExplainer
 
 import pandas as pd
 import numpy as np
@@ -16,14 +15,16 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import json
 import os
-
+import base64
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import matplotlib.dates as mdates
 
 import requests
-import datetime
+from datetime import datetime, timedelta
+
+from XAI_forecasting import forecastExplainer
 
 ####################################
 #####==========================#####
@@ -35,7 +36,9 @@ import datetime
 # analyzed in real-time. The same pipeline should be applied to any new batch
 # of data that we wish to add in the future and for which we have enough
 # historical data
-models_path = 'models/'
+models_path = './models/'
+
+observation_window = 15
 
 def execute_druid_query(body):
     """
@@ -58,17 +61,29 @@ def execute_druid_query(body):
         return None
 
 def data_load(machine,kpi):
-  
+  # Controlla gli ultimi tre caratteri
+  # Tipi di aggregazione validi
+  kpi_types = {"sum", "min", "max", "avg"}
+
+  kpi_name = ''
+  data_type = ''
+  if kpi[-3:] in kpi_types:
+      # Trova l'ultimo underscore
+      split_index = kpi.rfind("_")
+      
+      # Dividi il nome del KPI
+      kpi_name = kpi[:split_index]  # Parte prima dell'underscore
+      data_type = kpi[split_index + 1:]  # Parte dopo l'underscore
   query_body = {
-      "query": "SELECT * FROM \"timeseries\"" # WHERE Machine_name = {machine} AND KPI_name = {KPI}
-  }
-  # Execute the query
+        "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi_name}'"
+  } # Execute the query
   response = execute_druid_query(query_body)
-  
-  # time series should be loaded from the dataset,
-  # right now they can be read directly from the pickle file
-  # kpi_data = df.loc[df['name'] == machine].loc[df['kpi'] == kpi]
-  return response# kpi_data['time'].values, kpi_data['avg'].values
+  avg_r = []
+  avg_t = []
+  for r in response:
+    avg_r.append(r[data_type])
+    avg_t.append(r['__time'])
+  return avg_t,avg_r
 
 def data_extract_trends(ts):
   trends = {
@@ -103,7 +118,7 @@ def data_normalize_params(data):
   normalized_data = pd.Series(array_scaled.flatten(),index=data.index,name='Timestamp')
   return normalized_data
 
-def create_model_data(machine, kpi, path):
+def create_model_data(machine, kpi, path): #TODO: instead of path we need to save the model on the DB
   a_dict = {}
   a_dict['trends'] = {
       'max': 0,
@@ -138,17 +153,40 @@ def create_model_data(machine, kpi, path):
   a_dict['model'] = {
       'name': '', #name of the model used
       'p': 0, # p, q are the ARMA parameters
-      'q': 0
+      'q': 0,
+      'xgb_bytes': ''
   }
-  with open(path, 'w', os.O_CREAT) as outfile:
-    json.dump(a_dict, outfile)
+  return a_dict
 
 
 def save_model_data(machine, kpi, n_dict):
 
-  final_path = f'{models_path}{machine}_{kpi}.json'
+  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
   with open(final_path, 'w') as outfile:
     json.dump(n_dict, outfile)
+
+def load_model(machine, kpi): #handle loading with a query
+
+  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+  if not os.path.isfile(final_path):
+    return create_model_data(machine, kpi, final_path)
+  else:
+    dct = {}
+    with open(final_path, "r") as file:
+      dct = json.load(file)
+    return dct
+
+def check_model_exists(machine, kpi):
+  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+  
+
+  if os.path.isfile(final_path):
+     a_dict = load_model(machine,kpi)
+     if a_dict["model"]["name"] != "":
+        return True
+  return False
+
+   
 
 def optimize_ARIMA(endog, order_list, d):
 
@@ -187,16 +225,31 @@ def xgboost_parameter_select(X_train,y_train):
   return grid_search.best_estimator_ 
 
 
-def custom_tts(data, labels, window_size = 10):
-  X = []
-  y = []
-  for i in range(len(data) - window_size):
-    X.append(data[i:i + window_size])  # Input is the window of 10 elements
-    y.append(data[i + window_size])    # Target is the next value
+def custom_tts(data, labels, window_size = 20):
 
-  X = np.array(X)
-  y = np.array(y)
-  X_train, X_test, y_train, y_test, labels_train, labels_test = train_test_split(X,y,labels, test_size=0, random_state=42) #decide what to do
+  X_train = []
+  y_train = []
+  total_points = len(data)
+  for i in range(total_points - window_size - 1):
+      X_train.append(data[i:i+window_size])
+      y_train.append(data[i+window_size])
+
+  X_train = np.array(X_train)
+  y_train = np.array(y_train)
+
+  # # Train XGBoost model
+  # model.fit(X_train, y_train)
+
+  # X = []
+  # y = []
+  # for i in range(len(data) - window_size):
+  #   X.append(data[i:i + window_size])  # Input is the window of 10 elements
+  #   y.append(data[i + window_size])    # Target is the next value
+
+  # X = np.array(X)
+  # y = np.array(y)
+  # X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.15, random_state=42) #decide what to do
+  return X_train, y_train
 
 #########################
 ### 1. data profiling ###
@@ -204,14 +257,7 @@ def custom_tts(data, labels, window_size = 10):
 
 def characterize_KPI(machine, kpi):
   # DATA LOADING
-  final_path = f'{models_path}{machine}_{kpi}.json'
-  if not os.path.isfile(final_path):
-    create_model_data(machine, kpi, final_path)
-
-  a_dict = {}
-  with open(final_path, "r") as file:
-    a_dict = json.load(file)
-
+  a_dict = load_model(machine, kpi)
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   # EXTRACT DATA TRENDS
@@ -240,11 +286,11 @@ def characterize_KPI(machine, kpi):
       'Stationary': 1 if orig_p_value < 0.05 else 0
   }
 
+
   if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
-    diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff()})
+    diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
     diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
-    print(diff1_series)
-    data['Value'] = data_normalize_params(diff1_series['Value'])
+    # data['Value'] = data_normalize_params(diff1_series['Value'])
 
     stationarity_results = {
       'Differencing': 1,
@@ -253,9 +299,9 @@ def characterize_KPI(machine, kpi):
       'Stationary': 1 if diff1_p_value < 0.05 else 0
     }
     if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
-        diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff()})
+        diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
         diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
-        data['Value'] = data_normalize_params(diff2_series['Value'])
+        # data['Value'] = data_normalize_params(diff2_series['Value'])
 
         stationarity_results = {
           'Differencing': 2,
@@ -263,13 +309,13 @@ def characterize_KPI(machine, kpi):
           'P-value': f'{diff2_p_value:.2E}',
           'Stationary': 1 if diff2_p_value < 0.05 else 0
         }
-  else:
-    data['Value'] = data_normalize_params(data['Value'])
+  # else:
+  #   data['Value'] = data_normalize_params(data['Value'])
 
   a_dict['stationarity'] = stationarity_results
-  # ###########################
-  # ### 3. Model definition ###
-  # ###########################
+  ###########################
+  ### 3. Model definition ###
+  ###########################
   model_selected = 'xgboost'
   if model_selected == 'ARIMA':
     # Set up the p and q ranges
@@ -295,20 +341,28 @@ def characterize_KPI(machine, kpi):
     }
   elif model_selected == 'xgboost':
     # parameter selection for xgboost
-    X_train, _, y_train, _ = custom_tts(data['Value'].values,kpi_data_Time) 
+    X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
 
     model = xgboost_parameter_select(X_train,y_train)
-    model_bytes = model.save_raw()
+    # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
+    model.fit(X_train, y_train)
+
+    booster = model.get_booster()
+    model_bytes = booster.save_raw()
+    encoded_model = base64.b64encode(model_bytes).decode('utf-8')
     a_dict['model'] = {
        'name': 'xgboost',
-       'xgb_bytes': model_bytes
+       'xgb_bytes': encoded_model,
+       'metadata': {
+          'trained_on': str(datetime.today().date())},
+          # 'hyperparameters': model.get_params()},
     }
   ############################
   ### 4. Meta-Data storage ###
   ############################
   save_model_data(machine, kpi, a_dict)
 
-  return X_train, X_test, y_train, y_test, labels_train, labels_test
+
 ##############################
 #####====================#####
 ### II. Real-Time Analysis ###
@@ -338,13 +392,45 @@ def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q
 
     return pred_ARIMA[:horizon]
 
+def XAI_PRED(data, model, total_points, seq_length = 10, n_predictions = 30):
+  # Seed
+  np.random.seed(42)
+
+  # Prepare training data for XGBoost: predict next value from last seq_length values
+  X_train = []
+  y_train = []
+  for i in range(total_points - seq_length - 1):
+      X_train.append(data[i:i+seq_length])
+      y_train.append(data[i+seq_length])
+
+  X_train = np.array(X_train)
+  y_train = np.array(y_train)
+
+  # Perform predictions beyond the training range
+  input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
+
+  # Generate labels for the input_data
+  start_date = datetime(2020, 1, 1)
+  input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
+
+  # Initialize the explainer
+  explainer = forecastExplainer(model, X_train)
+
+  # Perform autoregressive predictions
+  results = explainer.predict_and_explain(
+      input_data=input_data,
+      n_predictions=n_predictions,
+      input_labels=input_labels,
+      num_features=5,
+      confidence=0.95,
+      n_samples=100,
+      use_mean_pred=True
+  )
+  return results
+
 def make_prediction(machine, kpi, length):
 
-  final_path = f'{models_path}{machine}_{kpi}.json'
-  
-  a_dict = {}
-  with open(final_path, "r") as file:
-    a_dict = json.load(file)
+  a_dict = load_model(machine, kpi)
 
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
@@ -355,7 +441,7 @@ def make_prediction(machine, kpi, length):
 
   avg_values1 = data['Value'].values
   if a_dict['model']['name'] == 'ARIMA':
-    
+
     # Split into train and test sets
     train_len = int(len(avg_values1) * 0.85)
     train, test = avg_values1[:train_len], avg_values1[train_len:]
@@ -368,12 +454,9 @@ def make_prediction(machine, kpi, length):
     # explainer = forecastExplainer(model, training_data)
     # input_data: Union[np.ndarray, torch.Tensor]
     # n_predictions: int
-    # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD'] 
+    # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD']
     # Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
     # Model MUST be able to do prediction = model.predict(input_data) <- predict should return a single value
-
-
-
 
     pred_ARIMA = rolling_forecast(
         avg_values1,
@@ -396,23 +479,42 @@ def make_prediction(machine, kpi, length):
     else:
         print(f"No test data available for evaluation for {machine} - {kpi}")
 
-  elif a_dict['model']['name'] == 'xgboost': 
+  elif a_dict['model']['name'] == 'xgboost':
     # TODO: perform differentiation here
-    X_train, X_test, y_train, y_test, l_train, l_test = custom_tts(avg_values1,kpi_data_Time)
+    # X_train, y_train = custom_tts(avg_values1,kpi_data_Time)
+    # X_test = [avg_values1[-11:-1]]
 
+    # print(f'testlen: {len(X_test)}')
+
+    # Decode the Base64 string back to raw bytes
+    encoded_model = a_dict['model']['xgb_bytes']
+    raw_model_bytes = bytearray(base64.b64decode(encoded_model))
+
+    # Load the model from raw bytes
+    booster = xgb.Booster()
+    booster.load_model(raw_model_bytes)
+
+    # Optionally, wrap the Booster back into an XGBRegressor for convenience
     loaded_model = xgb.XGBRegressor()
-    loaded_model.load_model(a_dict['model']['xgb_bytes'])
+    loaded_model._Booster = booster
+
     # Use the loaded model for predictions
 
-    explainer = forecastExplainer(loaded_model, X_train)
-    Predicted_values, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(X_test, length, l_test)
+    # explainer = forecastExplainer(loaded_model, X_train)
+    # formatted_dates = [datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d") for date in kpi_data_Time[-11:-1]]
+
+    results = XAI_PRED(avg_values1,loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
     
-    last_date = kpi_data_Time[-1]
-    out_dates = []
-    for i in range(horizon):
-      new_date = last_date+1
-      out_dates.append(str(new_date))
-    return Predicted_values, out_dates, Lower_bound, Upper_bound, Confidence_score, Lime_explaination
+    x = [r.item() for r in results['Predicted_value']]
+    y = [r.item() for r in results['Lower_bound']]
+    z = [r.item() for r in results['Upper_bound']]
+    k = [r.item() for r in results['Confidence_score']]
+    results['Predicted_value'] = x
+    results['Lower_bound'] = y
+    results['Upper_bound'] = z
+    results['Confidence_score'] = k
+    
+    return results
 
 def kpi_exists(machine, KPI, host_url, host_port):
 
