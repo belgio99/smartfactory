@@ -11,7 +11,7 @@ from schemas.promptmanager import PromptManager
 from chains.ontology_rag import DashboardGenerationChain, GeneralQAChain, KPIGenerationChain
 from schemas.models import Question, Answer
 from schemas.XAI_rag import RagExplainer
-from queryGen.QueryGenerator import QueryGenerator
+from queryGen.QueryGen import QueryGenerator
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
