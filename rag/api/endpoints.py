@@ -533,16 +533,14 @@ async def ask_question(question: Question): # to add or modify the services allo
                             
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, response_json["textualResponse"])
-
                     history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
-                    
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-                    data = json.dumps(response_json["bindings"], indent=2)            
-                    return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
                 else:
+                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
-                    data = json.dumps(response_json["bindings"], indent=2)
-                    return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
+                
+                data = json.dumps(response_json["bindings"], indent=2)
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
     except Exception as e:
         print(e)
         return Answer(textResponse="Something gone wrong, I'm not able to answer your question", textExplanation="", data="", label="Error")
