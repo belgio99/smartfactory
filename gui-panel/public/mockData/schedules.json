@@ -7,8 +7,8 @@
     "email": "mock@company.com",
     "startDate": "2024-12-01",
     "kpis": [
-      "Energy Cost Savings",
-      "Power Consumption Efficiency"
+      "energy_cost_max",
+      "power_consumption_efficiency"
     ],
     "machines": [
       "Machine 1",
@@ -17,13 +17,15 @@
   },
   {
     "id": 2,
-    "name": "Annual Throughput Report",
+    "name": "Annual Energy Consumption Report",
     "recurrence": "Yearly",
     "status": false,
     "email": "mock@company.com",
     "startDate": "2024-01-01",
     "kpis": [
-      "Throughput"
+      "consumption_sum",
+      "energy_cost_max",
+      "power_consumption_efficiency"
     ],
     "machines": [
       "Machine 3"
