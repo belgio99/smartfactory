@@ -506,7 +506,8 @@ async def ask_question(question: Question): # to add or modify the services allo
                 # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
                 context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 explainer.add_to_context([("Knowledge Base", context_cleaned)])
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
 
             if label == 'report':
