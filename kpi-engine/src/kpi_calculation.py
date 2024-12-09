@@ -414,6 +414,7 @@ class kpi_engine:
             "Content-Type": "application/json"
         }
         response = requests.get(f"http://kb:8000/kb/{kpi_id}/get_kpi", headers=headers)
+<<<<<<< HEAD
         response = response.json()
         print(response)
         if response.get("atomic") == True:
@@ -422,6 +423,11 @@ class kpi_engine:
             formula = response.get("atomic_formula")
         unit_of_measure = response.get("unit_measure")
         # formula = 'cycles_max'
+=======
+        formula = response["atomic_formula"]
+        unit_of_measure = response["unit_measure"]
+        # formula = 'cycles_mex'
+>>>>>>> 0bac998 (error handling)
         # unit_of_measure = '%'
         expr = parse_expr(formula)
 
