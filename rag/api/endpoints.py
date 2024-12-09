@@ -19,7 +19,7 @@ from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
 from collections import deque
 from dotenv import load_dotenv
-from .api_auth.api_auth import get_verify_api_key
+#from .api_auth.api_auth import get_verify_api_key
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -512,7 +512,4 @@ async def ask_question(question: Question): # to add or modify the services allo
             
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
             data = json.dumps(response_json["bindings"], indent=2)
-            
-            print(kb_context, "\n", "\n", gui_context)
-            
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
