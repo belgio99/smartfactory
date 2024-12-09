@@ -1,3 +1,9 @@
+"""
+@file kb.py
+@brief This file contains the implementation of the KB.
+@author Nicola Emmolo, Jacopo Raffi
+"""
+
 from owlready2 import *
 import sympy
 
@@ -19,9 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
-TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
 onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
 
@@ -38,13 +42,13 @@ def get_kpi(kpi_id):
     Globals:
         onto (Ontology): The global ontology object is used to extract KPIs.
 
-    Returns:
-        dict: A dictionary containing the KPI data. The structure includes:
+    Returns: 
+        dict A dictionary containing the KPI data. The structure includes:
             - "Status" (int): 0 if successful, -1 if no machine data is found.
             - Additional keys corresponding to the KPI's data properties.
     """
 
-    query = f'*{kpi_id}'
+    query = f'*#{kpi_id}'
     results = onto.search(iri = query)
     json_d = {'Status': -1} # default status
 
@@ -383,7 +387,7 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
         dict: The status of the pair. {Status: 0} and the info of the pair if the pair exists, {Status: -1} otherwise.
     """
 
-    query = f'*{machine_id}'
+    query = f'*{machine_id.lower().replace(" ", "_")}'
     result = onto.search_one(iri = query)
     json_d = {'Status': -1} # default status
 
@@ -513,7 +517,7 @@ def add_kpi(kpi_info):
                 machine.producesKPI.append(new_kpi)
 
             sync_reasoner()
-            onto.save(file = TMP_ONTOLOGY_PATH, format = "rdfxml")
+            onto.save(file = ONTOLOGY_PATH, format = "rdfxml")
         except Exception as error:
             print(error)
             return False
@@ -605,7 +609,16 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
         dict: The status of the operation.
     """
 
-    result = add_kpi(kpi_info)
+    kpi_info_dict = {
+        "id": [kpi_info.id],
+        "description": [kpi_info.description],
+        "formula": [kpi_info.formula],
+        "unit_measure": [kpi_info.unit_measure],
+        "forecastable": [kpi_info.forecastable],
+        "atomic": [kpi_info.atomic],
+    }
+
+    result = add_kpi(kpi_info_dict)
     if not result:
         return {"Status": -1, "message": "KPI not added"}
     return {"Status": 0, "message": "KPI added"}
@@ -617,21 +630,4 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
 # -------------------------------------------- Main --------------------------------------------
 
 if __name__ == "__main__":
-    """try:
-        tmp = is_pair_machine_kpi_exist("assembly_machine_1", "oee")
-        print(tmp)
-    except Exception as error:
-        print(error)"""
-    
-    """info = {
-        "id": ["kpi_prova"],
-        "description": ["KPI description"],
-        "formula": ["operative_time + power_sum"],
-        "unit_measure": ["unit"],
-        "forecastable": [True],
-        "atomic": [False],
-    }
-    kpi_info = KPI_Info(**info)
-    print(add_kpi(kpi_info))"""
-    
     uvicorn.run(app, port=8000, host="0.0.0.0")
