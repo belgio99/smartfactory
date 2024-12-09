@@ -86,7 +86,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                     {
                         id: messages.length + 2,
                         sender: 'assistant',
-                        content: 'This is an example report.',
+                        content: 'Your report is ready for review.',
                         extraData: {
                             explanation: XAIEX,
                             report: {
@@ -128,6 +128,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                                         reportId: response.data,
                                     },
                                 };
+                                response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
                         }
                     }
 
