@@ -19,10 +19,3 @@ class HistoricalQueryParams(BaseModel):
     machines: list
     group_time: Optional[str] = None
     
-
-class HistoricalData(BaseModel):
-    """
-    Represents the historical data obstained from the database.
-    """
-    
-    data: dict
