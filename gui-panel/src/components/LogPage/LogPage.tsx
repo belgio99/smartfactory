@@ -1,7 +1,7 @@
-import React, {useState, useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import styles from './styles/LogPage.module.css';
 import {fetchLogs, markAsRead} from '../../api/LogService';
-import {FaInfoCircle, FaExclamationTriangle, FaTimesCircle, FaChevronDown, FaChevronUp} from 'react-icons/fa';
+import {FaChevronDown, FaChevronUp, FaExclamationTriangle, FaInfoCircle, FaTimesCircle} from 'react-icons/fa';
 
 interface LogItem {
     id: number;
@@ -105,7 +105,7 @@ const LogPage: React.FC = () => {
                 {filteredLogs.map((log) => (
                     <div
                         key={log.id}
-                        className={`border rounded-lg p-4 mb-4 cursor-pointer transition-transform transform hover:scale-105 ${log.isRead
+                        className={`border-2 rounded-lg p-4 mb-4 cursor-pointer transition-transform transform hover:scale-105 ${log.isRead
                             ? 'bg-gray-50  text-gray-500' // Faded gray for read
                             : 'bg-white text-gray-800'   // Clean white for unread 
                         }`}

@@ -2,15 +2,14 @@ name: Build and Test Docker Compose Services
 
 on:
   pull_request:
-    branches-ignore:
-      - main
 
 jobs:
-  build-test-containers:
+  build-and-test-containers:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Replace with your actual service names
+        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]  # Lista completa dei servizi.
 
     steps:
       - name: Checkout code
@@ -19,48 +18,69 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Create .env file from secret
-        run: echo "${{ secrets.RAG_ENV }}" >> rag/.env
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and cache Docker images
+      - name: Build Docker image
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
           file: ./${{ matrix.service }}/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/${{ matrix.service }}:latest
-          push: false
+          tags: ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          push: false 
+          load: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
 
-      - name: Start services with Docker Compose
-        run: docker-compose up -d
-
-      - name: Wait for services to initialize
-
-        run: sleep 60
-
-      - name: Test running services
+      - name: Run container for testing
         run: |
-          SERVICES=$(docker-compose config --services)
-          for SERVICE in $SERVICES; do
-            CONTAINER_ID=$(docker ps -qf "name=${SERVICE}")
-            STATUS=$(docker inspect -f '{{.State.Status}}' $CONTAINER_ID)
-            if [ "$STATUS" != "running" ]; then
-              echo "Service $SERVICE failed to run!"
-              docker logs $CONTAINER_ID
-              docker-compose down
-              exit 1
-            else
-              echo "Service $SERVICE is running successfully."
-            fi
-          done
-
-      - name: Stop and remove services
-        run: docker-compose down
+          # Directory containing service-specific .env files
+          SERVICE_DIR="./${{ matrix.service }}"
+          
+          # Combine all .env files in the service directory into a temporary .env file
+          TEMP_ENV_FILE="./temp-${{ matrix.service }}.env"
+          rm -f "$TEMP_ENV_FILE" # Ensure no leftover temporary file
+          touch "$TEMP_ENV_FILE"
+          
+          if ls "$SERVICE_DIR"/*.env 1> /dev/null 2>&1; then
+            cat "$SERVICE_DIR"/*.env > "$TEMP_ENV_FILE"
+          fi
+          
+          # Add extra environment variable for RAG service
+          if [ "${{ matrix.service }}" = "rag" ]; then
+            echo "RAG_ENV=${{ secrets.RAG_ENV }}" >> "$TEMP_ENV_FILE"
+          fi
+          
+          # Determine if an env file exists and set the --env-file option
+          if [ -s "$TEMP_ENV_FILE" ]; then
+            ENV_OPTION="--env-file $TEMP_ENV_FILE"
+          else
+            ENV_OPTION=""
+          fi
+          
+          # Run the container in detached mode
+          docker run $ENV_OPTION --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          
+          # Wait for 60 seconds to test stability
+          sleep 60
+          
+          # Check the container status
+          if ! docker ps --filter "name=test-${{ matrix.service }}" --filter "status=running" | grep -q test-${{ matrix.service }}; then
+            echo "Container test-${{ matrix.service }} failed. Printing logs:"
+            docker logs test-${{ matrix.service }}
+            exit 1
+          fi
+          
+          # Stop the container after testing
+          docker stop test-${{ matrix.service }}
+          docker logs test-${{ matrix.service }}
+          echo "Container test-${{ matrix.service }} passed."
+          
+          # Clean up temporary .env file
+          rm -f "$TEMP_ENV_FILE"
+  

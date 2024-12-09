@@ -27,7 +27,7 @@ USER appuser
 CMD ["npm", "start"]
 
 # Step 7: Expose the port that Nginx is serving the app on
-EXPOSE 8000
+EXPOSE 8080
 
 LABEL org.opencontainers.image.source = https://github.com/belgio99/smartfactory
 

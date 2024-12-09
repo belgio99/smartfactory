@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from "react-router-dom";
+import React, {useState} from 'react';
+import {Link} from "react-router-dom";
+import { logout } from '../../api/ApiService';
 
-// Format path segments
 const formatPath = (path: string): string => {
     return path
         .replace(/^\/|\/$/g, '') // Trim leading/trailing slashes
@@ -13,43 +13,32 @@ interface HeaderProps {
     path: string; // e.g., "/user_settings"
     userAvatar: string;
     userName: string;
+    userId: string;
     role: string;
+    logoutHook?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ path, userAvatar, userName, role }) => {
+const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, userId, role, logoutHook}) => {
+    const [menuVisible, setMenuVisible] = useState(false);
     const pathSegments = path.split('/').filter(Boolean);
-
     return (
         <header className="flex justify-between items-center px-4 py-5 border-b bg-white border-gray-200">
-            <nav aria-label="Breadcrumb" className="flex items-center">
-                <button
-                    className="p-2 bg-transparent border-none cursor-pointer mr-2"
-                    aria-label="Add to favorites"
-                >
-                    <img
-                        src="https://cdn.builder.io/api/v1/image/assets/TEMP/4d221fed1faf3293d443fce0bfd1ac4f1237fe01bd37d307112b2b2c1046a6bb"
-                        alt="Favorite Icon"
-                        className="w-5 h-5"
-                    />
-                </button>
-                <ol className="flex list-none space-x-2 text-sm text-gray-700">
-                    {/* Loop through path segments */}
+            <nav aria-label="Breadcrumb" className="flex items-center mx-auto">
+                <ol className="flex list-none space-x-2 text-xl text-gray-700">
                     {pathSegments.map((segment, index) => {
-                        const segmentName = formatPath(segment); // Resolve name dynamically
+                        const segmentName = formatPath(segment);
                         return (
                             <React.Fragment key={index}>
                                 <li>
                                     {index < pathSegments.length - 1 ? (
                                         <Link
-                                            to={`/${pathSegments.slice(0, index + 1).join('/')}`} // Build link dynamically for each segment
+                                            to={`/${pathSegments.slice(0, index + 1).join('/')}`}
                                             className="text-blue-600 hover:underline"
                                         >
                                             {segmentName}
                                         </Link>
                                     ) : (
-                                        <span className="text-gray-900">
-                                            {segmentName} {/* Last segment is not a link */}
-                                        </span>
+                                        <span className="text-gray-900">{segmentName}</span>
                                     )}
                                 </li>
                                 {index < pathSegments.length - 1 && <li className="text-gray-400">/</li>}
@@ -70,14 +59,61 @@ const Header: React.FC<HeaderProps> = ({ path, userAvatar, userName, role }) => 
                         className="w-5 h-5"
                     />
                 </button>
-                <img
-                    src={require('./icon/avatar_32_32.svg').default}
-                    alt="User Avatar"
-                    className="w-8 h-8 rounded-full mr-2"
-                />
-                <span className="text-sm text-gray-900">
-                    {userName} <span className="text-gray-500">({role})</span>
-                </span>
+                <div className={`relative flex ${menuVisible ? 'z-10' : ''}`}
+                     onMouseEnter={() => setMenuVisible(true)}
+                     onMouseLeave={() => setMenuVisible(false)}
+                >
+                    <img
+                        src={require('./icon/avatar_32_32.svg').default}
+                        alt="User Avatar"
+                        className="w-8 h-8 rounded-full mr-2"
+                    />
+                    <div>
+                    <span className="text-sm text-gray-900 cursor-pointer">
+                        {userName} <span className="text-gray-500">({role})</span>
+                    </span>
+                        {menuVisible && (
+                            <div
+                                className="absolute right-0 top-8 w-auto mx-auto flex-col bg-white border-2 p-2 border-gray-200">
+                                <div
+                                    className="right-0 mt-2 ">
+                                    <div className="flex items-center px-1">
+                                        <img alt={"userIcon"}
+                                             src={'/icons/user.svg'}
+                                        />
+                                        <Link
+                                            to="/user-settings"
+                                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                        >
+                                            User Settings
+                                        </Link>
+                                    </div>
+                                    <div
+                                        className=" right-0 mt-2">
+                                        <div className="flex items-center px-1">
+                                            <img alt={"userIcon"}
+                                                 src={'/icons/logout.svg'}
+                                                 className="w-5 h-5"
+                                            />
+                                            <button
+                                                className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                onClick={() => {
+                                                    logout(userId);
+                                                    alert("Logging out...");
+                                                    logoutHook?.();
+                                                }}
+                                            >
+                                                Logout
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        )}
+                    </div>
+
+                </div>
             </div>
         </header>
     );

@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, {useEffect, useState} from 'react';
+import {BrowserRouter as Router, Navigate, Route, Routes} from 'react-router-dom';
 import DataManager from "./api/PersistentDataManager";
 import Home from "./components/Home";
 import LoginForm from "./components/LoginForm";
 
+
 const App = () => {
+
     // User authentication state ---  set to true for development purposes
     //const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -89,7 +91,8 @@ const App = () => {
                 <Routes>
                     <Route
                         path="/*"
-                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site} email={email} />}
+                        element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}
+                                       email={email} onLogout={handleLogout}/>}
                     />
                     <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
