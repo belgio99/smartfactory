@@ -41,7 +41,7 @@ while not success:
         success = True
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
-        time.sleep(30)
+        time.sleep(5)
 
 df = pd.DataFrame.from_dict(df, orient='columns')
 

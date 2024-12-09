@@ -391,11 +391,15 @@ class kpi_engine:
         fd = df
 
         # kpi_formula = extract formula through API and kpi_id
-        # response = requests.get(f"{os.getenv('BASE_URL')}/kb/retrieve/{kpi_id}")
-        # formula = response.get("atomic_formula")
-        # unit_of_measure = response.get("unit_measure")
-        formula = '((cycles_sum - bad_cycles_sum) / cycles_sum) * (working_time_sum / (working_time_sum + idle_time_sum))'
-        unit_of_measure = '%'
+        headers = {
+            "x-api-key": "06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7",
+            "Content-Type": "application/json"
+        }
+        response = requests.get(f"http://kb:8000/kb/{kpi_id}/get_kpi", headers=headers)
+        formula = response.get("atomic_formula")
+        unit_of_measure = response.get("unit_measure")
+        # formula = 'cycles_max'
+        # unit_of_measure = '%'
         expr = parse_expr(formula)
 
         # data extraction and symbol substitution
