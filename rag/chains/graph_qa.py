@@ -25,7 +25,16 @@ from langchain_community.graphs.rdf_graph import RdfGraph
 import warnings
 warnings.filterwarnings("ignore")
 
-def trim_query(query):
+def trim_query(query: str) -> str:
+    """
+    Trims a SPARQL query to remove unnecessary parts and returns only the essential query components.
+
+    Args:
+        query (str): The SPARQL query string to be trimmed.
+
+    Returns:
+        str: A trimmed SPARQL query string containing only the necessary components.
+    """
     # Match everything before the WHERE clause and the WHERE clause content itself, considering nested braces
     pattern = r"^(.*?)(WHERE\s*{(?:[^{}]*|{[^{}]*})*})"
     match = re.search(pattern, query, re.DOTALL)  # re.DOTALL allows '.' to match newline characters
@@ -36,18 +45,25 @@ def trim_query(query):
     return query  # If no WHERE clause is found, return the original query
 
 class GraphSparqlQAChain(Chain):
-    """Question-answering against an RDF or OWL graph by generating SPARQL statements.
+    """
+    A chain for performing question-answering against an RDF or OWL graph by generating SPARQL statements.
 
-    *Security note*: Make sure that the database connection uses credentials
-        that are narrowly-scoped to only include necessary permissions.
-        Failure to do so may result in data corruption or loss, since the calling
-        code may attempt commands that would result in deletion, mutation
-        of data if appropriately prompted or reading sensitive data if such
-        data is present in the database.
-        The best way to guard against such negative outcomes is to (as appropriate)
-        limit the permissions granted to the credentials used with this tool.
+    Security note: Ensure that database connection credentials are narrowly scoped to avoid dangerous operations.
+    
+    Args:
+        graph (RdfGraph): The RDF graph instance.
+        sparql_generation_select_chain (LLMChain): The chain for generating SELECT SPARQL queries.
+        sparql_generation_update_chain (LLMChain): The chain for generating UPDATE SPARQL queries.
+        sparql_intent_chain (LLMChain): The chain for determining the intent of a query.
+        qa_chain (LLMChain): The chain for answering questions based on the query.
+        return_sparql_query (bool, optional): Whether to return the generated SPARQL query. Defaults to False.
+        input_key (str, optional): The key for input queries. Defaults to "query".
+        output_key (str, optional): The key for output results. Defaults to "result".
+        sparql_query_key (str, optional): The key for returning the SPARQL query. Defaults to "sparql_query".
+        allow_dangerous_requests (bool, optional): Whether to allow dangerous requests. Defaults to False.
 
-        See https://python.langchain.com/docs/security for more information.
+    Raises:
+        ValueError: If allow_dangerous_requests is not set to True.
     """
 
     graph: RdfGraph = Field(exclude=True)
@@ -61,22 +77,18 @@ class GraphSparqlQAChain(Chain):
     sparql_query_key: str = "sparql_query"  #: :meta private:
 
     allow_dangerous_requests: bool = False
-    """Forced user opt-in to acknowledge that the chain can make dangerous requests.
-
-    *Security note*: Make sure that the database connection uses credentials
-        that are narrowly-scoped to only include necessary permissions.
-        Failure to do so may result in data corruption or loss, since the calling
-        code may attempt commands that would result in deletion, mutation
-        of data if appropriately prompted or reading sensitive data if such
-        data is present in the database.
-        The best way to guard against such negative outcomes is to (as appropriate)
-        limit the permissions granted to the credentials used with this tool.
-
-        See https://python.langchain.com/docs/security for more information.
-    """
+    """Forced user opt-in to acknowledge that the chain can make dangerous requests."""
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize the chain."""
+        """
+        Initializes the GraphSparqlQAChain.
+
+        Args:
+            **kwargs: Additional keyword arguments passed to the parent class and the chain initialization.
+
+        Raises:
+            ValueError: If `allow_dangerous_requests` is not set to True.
+        """
         super().__init__(**kwargs)
         if self.allow_dangerous_requests is not True:
             raise ValueError(
@@ -93,21 +105,24 @@ class GraphSparqlQAChain(Chain):
 
     @property
     def input_keys(self) -> List[str]:
-        """Return the input keys.
+        """
+        Returns the input keys for the chain.
 
-        :meta private:
+        Returns:
+            List[str]: A list containing the input key.
         """
         return [self.input_key]
 
     @property
     def output_keys(self) -> List[str]:
-        """Return the output keys.
+        """
+        Returns the output keys for the chain.
 
-        :meta private:
+        Returns:
+            List[str]: A list containing the output key.
         """
         _output_keys = [self.output_key]
         return _output_keys
-
 
     @classmethod
     def from_llm(
@@ -120,7 +135,20 @@ class GraphSparqlQAChain(Chain):
         sparql_intent_prompt: BasePromptTemplate = SPARQL_INTENT_PROMPT,
         **kwargs: Any,
     ) -> GraphSparqlQAChain:
-        """Initialize from LLM."""
+        """
+        Initializes the GraphSparqlQAChain from an LLM.
+
+        Args:
+            llm (BaseLanguageModel): The language model to use for query generation and answering.
+            qa_prompt (BasePromptTemplate, optional): The prompt template for question answering. Defaults to SPARQL_QA_PROMPT.
+            sparql_select_prompt (BasePromptTemplate, optional): The prompt template for generating SELECT queries. Defaults to SPARQL_GENERATION_SELECT_PROMPT.
+            sparql_update_prompt (BasePromptTemplate, optional): The prompt template for generating UPDATE queries. Defaults to SPARQL_GENERATION_UPDATE_PROMPT.
+            sparql_intent_prompt (BasePromptTemplate, optional): The prompt template for identifying query intent. Defaults to SPARQL_INTENT_PROMPT.
+            **kwargs: Additional keyword arguments passed to the chain initialization.
+
+        Returns:
+            GraphSparqlQAChain: An initialized instance of GraphSparqlQAChain.
+        """
         qa_chain = LLMChain(llm=llm, prompt=qa_prompt)
         sparql_generation_select_chain = LLMChain(llm=llm, prompt=sparql_select_prompt)
         sparql_generation_update_chain = LLMChain(llm=llm, prompt=sparql_update_prompt)
@@ -134,38 +162,26 @@ class GraphSparqlQAChain(Chain):
             **kwargs,
         )
 
-
-
     def _call(
         self,
         inputs: Dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> Dict[str, str]:
         """
-        Generate SPARQL query, use it to retrieve a response from the gdb and answer
-        the question.
+        Processes the input query and generates a SPARQL query, which is used to retrieve an answer from the RDF graph.
+
+        Args:
+            inputs (Dict[str, Any]): A dictionary containing the input query.
+            run_manager (Optional[CallbackManagerForChainRun], optional): The callback manager for chain execution. Defaults to None.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the result of the query or an error message.
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         prompt = inputs[self.input_key]
 
-        '''
-        _intent = self.sparql_intent_chain.run({"prompt": prompt}, callbacks=callbacks)
-        intent = _intent.strip()
-
-        if "SELECT" in intent and "UPDATE" not in intent:
-            sparql_generation_chain = self.sparql_generation_select_chain
-            intent = "SELECT"
-        elif "UPDATE" in intent and "SELECT" not in intent:
-            sparql_generation_chain = self.sparql_generation_update_chain
-            intent = "UPDATE"
-        else:
-            raise ValueError(
-                "I am sorry, but this prompt seems to fit none of the currently "
-                "supported SPARQL query types, i.e., SELECT and UPDATE."
-            )
-        '''
-
+        # Set intent to "SELECT" for now
         intent = 'SELECT'
         sparql_generation_chain = self.sparql_generation_select_chain
 

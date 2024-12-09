@@ -4,11 +4,18 @@ from chains.graph_qa import GraphSparqlQAChain
 # GENERAL QA CHAIN
 class GeneralQAChain:
   def __init__(self, llm, graph, history):
+    """
+    Initializes the GeneralQAChain to handle QA tasks related to graph-based queries.
 
+    Args:
+        llm: The language model to generate responses.
+        graph: The RDF graph containing the data.
+        history: A list of previous conversation entries to inform the context.
+    """
     self._llm = llm
     self._graph = graph
 
-    # Format the history
+    # Format the conversation history into a context string
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
         [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
     )
@@ -19,6 +26,7 @@ class GeneralQAChain:
     template_general_QA_answer="Task: Generate a natural language response from the results of a SPARQL query.\nYou are an assistant that creates well-written and human understandable answers.\nThe information part contains the information provided, which you can use to construct an answer.\nThe information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.\nThe information provided is the response from the query, use the query to understand the meaning of the field in the information.\nNote that if a field contains a hyphen, it indicates that the field is not relevant or important in that context, as it does not carry meaningful information. For example, this could occur in a formula within an atomic KPI.\nQuery:\n{query}\n\nInformation:\n{context}\n\nQuestion: {prompt}\nHelpful Answer:"
     general_QA_prompt_answer = PromptTemplate(input_variables=['prompt', 'context', 'query'], template=template_general_QA_answer)
 
+    # Initialize the chain that connects the prompts with the graph-based QA
     self.chain = GraphSparqlQAChain.from_llm(
       self._llm, graph=self._graph, verbose=True, allow_dangerous_requests=True, sparql_select_prompt=general_QA_prompt_select, qa_prompt=general_QA_prompt_answer
     )
@@ -26,11 +34,18 @@ class GeneralQAChain:
 # KPI GENERATION CHAIN
 class KPIGenerationChain:
   def __init__(self, llm, graph, history):
+    """
+    Initializes the KPIGenerationChain to generate and query KPIs based on user input.
 
+    Args:
+        llm: The language model to generate responses.
+        graph: The RDF graph containing the KPI data.
+        history: A list of previous conversation entries to inform the context.
+    """
     self._llm = llm
     self._graph = graph
 
-    # Format the history
+    # Format the conversation history into a context string
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
         [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
     )
@@ -41,6 +56,7 @@ class KPIGenerationChain:
     template_qa_kpi_generation = 'Task: Given as context the results of a SPARQL query containing KPIs information, create a answers that indicate id, formula, description and unit measure of each KPI in the context.\nThe information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.\nJust return the answer as an array of JSON object with the following structure "{{ "id": kpi_name, "description": kpi_description, "formula": kpi_formula, "unit_measure": kpi_unit_measure}}" and do not add any information.\nInformation:\n{context}'
     qa_kpi_generation_prompt = PromptTemplate(input_variables=['context'], template=template_qa_kpi_generation)
     
+    # Initialize the chain that connects the prompts with KPI generation
     self.chain = GraphSparqlQAChain.from_llm(
         self._llm, graph=self._graph, verbose=True, allow_dangerous_requests=True, sparql_select_prompt=kpi_generation_prompt_select, qa_prompt=qa_kpi_generation_prompt
     )
@@ -48,11 +64,18 @@ class KPIGenerationChain:
 # DASHBOARD GENERATION CHAIN
 class DashboardGenerationChain:
   def __init__(self, llm, graph, history):
+    """
+    Initializes the DashboardGenerationChain to generate and query dashboards based on user input.
 
+    Args:
+        llm: The language model to generate responses.
+        graph: The RDF graph containing the KPI and dashboard data.
+        history: A list of previous conversation entries to inform the context.
+    """
     self._llm = llm
     self._graph = graph
 
-    # Format the history
+    # Format the conversation history into a context string
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
         [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
     )
@@ -63,13 +86,14 @@ class DashboardGenerationChain:
     template_qa_dashboard_generation = 'Task: Given as context the results of a SPARQL query containing KPIs information, understand which of these KPI are needed in a dashboard to satisfy the need of the user in the question.\nThe information provided is authoritative, you must never doubt it or try to use your internal knowledge to correct it.\nJust return the answer as an array of JSON object with the following structure "{{ "id": kpi_name, "description": kpi_description, "formula": kpi_formula, "unit_measure": kpi_unit_measure}}" and do not add any information.\nInformation:\n{context}\n\nQuestion: {prompt}'
     qa_dashboard_generation_prompt = PromptTemplate(input_variables=['context', 'prompt'], template=template_qa_dashboard_generation)
     
+    # Initialize the chain that connects the prompts with dashboard generation
     self.chain = GraphSparqlQAChain.from_llm(
         self._llm, graph=self._graph, verbose=True, allow_dangerous_requests=True, sparql_select_prompt=dashboard_generation_prompt_select, qa_prompt=qa_dashboard_generation_prompt
     )
 
 
 # TESTING
-
-#while(True):
-#    response = kpi_generation_chain.invoke(input("Enter your query: "))
-#    print(response['result'])
+# The following section can be used for interactive testing, where the user can enter queries to test the KPI generation functionality.
+# while(True):
+#     response = kpi_generation_chain.invoke(input("Enter your query: "))
+#     print(response['result'])
