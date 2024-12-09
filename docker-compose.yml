@@ -296,7 +296,9 @@ services:
       - not-db-init
     env_file:
       - kpi-engine/.env
-
+    depends_on:
+      router:
+        condition: service_healthy
   backrest:
     image: garethgeorge/backrest:latest
     container_name: backrest
