@@ -593,7 +593,7 @@ async def ask_question(question: Question): # to add or modify the services allo
             
         # Update the history
         history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
-        return Answer(textResponse=llm_result.content, textExplanation='', data='query')
+        return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
 
     # Execute the handler
     context = await handlers[label]()
@@ -605,7 +605,7 @@ async def ask_question(question: Question): # to add or modify the services allo
 
         # Update the history
         history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
-        return Answer(textResponse=context, textExplanation='', data='query')
+        return Answer(textResponse=context, textExplanation='', data='', label=label)
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
@@ -632,20 +632,20 @@ async def ask_question(question: Question): # to add or modify the services allo
             # Response: Chat response, Explanation: TODO, Data: No data to send            
             explainer.add_to_context([("Predictor", "["+context+"]")])
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data='')
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
 
         if label == 'kpi_calc':
             # Response: Chat response, Explanation: TODO, Data: No data to send            
             explainer.add_to_context([("KPI Engine", "["+context+"]")])
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data="")
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
 
         if label == 'new_kpi':
             # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
             context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
             explainer.add_to_context([("Knowledge Base", context_cleaned)])
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data= context_cleaned) #llm_result.content
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
 
         if label == 'report':
             # Response: No chat response, Explanation: TODO, Data: Report in str format
@@ -655,7 +655,7 @@ async def ask_question(question: Question): # to add or modify the services allo
             explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
             
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse="", textExplanation=textExplanation, data=textResponse)
+            return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
 
         if label == 'dashboard':
             # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
@@ -671,4 +671,4 @@ async def ask_question(question: Question): # to add or modify the services allo
             
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
             data = json.dumps(response_json["bindings"], indent=2)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
