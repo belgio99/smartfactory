@@ -32,7 +32,7 @@ API_key = '12d326d6-8895-49b9-8e1b-a760462ac13f'
 
 # TEST CONNECTIONS
 @app.get("/data-processing/_public")
-def hello_world()):
+def hello_world():
     return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
