@@ -40,7 +40,8 @@ jobs:
       - name: Configure Doxygen INPUT
         working-directory: ./docs
         run: |
-          sed -i "s|^INPUT.*|INPUT = ${matrix.input_dirs}|" Doxyfile
+          input_dir="${{ matrix.input_dirs }}"
+          sed -i "s|^INPUT.*|INPUT = ${input_dir}|" Doxyfile
 
       # Run Doxygen using the modified Doxyfile
       - name: Run Doxygen
