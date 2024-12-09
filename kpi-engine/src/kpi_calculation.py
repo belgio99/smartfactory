@@ -408,15 +408,19 @@ class kpi_engine:
 
     def dynamic_kpi(df, machine_id, machine_type, start_period, end_period, kpi_id):
         fd = df
-
         # kpi_formula = extract formula through API and kpi_id
         headers = {
-            "x-api-key": "06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7",
+            "x-api-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234",
             "Content-Type": "application/json"
         }
         response = requests.get(f"http://kb:8000/kb/{kpi_id}/get_kpi", headers=headers)
-        formula = response["atomic_formula"]
-        unit_of_measure = response["unit_measure"]
+        response = response.json()
+        print(response)
+        if response.get("atomic") == True:
+            formula = response.get("id")
+        else:
+            formula = response.get("atomic_formula")
+        unit_of_measure = response.get("unit_measure")
         # formula = 'cycles_max'
         # unit_of_measure = '%'
         expr = parse_expr(formula)
