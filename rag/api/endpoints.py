@@ -467,36 +467,43 @@ async def ask_question(question: Question): # to add or modify the services allo
 
         history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
 
-        explainer = RagExplainer(threshold = 20.0,)
+        explainer = RagExplainer(threshold = 15.0,)
 
         if label == 'predictions':
             # Response: Chat response, Explanation: TODO, Data: No data to send            
-            explainer.add_to_context([("Predictor", context)])
+            explainer.add_to_context([("Predictor", "["+context+"]")])
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
             return Answer(textResponse=textResponse, textExplanation=textExplanation, data='')
 
         if label == 'kpi_calc':
             # Response: Chat response, Explanation: TODO, Data: No data to send            
-            explainer.add_to_context([("KPI Engine", context)])
+            explainer.add_to_context([("KPI Engine", "["+context+"]")])
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data='')
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data="")
 
         if label == 'new_kpi':
             # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
-            explainer.add_to_context([("Knowledge Base", context)])
+            context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+            explainer.add_to_context([("Knowledge Base", context_cleaned)])
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content)
+            return Answer(textResponse=textResponse, textExplanation=textExplanation, data= context_cleaned) #llm_result.content
 
         if label == 'report':
             # Response: No chat response, Explanation: TODO, Data: Report in str format
             pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
+            pred_context = "["+pred_context+"]"
+            eng_context = "["+eng_context+"]"
             explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
-            return Answer(textResponse=llm_result.content, textExplanation='', data=llm_result.content)
+            
+            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+            return Answer(textResponse="", textExplanation=textExplanation, data=textResponse)
 
         if label == 'dashboard':
             # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
             # TODO: separare il chat response dal binding nel prompt
             kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
+            kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+            gui_context = "["+gui_context+"]"
             explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
             
             # Converting the JSON string to a dictionary
@@ -506,5 +513,6 @@ async def ask_question(question: Question): # to add or modify the services allo
             textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
             data = json.dumps(response_json["bindings"], indent=2)
             
+            print(kb_context, "\n", "\n", gui_context)
+            
             return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data)
-        
