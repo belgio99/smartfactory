@@ -421,10 +421,10 @@ export const getAlerts = async (userId: string): Promise<Alert[]> => {
  * @param userInput string - The user input
  * @returns Promise will return the AI response
  */
-export const interactWithAgent = async (userInput: string): Promise<{ textResponse: string; data?: string }> => {
+export const interactWithAgent = async (userId: string, userInput: string): Promise<{ textResponse: string; data?: string }> => {
   try {
     const response = await axios.post(
-      `${BASE_URL}/smartfactory/agent`,
+      `${BASE_URL}/smartfactory/agent/${userId}`,
       { userInput },
       {
         headers: {
@@ -611,5 +611,28 @@ export const downloadReport = async (reportId: string): Promise<Blob> => {
   } catch (error: any) {
       console.error('Error downloading the report:', error.response?.data || error.message);
       throw new Error(error.response?.data?.message || 'Failed to download the report');
+  }
+};
+
+
+/**
+ * API POST used to logout
+ * @param userId string - The user ID
+ */
+export const logout = async (userId: string): Promise<void> => {
+  try {
+    await axios.post(
+      `${BASE_URL}/smartfactory/logout?userId=${userId}`,
+      {}, // Nessun body richiesto
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": API_KEY,
+        },
+      }
+    );
+  } catch (error: any) {
+    console.error('Logout API error:', error);
+    throw new Error(error.response?.data?.message || 'Failed to logout');
   }
 };

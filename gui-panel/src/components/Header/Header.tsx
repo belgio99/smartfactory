@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {Link} from "react-router-dom";
+import { logout } from '../../api/ApiService';
 
 const formatPath = (path: string): string => {
     return path
@@ -12,11 +13,12 @@ interface HeaderProps {
     path: string; // e.g., "/user_settings"
     userAvatar: string;
     userName: string;
+    userId: string;
     role: string;
     logoutHook?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, role, logoutHook}) => {
+const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, userId, role, logoutHook}) => {
     const [menuVisible, setMenuVisible] = useState(false);
     const pathSegments = path.split('/').filter(Boolean);
     return (
@@ -96,6 +98,7 @@ const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, role, logout
                                             <button
                                                 className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                                 onClick={() => {
+                                                    logout(userId);
                                                     alert("Logging out...");
                                                     logoutHook?.();
                                                 }}
