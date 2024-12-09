@@ -851,9 +851,8 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         raise HTTPException(status_code=500, detail="Empty user input")
     try:
         # Send the user input to the RAG API and get the response
-        # response = call_ai_agent(userInput)
-        # answer = response.json()
-        answer = Answer(data="pdf Test Report", label="report")
+        response = call_ai_agent(userInput)
+        answer = response.json()
         if answer.label == 'new_kpi':
             # add new kpi
             try:
