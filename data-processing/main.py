@@ -111,18 +111,21 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             'Date_prediction': '',
             'Forecast': True
         }
-        host_url = 'kb'
         host_port = '8000'
-        # KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_url,host_port)
-        KPI_data = {
-            "Status": 0,
-            "forecastable": True,
-            "unit_measure": "BAU"
-        }
-        # print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        # print(machine)
-        # prtin(KPI_name)
-        # print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        print(machine)
+        print(KPI_name)
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+
+        KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_port, API_key)
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        print(KPI_data)
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        # KPI_data = {
+        #     "Status": 0,
+        #     "forecastable": True,
+        #     "unit_measure": "BAU"
+        # }
 
         if KPI_data['Status'] == 0:
             if KPI_data['forecastable'] == True:
@@ -176,18 +179,21 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             'Date_prediction': '',
             'Forecast': True
         }
-        host_url = 'kb'
         host_port = '8000'
-        # KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_url,host_port)
-        KPI_data = {
-            "Status": 0,
-            "forecastable": True,
-            "unit_measure": "BAU"
-        }
-        # print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        # print(machine)
-        # prtin(KPI_name)
-        # print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        print(machine)
+        print(KPI_name)
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+
+        KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_port)
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        print(KPI_data)
+        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
+        # KPI_data = {
+        #     "Status": 0,
+        #     "forecastable": True,
+        #     "unit_measure": "BAU"
+        # }
 
         if KPI_data['Status'] == 0:
             if KPI_data['forecastable'] == True:
@@ -215,7 +221,6 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
     return {"result": out_dicts}  # Convert numpy array to list for JSON serialization
 
 
-
 # TODO: This function should be called once a day and retreive all the models 
 def new_data_polling():
     """
@@ -227,14 +232,14 @@ def new_data_polling():
 
         Returns:
     """
-    # query_body = {
-    #     "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
-    # }
-    # response = f_dataprocessing.execute_druid_query(query_body)
-    # #TODO: link response to available models
-    # availableModels = []
-    # for m in availableModels:
-    #     f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    query_body = {
+        "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
+    }
+    response = f_dataprocessing.execute_druid_query(query_body)
+    #TODO: link response to available models
+    availableModels = []
+    for m in availableModels:
+        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
     print(datetime.datetime.today())
  
 if __name__ == "__main__":

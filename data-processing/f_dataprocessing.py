@@ -60,43 +60,43 @@ def execute_druid_query(body):
         print(f"An error occurred: {e}")
         return None
 
-# def data_load(machine,kpi):
-#   # Controlla gli ultimi tre caratteri
-#   # Tipi di aggregazione validi
-#   kpi_types = {"sum", "min", "max", "avg"}
-
-#   kpi_name = ''
-#   data_type = ''
-#   if kpi[-3:] in kpi_types:
-#       # Trova l'ultimo underscore
-#       split_index = kpi.rfind("_")
-      
-#       # Dividi il nome del KPI
-#       kpi_name = kpi[:split_index]  # Parte prima dell'underscore
-#       data_type = kpi[split_index + 1:]  # Parte dopo l'underscore
-#   query_body = {
-#         "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi_name}'"
-#   } # Execute the query
-#   response = execute_druid_query(query_body)
-#   avg_r = []
-#   avg_t = []
-#   for r in response:
-#     avg_r.append(r[data_type])
-#     avg_t.append(r['__time'])
-#   return avg_t,avg_r
 def data_load(machine,kpi):
   # Controlla gli ultimi tre caratteri
   # Tipi di aggregazione validi
+  kpi_types = {"sum", "min", "max", "avg"}
+
+  kpi_name = ''
+  data_type = ''
+  if kpi[-3:] in kpi_types:
+      # Trova l'ultimo underscore
+      split_index = kpi.rfind("_")
+      
+      # Dividi il nome del KPI
+      kpi_name = kpi[:split_index]  # Parte prima dell'underscore
+      data_type = kpi[split_index + 1:]  # Parte dopo l'underscore
   query_body = {
-        "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi}'"
+        "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi_name}'"
   } # Execute the query
   response = execute_druid_query(query_body)
   avg_r = []
   avg_t = []
   for r in response:
-    avg_r.append(r['avg'])
+    avg_r.append(r[data_type])
     avg_t.append(r['__time'])
   return avg_t,avg_r
+# def data_load(machine,kpi):
+#   # Controlla gli ultimi tre caratteri
+#   # Tipi di aggregazione validi
+#   query_body = {
+#         "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi}'"
+#   } # Execute the query
+#   response = execute_druid_query(query_body)
+#   avg_r = []
+#   avg_t = []
+#   for r in response:
+#     avg_r.append(r['avg'])
+#     avg_t.append(r['__time'])
+#   return avg_t,avg_r
 
 def data_extract_trends(ts):
   trends = {
@@ -298,13 +298,10 @@ def characterize_KPI(machine, kpi):
       'P-value': f'{orig_p_value:.2E}',
       'Stationary': 1 if orig_p_value < 0.05 else 0
   }
-
-
   if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
     diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
     diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
     # data['Value'] = data_normalize_params(diff1_series['Value'])
-
     stationarity_results = {
       'Differencing': 1,
       'Statistic': round(diff1_statistic, 3),
@@ -315,7 +312,6 @@ def characterize_KPI(machine, kpi):
         diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
         diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
         # data['Value'] = data_normalize_params(diff2_series['Value'])
-
         stationarity_results = {
           'Differencing': 2,
           'Statistic': round(diff2_statistic, 3),
@@ -324,7 +320,6 @@ def characterize_KPI(machine, kpi):
         }
   # else:
   #   data['Value'] = data_normalize_params(data['Value'])
-
   a_dict['stationarity'] = stationarity_results
   ###########################
   ### 3. Model definition ###
@@ -529,10 +524,18 @@ def make_prediction(machine, kpi, length):
     
     return results
 
-def kpi_exists(machine, KPI, host_url, host_port):
+def kpi_exists(machine, KPI, host_port, api_key):
 
-  url_KB = f"http://{host_url}:{host_port}/kb/{machine}/{KPI}/check"
-  Kpi_info = requests.post(url_KB)
+  headers = {
+      "x-api-key": api_key
+  }
+  
+  # Send GET request with headers
+  
+  url_KB = f"http://localhost:{host_port}/kb/{machine}/{KPI}/check"
+  # Kpi_info  = requests.post(url_KB)
+  Kpi_info = requests.get(url_KB, headers=headers)
+
   return Kpi_info
 
 ###########################################
@@ -695,7 +698,16 @@ def detect_outlier(x, window):
 
        
 def elaborate_new_datapoint(machine, kpi):
+  """
+      daily check of new data point to update the models. 
 
+      Args:
+      machine: a machine
+      kpi: a kpi
+
+      Returns:
+        
+  """
   ##################################
   ### 1. Initial data processing ###
   ##################################
