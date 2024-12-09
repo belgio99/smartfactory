@@ -3,10 +3,30 @@ import psycopg2
 from dotenv import load_dotenv
 from pathlib import Path
 
+## \file
+#  \brief A script to manage PostgreSQL database connections and table creation for various microservices.
+
+# Load environment variables from the .env file
 env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path) # Load environment variables from the .env file
+load_dotenv(dotenv_path=env_path)
 
 def get_postgres_cursor():
+    """
+    Establishes a connection to the PostgreSQL database and returns the connection and cursor objects.
+
+    Globals:
+        POSTGRES_DB (str): The name of the PostgreSQL database.
+        POSTGRES_USER (str): The username for the PostgreSQL database.
+        POSTGRES_PASSWORD (str): The password for the PostgreSQL database.
+        POSTGRES_HOST (str): The host address of the PostgreSQL database.
+        POSTGRES_PORT (int): The port of the PostgreSQL database.
+
+    Raises:
+        Exception: If there is an error connecting to the PostgreSQL database.
+
+    Returns:
+        tuple: A tuple containing the connection and cursor objects. Returns (None, None) on failure.
+    """
     try:
         # Connect to your postgres DB
         connection = psycopg2.connect(
@@ -16,20 +36,32 @@ def get_postgres_cursor():
             host=os.getenv('POSTGRES_HOST'),
             port=os.getenv('POSTGRES_PORT')
         )
-        
+
         # Create a cursor object
         cursor = connection.cursor()
-        
+
         return connection, cursor
     except Exception as error:
         print(f"Error connecting to PostgreSQL database: {error}")
         return None, None
 
 if __name__ == "__main__":
+    """
+    Main entry point of the script. Manages table creation and data operations.
+
+    Globals:
+        POSTGRES_DB (str): The name of the PostgreSQL database.
+        POSTGRES_USER (str): The username for the PostgreSQL database.
+        POSTGRES_PASSWORD (str): The password for the PostgreSQL database.
+        POSTGRES_HOST (str): The host address of the PostgreSQL database.
+        POSTGRES_PORT (int): The port of the PostgreSQL database.
+
+    """
     conn, cur = get_postgres_cursor()
     if cur:
         print("Cursor obtained successfully")
-        # Don't forget to close the connection and cursor when done
+
+        # Queries for creating tables
         create_table_queries = [
             """
             CREATE TABLE IF NOT EXISTS Users (
@@ -95,6 +127,7 @@ if __name__ == "__main__":
             """
         ]
 
+        # Execute table creation queries
         for query in create_table_queries:
             cur.execute(query)
             conn.commit()
@@ -117,5 +150,6 @@ if __name__ == "__main__":
         conn.commit()
         print("Demo API Keys inserted into Microservices table")
 
+        # Close cursor and connection
         cur.close()
         conn.close()

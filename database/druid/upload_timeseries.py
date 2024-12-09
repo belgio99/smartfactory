@@ -5,19 +5,34 @@ import requests
 from dotenv import load_dotenv
 from pathlib import Path
 
+## \file
+#  \brief A script for managing file conversion to CSV and submitting ingestion tasks to Apache Druid.
+
+# Load environment variables from the .env file
 env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path) # Load environment variables from the .env file
+load_dotenv(dotenv_path=env_path)
 
 # Add the parent directory of 'vault' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from vault.crypto_lib import encrypt_csv
 
-# Helper function to convert different formats to CSV if needed
 def convert_to_csv(file_path):
+    """
+    Converts a given file to CSV format if necessary.
+
+    Args:
+        file_path (str): The path of the file to be converted.
+
+    Raises:
+        ValueError: If the file format is unsupported.
+
+    Returns:
+        str: The path of the converted CSV file.
+    """
     file_name, file_extension = os.path.splitext(file_path)
     csv_path = file_name + '.csv'
-    
+
     if file_extension == '.pkl':
         df = pd.read_pickle(file_path)
         df.to_csv(csv_path, index=False)
@@ -26,10 +41,20 @@ def convert_to_csv(file_path):
         return file_path  # Already a CSV, no conversion needed
     else:
         raise ValueError(f"Unsupported file format: {file_extension}")
-    
+
 def submit_to_druid(file_path):
     """
-    Prepares and submits the ingestion task to Druid for the given CSV file.
+    Prepares and submits the ingestion task to Apache Druid for the given CSV file.
+
+    Args:
+        file_path (str): The path of the CSV file to be submitted.
+
+    Globals:
+        DRUID_INSERT_ENDPOINT (str): The Druid ingestion endpoint.
+        TO_LOAD_DIR (str): The directory containing the files to be loaded.
+
+    Raises:
+        Exception: If the submission to Druid fails.
     """
     ingestion_spec = {
         "type": "index",
@@ -40,7 +65,7 @@ def submit_to_druid(file_path):
                     "column": "time",
                     "format": "auto"
                 },
-                "dimensionsSpec": { 
+                "dimensionsSpec": {
                     "dimensions": [
                         {"name": "asset_id", "type": "string"},
                         {"name": "name", "type": "string"},
@@ -83,11 +108,13 @@ def submit_to_druid(file_path):
     else:
         print(f"Failed to submit task for file: {file_path}, response: {response.text}")
 
-
 def main():
     """
     Main function to first convert files to CSV if necessary,
-    and then submit only the CSV files to Druid.
+    and then submit only the CSV files to Apache Druid.
+
+    Globals:
+        TO_LOAD_DIR (str): The directory containing files to be processed.
     """
     csv_files = []
 
@@ -121,15 +148,15 @@ def main():
         try:
             # The following functions encrypt the csv file before submitting it to druid.
             # Remove comments if you want to encrypt files.
-            #encrypt file
-            #df = encrypt_csv(csv_file_path)
+            # encrypt file
+            # df = encrypt_csv(csv_file_path)
 
             # Save the encrypted file
-            #encrypted_file_path = csv_file_path.replace(".csv", "_encrypted.csv")
-            #df.to_csv(encrypted_file_path, index=False)
-            #print(f"Encrypted file saved at: {encrypted_file_path}")
-            #submit_to_druid(encrypted_file_path)
-            
+            # encrypted_file_path = csv_file_path.replace(".csv", "_encrypted.csv")
+            # df.to_csv(encrypted_file_path, index=False)
+            # print(f"Encrypted file saved at: {encrypted_file_path}")
+            # submit_to_druid(encrypted_file_path)
+
             submit_to_druid(csv_file_path)
         except Exception as e:
             print(f"An error occurred during submission of {csv_file_path}: {e}")

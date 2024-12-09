@@ -4,7 +4,6 @@ import struct
 import pandas as pd
 from vault.vault_lib import start_vault, stop_vault, create_client
 
-
 KEY_NAME = "druid-key"
 
 # Define the Vault path where you will store the AES key
@@ -13,9 +12,9 @@ vault_path = "my-aes-key"
 def store_aes_key_in_vault(vault_client, key: bytes):
     """
     Store the AES key securely in Vault.
-    
+
     Args:
-        vault_client: client for Vault
+        vault_client: Client for Vault.
         key (bytes): AES encryption key.
     """
     vault_client.secrets.kv.v2.create_or_update_secret(
@@ -28,14 +27,14 @@ def store_aes_key_in_vault(vault_client, key: bytes):
 def retrieve_aes_key_from_vault() -> bytes:
     """
     Retrieve the AES key from Vault.
-    
+
     Returns:
         bytes: The AES encryption key.
     """
     # Start Vault Server
     #start_vault()
 
-    # Create client to comunicate with Vault
+    # Create client to communicate with Vault
     vault_client = create_client()
     secret = vault_client.secrets.kv.v2.read_secret_version(path=vault_path)
     aes_key_hex = secret['data']['data']['aes_key']
@@ -44,7 +43,6 @@ def retrieve_aes_key_from_vault() -> bytes:
     #stop_vault()
 
     return bytes.fromhex(aes_key_hex)  # Convert the hex string back to bytes
-
 
 def aes_encrypt(data: bytes, key: bytes = None) -> tuple:
     """
@@ -88,12 +86,12 @@ def aes_encrypt(data: bytes, key: bytes = None) -> tuple:
 def aes_decrypt(encrypted_data: bytes, iv: bytes, data_type: type) -> any:
     """
     Decrypt data using AES with the AES key managed by Vault and convert it back to the original type.
-    
+
     Args:
         encrypted_data (bytes): The encrypted data to be decrypted.
         iv (bytes): The initialization vector used for encryption.
         data_type (type): The type to which the decrypted data should be converted (int, float, str).
-        
+
     Returns:
         any: The decrypted data converted back to the original type.
     """
@@ -115,10 +113,19 @@ def aes_decrypt(encrypted_data: bytes, iv: bytes, data_type: type) -> any:
         raise ValueError("Unsupported data type")
 
 def encrypt_csv(csv_file_path):
-    df = pd.read_csv(csv_file_path)            
+    """
+    Encrypt specified columns in a CSV file using AES encryption.
+
+    Args:
+        csv_file_path (str): Path to the CSV file to be encrypted.
+
+    Returns:
+        pandas.DataFrame: The DataFrame with encrypted columns.
+    """
+    df = pd.read_csv(csv_file_path)
     # Encrypt columns that need protection (we should decide which ones)
     key = retrieve_aes_key_from_vault()
-    for column in ["kpi","avg","min","max"]:
+    for column in ["kpi", "avg", "min", "max"]:
         print(f"Processing column: {column} in file: {csv_file_path}")
-        df[column]=df[column].apply(aes_encrypt, args=(key,))
+        df[column] = df[column].apply(aes_encrypt, args=(key,))
     return df
