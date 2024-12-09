@@ -560,7 +560,7 @@ async def get_all_kpis_endpoint(api_key: str = Depends(get_verify_api_key(["api-
 
 
 @app.get("/kb/retrieveMachines")
-async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get all machines, grouped under the main classes of the ontology
 
@@ -598,7 +598,7 @@ class KPI_Info(BaseModel):
     atomic: bool
 
 @app.post("/kb/insert")
-async def add_kpi_endpoint(kpi_info: KPI_Info):
+async def add_kpi_endpoint(kpi_info: KPI_Info, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function
     """
     Add a KPI to the ontology
 
