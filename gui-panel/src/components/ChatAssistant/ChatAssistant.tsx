@@ -17,9 +17,10 @@ export interface Message {
 
 export interface ChatAssistantProps {
     username: string;
+    userId: string;
 }
 
-const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
+const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([{
         id: 0,
@@ -92,7 +93,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username}) => {
 
             // Simulate assistant response
             setIsTyping(true);
-            interactWithAgent(userMessage.content)
+            interactWithAgent(userId, userMessage.content)
                 .then((response) => {
                     const assistantMessage: Message = {
                         id: messages.length + 2,
