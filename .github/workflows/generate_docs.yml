@@ -64,7 +64,10 @@ jobs:
 
       # Upload PDF as an artifact
       - name: Upload documentation artifact
-        uses: actions/upload-artifact@v3
+        working-directory: ./docs/latex
+        run: |
+          sanitized_dir_name=$(basename "${{ matrix.input_dirs }}" | tr -cd '[:alnum:]-_')
+          echo "Uploading artifact with name: python-documentation-${sanitized_dir_name}"
         with:
-          name: python-documentation-${{ matrix.input_dirs }}
-          path: docs/latex/api_docs_*.pdf
+          name: python-documentation-${{ matrix.input_dirs | toJSON | fromJSON | replace('../', '') | replace('/', '-') }}
+          path: api_docs_*.pdf
