@@ -34,7 +34,7 @@ class QueryGenerator:
         ?machine ontology:id ?id.
         }
         """
-        graph_dir=Path(os.path.dirname(os.path.abspath(__file__))+"\..\docs\sa_ontology.rdf").as_uri()
+        graph_dir=Path(os.path.dirname(os.path.abspath(__file__))+"/../docs/sa_ontology.rdf").as_uri()
         graph = Graph()
         graph.parse(graph_dir, format="xml")
         res = graph.query(kpi_query)

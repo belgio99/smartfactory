@@ -200,80 +200,6 @@ async def ask_kpi_engine(url):
         'Forecast': False
         },
         ])
-
-    #   json = [{
-    #     "Machine_name": "Riveting Machine",
-    #     "KPI_name": "idle_time",
-    #     "Date": "20/10/2024",
-    #     "Mean": 2.333
-    #   },
-    #   {
-    #     "Machine_name": "Riveting Machine",
-    #     "KPI_name": "idle_time",
-    #     "Date": "20/10/2024",
-    #     "Max": 5.0
-    #   },
-    #   {
-    #     "Machine_name": "Riveting Machine",
-    #     "KPI_name": "idle_time",
-    #     "Date": "20/10/2024",
-    #     "Min": 0.0
-    #   },
-    #   {
-    #     "Machine_name": "Riveting Machine",
-    #     "KPI_name": "working_time",
-    #     "Date": "18/10/2024",
-    #     "Mean": 180.0
-    #   },
-    #   {
-    #     "Machine_name": "Riveting Machine",
-    #     "KPI_name": "working_time",
-    #     "Date": "18/10/2024",
-    #     "Max": 200.0
-    #   },
-    #   {
-    #     "Machine_name": "Riveting Machine",
-    #     "KPI_name": "working_time",
-    #     "Date": "18/10/2024",
-    #     "Min": 133.0
-    #   },
-    #   {
-    #     "Machine_name": "Welding Machine",
-    #     "KPI_name": "idle_time",
-    #     "Date": "17/10/2024",
-    #     "Mean": 3.5
-    #   },
-    #   {
-    #     "Machine_name": "Welding Machine",
-    #     "KPI_name": "idle_time",
-    #     "Date": "17/10/2024",
-    #     "Max": 6.0
-    #   },
-    #   {
-    #     "Machine_name": "Welding Machine",
-    #     "KPI_name": "idle_time",
-    #     "Date": "17/10/2024",
-    #     "Min": 1.0
-    #   },
-    #   {
-    #     "Machine_name": "Welding Machine",
-    #     "KPI_name": "working_time",
-    #     "Date": "22/10/2024",
-    #     "Mean": 150
-    #   },
-    #   {
-    #     "Machine_name": "Welding Machine",
-    #     "KPI_name": "working_time",
-    #     "Date": "22/10/2024",
-    #     "Max": 190
-    #   },
-    #   {
-    #     "Machine_name": "Welding Machine",
-    #     "KPI_name": "working_time",
-    #     "Date": "22/10/2024",
-    #     "Min": 120
-    #   }
-    # ])
     
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
@@ -491,124 +417,132 @@ async def translate_answer(question: Question, question_language: str, context):
 @router.post("/chat", response_model=Answer)
 #async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
 async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
-    language_prompt = prompt_manager.get_prompt('get_language').format(
-        _HISTORY_='',
-        _CONTEXT_='',
-        _USER_QUERY_=question.userInput
-    )
-    translated_question = llm.invoke(language_prompt).content
-    question_language, question.userInput = translated_question.split("-", 1)
-
-    print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
-
-    # Classify the question
-    label, url = prompt_classifier(question)
-
-    # Mapping of handlers
-    handlers = {
-        'predictions': lambda: handle_predictions(url),
-        'new_kpi': lambda: handle_new_kpi(question, llm, graph, history),
-        'report': lambda: handle_report(url),
-        'dashboard': lambda: handle_dashboard(question, llm, graph, history),
-        'kpi_calc': lambda: handle_kpi_calc(url),
-        'kb_q': lambda: handle_kb_q(question, llm, graph, history),
-    }
-
-    # Check if the label is valid
-    if label not in handlers:
-        # Format the history
-        history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-            [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+    try:
+        language_prompt = prompt_manager.get_prompt('get_language').format(
+            _HISTORY_='',
+            _CONTEXT_='',
+            _USER_QUERY_=question.userInput
         )
-        llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
-        
-        if question_language.lower() != "english":
-            llm_result = await translate_answer(question, question_language, llm_result.content)
+        translated_question = llm.invoke(language_prompt).content
+        question_language, question.userInput = translated_question.split("-", 1)
+
+        print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
+
+        # Classify the question
+        label, url = prompt_classifier(question)
+
+        # Mapping of handlers
+        handlers = {
+            'predictions': lambda: handle_predictions(url),
+            'new_kpi': lambda: handle_new_kpi(question, llm, graph, history),
+            'report': lambda: handle_report(url),
+            'dashboard': lambda: handle_dashboard(question, llm, graph, history),
+            'kpi_calc': lambda: handle_kpi_calc(url),
+            'kb_q': lambda: handle_kb_q(question, llm, graph, history),
+        }
+
+        # Check if the label is valid
+        if label not in handlers:
+            # Format the history
+            history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+            )
+            llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
             
-        # Update the history
-        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
-        return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
-
-    # Execute the handler
-    context = await handlers[label]()
-
-    if label == 'kb_q':
-        if question_language.lower() != "english":
-            context = await translate_answer(question, question_language, context)
-            context = context.content
-
-        # Update the history
-        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
-        return Answer(textResponse=context, textExplanation='', data='', label=label)
-
-    # Generate the prompt and invoke the LLM for certain labels
-    if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
-        # Prepare the history context from previous chat
-        history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-            [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
-        )
-        # Prepare the prompt and invoke the LLM
-        prompt = prompt_manager.get_prompt(label).format(
-            _HISTORY_=history_context,
-            _USER_QUERY_=question.userInput,
-            _CONTEXT_=context
-        )
-        llm_result = llm.invoke(prompt)
-        
-        if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
             if question_language.lower() != "english":
                 llm_result = await translate_answer(question, question_language, llm_result.content)
-
+                
+            # Update the history
             history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+            return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
 
-        explainer = RagExplainer(threshold = 15.0,)
+        # Execute the handler
+        context = await handlers[label]()
 
-        if label == 'predictions':
-            # Response: Chat response, Explanation: TODO, Data: No data to send            
-            explainer.add_to_context([("Predictor", "["+context+"]")])
-            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
-
-        if label == 'kpi_calc':
-            # Response: Chat response, Explanation: TODO, Data: No data to send            
-            explainer.add_to_context([("KPI Engine", "["+context+"]")])
-            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
-
-        if label == 'new_kpi':
-            # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
-            context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-            explainer.add_to_context([("Knowledge Base", context_cleaned)])
-            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
-
-        if label == 'report':
-            # Response: No chat response, Explanation: TODO, Data: Report in str format
-            pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
-            pred_context = "["+pred_context+"]"
-            eng_context = "["+eng_context+"]"
-            explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
-            
-            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
-
-        if label == 'dashboard':
-            # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
-            # TODO: separare il chat response dal binding nel prompt
-            kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
-            kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-            gui_context = "["+gui_context+"]"
-            explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
-            
-            # Converting the JSON string to a dictionary
-            response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-            response_json = json.loads(response_cleaned)
-                        
+        if label == 'kb_q':
             if question_language.lower() != "english":
-                llm_result = await translate_answer(question, question_language, response_json["textualResponse"])
+                context = await translate_answer(question, question_language, context)
+                context = context.content
 
-            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+            # Update the history
+            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
+            return Answer(textResponse=context, textExplanation='', data='', label=label)
+
+        # Generate the prompt and invoke the LLM for certain labels
+        if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
+            # Prepare the history context from previous chat
+            history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+            )
+            # Prepare the prompt and invoke the LLM
+            prompt = prompt_manager.get_prompt(label).format(
+                _HISTORY_=history_context,
+                _USER_QUERY_=question.userInput,
+                _CONTEXT_=context
+            )
+            llm_result = llm.invoke(prompt)
             
-            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-            data = json.dumps(response_json["bindings"], indent=2)            
-            return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
+            if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
+                if question_language.lower() != "english":
+                    llm_result = await translate_answer(question, question_language, llm_result.content)
+
+                history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+
+            explainer = RagExplainer(threshold = 15.0,)
+
+            if label == 'predictions':
+                # Response: Chat response, Explanation: TODO, Data: No data to send            
+                explainer.add_to_context([("Predictor", "["+context+"]")])
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
+
+            if label == 'kpi_calc':
+                # Response: Chat response, Explanation: TODO, Data: No data to send            
+                explainer.add_to_context([("KPI Engine", "["+context+"]")])
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
+
+            if label == 'new_kpi':
+                # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
+                context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                explainer.add_to_context([("Knowledge Base", context_cleaned)])
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
+
+            if label == 'report':
+                # Response: No chat response, Explanation: TODO, Data: Report in str format
+                pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
+                pred_context = "["+pred_context+"]"
+                eng_context = "["+eng_context+"]"
+                explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
+                
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
+
+            if label == 'dashboard':
+                # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
+                # TODO: separare il chat response dal binding nel prompt
+                kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
+                kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                gui_context = "["+gui_context+"]"
+                explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
+                
+                # Converting the JSON string to a dictionary
+                response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                response_json = json.loads(response_cleaned)
+                            
+                if question_language.lower() != "english":
+                    llm_result = await translate_answer(question, question_language, response_json["textualResponse"])
+
+                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                    data = json.dumps(response_json["bindings"], indent=2)            
+                    return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
+                else:
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
+                    data = json.dumps(response_json["bindings"], indent=2)
+                    return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
+    except Exception as e:
+        print(e)
+        return Answer(textResponse="Something gone wrong, I'm not able to answer your question", textExplanation="", data="", label="Error")
