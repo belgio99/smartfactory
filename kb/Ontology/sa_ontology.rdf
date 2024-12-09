@@ -404,12 +404,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -507,12 +507,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -610,12 +610,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_3">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#AssemblyMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -739,9 +739,9 @@
     
 
 
-    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg -->
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI_Production"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
@@ -764,15 +764,15 @@
         <sa-ontology:description>This KPI is atomic, it measures the average time taken to complete a production cycle, considering the average.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>avg_cycle_time_avg</sa-ontology:id>
+        <sa-ontology:id>average_cycle_time_avg</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max -->
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI_Production"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
@@ -795,15 +795,15 @@
         <sa-ontology:description>This KPI is atomic, it measures the average time taken to complete a production cycle, considering the maximum.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>avg_cycle_time_max</sa-ontology:id>
+        <sa-ontology:id>average_cycle_time_max</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med -->
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI_Production"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
@@ -826,15 +826,15 @@
         <sa-ontology:description>This KPI is atomic, it measures the average time taken to complete a production cycle, considering the median.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>avg_cycle_time_med</sa-ontology:id>
+        <sa-ontology:id>average_cycle_time_med</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min -->
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI_Production"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
@@ -857,15 +857,15 @@
         <sa-ontology:description>This KPI is atomic, it measures the average time taken to complete a production cycle, considering the minimum.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>avg_cycle_time_min</sa-ontology:id>
+        <sa-ontology:id>average_cycle_time_min</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std -->
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI_Production"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
@@ -888,15 +888,15 @@
         <sa-ontology:description>This KPI is atomic, it measures the average time taken to complete a production cycle, considering the standard deviation.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>avg_cycle_time_std</sa-ontology:id>
+        <sa-ontology:id>average_cycle_time_std</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
 
 
-    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum -->
+    <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#ProductionKPI_Production"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#assembly_machine_2"/>
@@ -919,7 +919,7 @@
         <sa-ontology:description>This KPI is atomic, it measures the average time taken to complete a production cycle, considering the sum.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>avg_cycle_time_sum</sa-ontology:id>
+        <sa-ontology:id>average_cycle_time_sum</sa-ontology:id>
         <sa-ontology:unit_measure>s</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
@@ -2821,12 +2821,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -2924,12 +2924,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3027,12 +3027,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_cutter">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserCutter"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3130,12 +3130,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3233,12 +3233,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LaserWeldingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3336,12 +3336,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LowCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3470,12 +3470,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3573,12 +3573,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -3676,12 +3676,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -4306,12 +4306,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#riveting_machine">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#RivetingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -4409,12 +4409,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -4512,12 +4512,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
@@ -4615,12 +4615,12 @@
     <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#TestingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_avg"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_max"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_med"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_min"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_std"/>
-        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#avg_cycle_time_sum"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_max"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_med"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_min"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_std"/>
+        <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_sum"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_avg"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_max"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#bad_cycles_med"/>
