@@ -852,7 +852,6 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         # Send the user input to the RAG API and get the response
         response = call_ai_agent(userInput)
         answer = response.json()
-        logging.info("Answer:", answer)
         if answer.label == 'new_kpi':
             # add new kpi
             try:
@@ -872,6 +871,8 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
                 report_id = create_report_pdf(answer, userId, tmp_path, report_name)
                 # replace the data with the report id
                 answer.data = str(report_id)
+                answer.textResponse = report_name
+                logging.info("Agent answer: %s", answer)
             except Exception as e:
                 logging.error("Exception: %s", str(e))
                 raise HTTPException(status_code=500, detail=str(e))
