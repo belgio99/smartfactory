@@ -28,17 +28,17 @@ from pathlib import Path
 
 from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
-from model.historical import HistoricalQueryParams, HistoricalData
+from model.historical import HistoricalQueryParams
 # TODO: how to import modules from rag directory ??
 from model.agent import Answer
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
+import sys
+from io import BytesIO
 
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
-import sys
-from io import BytesIO
 
 logging.basicConfig(level=logging.INFO)
 
@@ -314,7 +314,7 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
     Args:
         body (ChangePassword): the user details of the user, including both the new and old password.
     Returns:
-        UserInfo object with the details of the user created.
+        JSONResponse: A response object with status code 200 if the password is changed successfully.
     Raises:
         HTTPException: If the user is not present in the database, the old password is incorrect, or an unexpected error occurs
     """
@@ -389,7 +389,6 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
         Response: A response object with status code 200 if the dashboard disposition is saved successfully.
     Raises:
         HTTPException: If an unexpected error occurs.
-        
     '''
     try:
         if persist_dashboard_settings(userId, dashboard_settings) == False:
@@ -891,7 +890,7 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     Args:
         historical_params (HistoricalQueryParams): The parameters for the historical data query.
     Returns:
-        HistoricalData: The historical data retrieved from the database.
+        response: The historical data retrieved from the database.
     Raises:
         HTTPException: If the query parameters are malformed or an unexpected error occurs.
     """
@@ -958,21 +957,4 @@ async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
-    '''
-    time.sleep(20)
-    register(Register(username="test", email="test@test.it", role="admin", password="test", site="Test"))
-    answer = Answer(data="pdf Test Report", label="report")
-    try:
-        # generate report
-        # name is based on the current datetime
-        report_name = "report_" + str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-        tmp_path = "/tmp/" + report_name + ".pdf"
-        try:
-            logging.info("Generating report: %s", answer.data)
-            create_report_pdf(answer, '1', tmp_path, report_name)
-        except Exception as e:
-            logging.error("Exception: %s", str(e))
-            raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        print(e)
-    '''
+ 
