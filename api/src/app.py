@@ -402,6 +402,16 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
     
 @app.get("/smartfactory/reports")
 def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve a user's reports.
+    This endpoint receives the user id and retrieves all the user's reports.
+    Args:
+        userId: the id of the user.
+    Returns:
+        A Json with a list of ReportResponse objects.
+    Raises:
+        HTTPException: If a server exception occurs.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT ReportID, Name, Type, FilePath FROM Reports WHERE OwnerID = %s"
@@ -421,6 +431,16 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
     
 @app.get("/smartfactory/reports/download/{report_id}")
 def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to download a report.
+    This endpoint receives the report id and sends back the report data in pdf format.
+    Args:
+        report_id: the id of the report.
+    Returns:
+        A PDF file.
+    Raises:
+        HTTPException: If a server exception occurs or the report is not found.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT ReportID, Name, OwnerID, FilePath FROM Reports WHERE ReportID = %s"
@@ -448,6 +468,13 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         raise HTTPException(status_code=500, detail=str(e))
     
 def call_ai_agent(input: str):
+    """
+    This function performs a call to the RAG AI agent.
+    Args:
+        input: the user text input.
+    Returns:
+        The response of the API call.
+    """
     headers = {
         'Content-Type': 'application/json',
         'x-api-key': os.getenv('API_KEY')
@@ -461,6 +488,16 @@ def call_ai_agent(input: str):
     return response
 
 def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str, type: str = None):
+    """
+    This function inserts the report PDF in the DB.
+    Args:
+        answer: the Answer object from the AI agent.
+        userId: the id of the user.
+        tmp_path: the path where to save the .
+        type: the type of the report.
+    Returns:
+        The id of the report.
+    """
     connection, cursor = get_db_connection()
     obj_path = "/reports/"+userId+"/"+obj_name+".pdf"
     create_pdf(answer.data, answer.textExplanation, tmp_path)
@@ -475,6 +512,13 @@ def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str,
     return response[0]
 
 def create_pdf(text: str, appendix: str, path: str):
+    """
+    This function creates a PDF file.
+    Args:
+        text: the text of the PDF.
+        appendix: the appendix of the PDF.
+        path: the path where to save the PDF.
+    """
     pdf = FPDF()
     try:
         pdf.set_font('Arial', '', 12)
@@ -491,14 +535,13 @@ def create_pdf(text: str, appendix: str, path: str):
         pdf.ln()
         pdf.ln()
         pdf.set_font('Arial', '', 12)
-        appendix = appendix.replace("\n", "ACAPO")
         appendix = json.loads(appendix)
         for obj in appendix:
-            if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
+            if obj.get("context", None) is not None and obj.get("reference_number", None) is not None and obj.get("source_name", None) is not None:
                 pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
                 pdf.ln()
                 pdf.cell(190, 5, "Context:")
-                lines = obj["context"].split("ACAPO")
+                lines = obj["context"].split("\n")
                 for line in lines:
                     if len(line) > 0:
                         pdf.multi_cell(190, 5, line)
@@ -518,6 +561,18 @@ def create_pdf(text: str, appendix: str, path: str):
 
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
 def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Report, ScheduledReport], Body()], is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to download a report.
+    This endpoint receives the report id and sends back the report data in pdf format.
+    Args:
+        userId: the id of the user.
+        params: the settings of the report to generate, as Report or ScheduledReport.
+        is_scheduled: check if the generate comes from a scheduled process.
+    Returns:
+        A PDF file.
+    Raises:
+        HTTPException: If a server exception occurs or the user is not found.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID FROM Users WHERE UserID = %s"
@@ -572,12 +627,27 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
         raise HTTPException(status_code=500, detail=str(e))
     
 def generate_and_send_report(userId: str, email: str, params: ScheduledReport, api_key: str):
+    """
+    This function generates a schedules report and sends it via email.
+    Args:
+        userId: the id of the user.
+        email: the email where to send the report.
+        params: the settings of the report.
+    """
     logging.info("Started scheduled report generation")
     report_name, to_email, tmp_path = generate_report(userId, params, True, api_key)
     send_report(to_email, report_name, tmp_path)
 
 @app.get("/smartfactory/reports/schedule")
 def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve the schedules.
+    This endpoint receives the user id and sends back the schedules set by that user.
+    Args:
+        userId: the id of the user.
+    Returns:
+        A Json file with the list of ScheduledReport objects.
+    """
     schedules = []
     minio = get_minio_connection()
     objects = minio.list_objects(bucket_name="settings", recursive=True)
@@ -597,6 +667,15 @@ def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
 async def schedule_report(userId: Annotated[str, Body()], params: Annotated[ScheduledReport, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to schedule a report.
+    This endpoint receives the user id and schedules a report.
+    Args:
+        userId: the id of the user.
+        params: the settings of the report to schedule.
+    Raises:
+        HTTPException: If a server exception occurs or the user is not found.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID, Email FROM Users WHERE UserID = %s"
