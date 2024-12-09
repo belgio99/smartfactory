@@ -1,6 +1,7 @@
 import httpx
 import json
 import os
+import time
 
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
@@ -35,7 +36,7 @@ load_dotenv()
 
 def create_graph(source_file):
     """
-    Creates an RDF graph from the specified file.
+    Creates an RDF graph from the specified file, retrying every 30 seconds until successful.
     
     Args:
         source_file (str): The file path for the RDF source.
@@ -43,12 +44,17 @@ def create_graph(source_file):
     Returns:
         RdfGraph: An RDFGraph instance created from the source file.
     """
-    graph = RdfGraph(
-        source_file=source_file,
-        serialization="xml",
-        standard="rdf"
-    )
-    return graph
+    while True:
+        try:
+            graph = RdfGraph(
+                source_file=source_file,
+                serialization="xml",
+                standard="rdf"
+            )
+            return graph
+        except FileNotFoundError:
+            print(f"Source file {source_file} not found. Retrying in 30 seconds...")
+            time.sleep(30)
 
 class FileUpdateHandler(FileSystemEventHandler):
     """
