@@ -25,7 +25,8 @@ class PromptManager:
             "new_kpi": "kpi_generation",
             "report": "report",
             "dashboard": "dashboard_generation",
-            "translate": "translate"
+            "translate": "translate",
+            "get_language": "get_language"
             }
     
     def load_prompts(self):

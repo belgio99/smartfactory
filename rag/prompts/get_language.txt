@@ -1,0 +1,13 @@
+{_HISTORY_}
+
+USER QUERY: "{_USER_QUERY_}"
+ 
+INSTRUCTION: 
+"
+0. If USER QUERY language is English skip next points and return: English-<USER QUERY>
+1. Identify the language of USER QUERY and translate it into English. Return the result in the following format:
+<Language>-<Translated text>
+"
+
+CONTEXT: 
+{_CONTEXT_}

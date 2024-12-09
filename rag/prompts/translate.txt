@@ -1,12 +1,19 @@
 {_HISTORY_}
 
 USER QUERY: "{_USER_QUERY_}"
+
+LANGUAGE: "{_LANGUAGE_}"
  
 INSTRUCTION: 
 "
-0. Skip next points and just return the context if user query language is english.
-1. Translate the context in the user query language.
-2. Be sure every element except KPI names and GUI elements are translated.
+0. Skip next points and just return the context if language is english.
+1. Translate the context in the specified language.
+2. Be sure every element is translated except the following:
+- Machine Names like Cutting Machine, Assembly Machine, Laser Welding Machine etc...
+- KPIs (Key Performance Indicators) like EnergyKPI, ProductionKPI, MachineUsageKPI, AtomicAvgCycleTime, AtomicCost, consumption_idle, cost_std, etc...
+- General Ontology Classes like Entity, Operation, Material, Machine etc...
+- Statistical or Temporal Metrics like avg, max, min, std, sum, med, etc...
+- Ontology Properties like ObjectProperty, DatatypeProperty, producesKPI, isConsumedBy, etc...
 3. Return the translated response.
 "
 

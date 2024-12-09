@@ -384,9 +384,31 @@ async def handle_kb_q(question: Question, llm, graph, history):
     response = general_qa.chain.invoke(question.userInput)
     return response['result']
 
+async def translate_answer(question: Question, question_language: str, context):
+    prompt = prompt_manager.get_prompt('translate').format(
+        _HISTORY_='',
+        _CONTEXT_=context,
+        _USER_QUERY_=question.userInput,
+        _LANGUAGE_=question_language
+    )
+    print(f"Translating response to {question_language}")
+    return llm.invoke(prompt)
+
+
 @router.post("/chat", response_model=Answer)
 #async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
 async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
+    language_prompt = prompt_manager.get_prompt('get_language').format(
+        _HISTORY_='',
+        _CONTEXT_='',
+        _USER_QUERY_=question.userInput
+    )
+    translated_question = llm.invoke(language_prompt).content
+    question_language, question.userInput = translated_question.split("-", 1)
+
+    print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
+
+    
     # Classify the question
     label, url = prompt_classifier(question)
 
@@ -407,6 +429,10 @@ async def ask_question(question: Question): # to add or modify the services allo
             [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
         )
         llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
+        
+        if question_language.lower() != "english":
+            llm_result = await translate_answer(question, question_language, llm_result.content)
+            
         # Update the history
         history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
         return Answer(textResponse=llm_result.content, textExplanation='', data='query')
@@ -415,9 +441,12 @@ async def ask_question(question: Question): # to add or modify the services allo
     context = await handlers[label]()
 
     if label == 'kb_q':
+        if question_language.lower() != "english":
+            context = await translate_answer(question, question_language, context)
+
         # Update the history
-        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
-        return Answer(textResponse=context, textExplanation='', data='query')
+        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.content.replace('{','{{').replace('}','}}')})
+        return Answer(textResponse=context.content, textExplanation='', data='query')
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
@@ -432,13 +461,9 @@ async def ask_question(question: Question): # to add or modify the services allo
             _CONTEXT_=context
         )
         llm_result = llm.invoke(prompt)
-
-        prompt = prompt_manager.get_prompt('translate').format(
-            _HISTORY_='',
-            _CONTEXT_=llm_result.content,
-            _USER_QUERY_=question.userInput
-        )
-        llm_result = llm.invoke(prompt)
+        
+        if question_language.lower() != "english":
+            llm_result = await translate_answer(question, question_language, llm_result.content)
 
         history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
 
