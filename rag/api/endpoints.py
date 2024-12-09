@@ -627,10 +627,11 @@ async def ask_question(question: Question): # to add or modify the services allo
         )
         llm_result = llm.invoke(prompt)
         
-        if question_language.lower() != "english":
-            llm_result = await translate_answer(question, question_language, llm_result.content)
+        if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
+            if question_language.lower() != "english":
+                llm_result = await translate_answer(question, question_language, llm_result.content)
 
-        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
 
         explainer = RagExplainer(threshold = 15.0,)
 
@@ -674,7 +675,12 @@ async def ask_question(question: Question): # to add or modify the services allo
             # Converting the JSON string to a dictionary
             response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
             response_json = json.loads(response_cleaned)
+                        
+            if question_language.lower() != "english":
+                llm_result = await translate_answer(question, question_language, response_json["textualResponse"])
+
+            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
             
-            textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
-            data = json.dumps(response_json["bindings"], indent=2)
+            textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+            data = json.dumps(response_json["bindings"], indent=2)            
             return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
