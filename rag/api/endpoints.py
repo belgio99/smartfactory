@@ -601,10 +601,11 @@ async def ask_question(question: Question): # to add or modify the services allo
     if label == 'kb_q':
         if question_language.lower() != "english":
             context = await translate_answer(question, question_language, context)
+            context = context.content
 
         # Update the history
-        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.content.replace('{','{{').replace('}','}}')})
-        return Answer(textResponse=context.content, textExplanation='', data='query')
+        history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
+        return Answer(textResponse=context, textExplanation='', data='query')
 
     # Generate the prompt and invoke the LLM for certain labels
     if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
