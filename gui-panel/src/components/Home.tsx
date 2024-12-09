@@ -95,6 +95,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                     path={location.pathname}
                     userAvatar={userAvatar || '/default-avatar.png'}
                     userName={username}
+                    userId={userId}
                     role={role}
                     logoutHook={onLogout}
                 />
@@ -132,7 +133,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
             </main>
 
             {/* Chat Assistant */}
-            <ChatAssistant username={username} />
+            <ChatAssistant username={username} userId={userId} />
         </div>
     );
 };

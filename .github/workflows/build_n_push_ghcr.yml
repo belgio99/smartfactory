@@ -15,9 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create .env file from secret
-        run: echo "${{ secrets.RAG_ENV }}" > rag/.env
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
@@ -42,8 +39,32 @@ jobs:
 
       - name: Run container for testing
         run: |
+          # Directory containing service-specific .env files
+          SERVICE_DIR="./${{ matrix.service }}"
+          
+          # Combine all .env files in the service directory into a temporary .env file
+          TEMP_ENV_FILE="./temp-${{ matrix.service }}.env"
+          rm -f "$TEMP_ENV_FILE" # Ensure no leftover temporary file
+          touch "$TEMP_ENV_FILE"
+          
+          if ls "$SERVICE_DIR"/*.env 1> /dev/null 2>&1; then
+            cat "$SERVICE_DIR"/*.env > "$TEMP_ENV_FILE"
+          fi
+          
+          # Add extra environment variable for RAG service
+          if [ "${{ matrix.service }}" = "rag" ]; then
+            echo "RAG_ENV=${{ secrets.RAG_ENV }}" >> "$TEMP_ENV_FILE"
+          fi
+          
+          # Determine if an env file exists and set the --env-file option
+          if [ -s "$TEMP_ENV_FILE" ]; then
+            ENV_OPTION="--env-file $TEMP_ENV_FILE"
+          else
+            ENV_OPTION=""
+          fi
+          
           # Run the container in detached mode
-          docker run --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
+          docker run $ENV_OPTION --name test-${{ matrix.service }} -d ghcr.io/${{ github.repository_owner }}/smartfactory/${{ matrix.service }}:pr-${{ github.event.number }}
           
           # Wait for 60 seconds to test stability
           sleep 60
@@ -59,4 +80,7 @@ jobs:
           docker stop test-${{ matrix.service }}
           docker logs test-${{ matrix.service }}
           echo "Container test-${{ matrix.service }} passed."
+          
+          # Clean up temporary .env file
+          rm -f "$TEMP_ENV_FILE"
   

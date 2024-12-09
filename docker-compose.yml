@@ -9,6 +9,12 @@ volumes:
   db: {}
   minio_data: {}
   kb: {}
+  db_backup: {}
+  druid_db_backup: {}
+  backrest_data: {}
+  backrest_config: {}
+  backrest_cache: {}
+  target_volume: {}
 
 services:
   postgres:
@@ -292,24 +298,31 @@ services:
     env_file:
       - kpi-engine/.env
 
-
-
   backrest:
     image: garethgeorge/backrest:latest
     container_name: backrest
     hostname: backrest
     volumes:
       - backrest_data:/data
-      - backrest_config:/config
+      - ./database/backrest/config:/config
       - backrest_cache:/cache
-      - /MY-BACKUP-DATA:/userdata # [optional] mount local paths to backup here.
-      - /MY-REPOS:/repos # [optional] mount repos if using local storage, not necessary for remotes e.g. B2, S3, etc.
+      - druid_shared:/userdata/druid_shared # [optional] mount local paths to backup here.
+      - db_backup:/userdata/db_backup 
+      - druid_db_backup:/userdata/druid_db_backup
+      - minio_data:/userdata/minio_data
+      - target_volume:/target_volume
+    #  - /MY-REPOS:/repos # [optional] mount repos if using local storage, not necessary for remotes e.g. B2, S3, etc.
     environment:
       - BACKREST_DATA=/data # path for backrest data. restic binary and the database are placed here.
       - BACKREST_CONFIG=/config/config.json # path for the backrest config file.
       - XDG_CACHE_HOME=/cache # path for the restic cache which greatly improves performance.
-      - TZ=America/Los_Angeles # set the timezone for the container, used as the timezone for cron jobs.
+      - TZ=Europe/Rome # set the timezone for the container, used as the timezone for cron jobs.
     restart: unless-stopped
     ports:
       - 9898:9898
+    profiles:
+      - database
+      - not-db-init
+    env_file:
+      - database/backrest/.env
 

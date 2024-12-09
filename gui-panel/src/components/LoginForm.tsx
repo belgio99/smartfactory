@@ -4,6 +4,7 @@ import styles from '../styles/LoginForm.module.css';
 import {login, register, UserInfo} from '../api/ApiService';
 // Security service
 import {hashPassword} from '../api/security/securityService';
+import { log } from 'console';
 
 interface LoginFormProps {
     onLogin: (userId: string, username: string, token: string, role: string, site: string, email: string) => void;
@@ -13,7 +14,7 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
     const [isRegistering, setIsRegistering] = useState(false);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState('');
+    const [role, setRole] = useState('FloorFactoryManager');
     const [site, setSite] = useState('');
     const [token, setToken] = useState('');
     const [userId, setUserId] = useState('');
@@ -75,19 +76,24 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
 
             // Call the register API
             const registerResponse = await register(username, email, hashedPassword, role, site);
+            //
+            console.log('Regisration response:', registerResponse);
+            //
+            // Call the login API after the registration
+            const loginResponse = await login(username, isEmail, hashedPassword);
             // If the register is successful, call the onLogin function
             if (registerResponse) {
-                if (registerResponse.access_token) {
+                if (loginResponse.access_token) {
                     // Call the onLogin function
                     // Pass the user information to the parent component
-                    onLogin(registerResponse.userId,        // User ID
-                        registerResponse.username,      // Username
-                        registerResponse.access_token,  // Token
-                        registerResponse.role,          // Role
-                        registerResponse.site,          // Site
-                        registerResponse.email);        // Email
+                    onLogin(loginResponse.userId,        // User ID
+                            loginResponse.username,      // Username
+                            loginResponse.access_token,  // Token
+                            loginResponse.role,          // Role
+                            loginResponse.site,          // Site
+                            loginResponse.email);        // Email
                 } else {
-                    setError('Invalid credentials!');
+                    setError('Error during access, but the account was created successfully. Please try to use the login form.');
                 }
             } else {
                 setError('Error during registration. Please try again.');
@@ -128,7 +134,7 @@ const LoginForm: React.FC<LoginFormProps> = ({onLogin}) => {
                             {/*Either Floor Factory Manager or Specialty Manufactory Owner */}
                             <label>Role:</label>
                             <select
-                                value={role}
+                                //value={role || 'FloorFactoryManager'}
                                 onChange={(e) => setRole(e.target.value)}
                                 className={styles.input}
                             >
