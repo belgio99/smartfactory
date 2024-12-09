@@ -11,6 +11,7 @@ from schemas.promptmanager import PromptManager
 from chains.ontology_rag import DashboardGenerationChain, GeneralQAChain, KPIGenerationChain
 from schemas.models import Question, Answer
 from schemas.XAI_rag import RagExplainer
+from queryGen.QueryGenerator import QueryGenerator
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
@@ -99,6 +100,9 @@ router = APIRouter()
 # Initialize the prompt manager
 prompt_manager = PromptManager('prompts/')
 
+# Initialize the query generator
+query_gen = QueryGenerator(llm)
+
 def format_docs(docs):
     """
     Helper function to format documents for the prompt.
@@ -111,42 +115,7 @@ def format_docs(docs):
     """
     return "\n\n".join(doc.page_content for doc in docs)
 
-def toDate(data):
-    """
-    Converts a date range string into a valid date format.
-    
-    Args:
-        data (str): The date range or single date string to be converted.
-    
-    Returns:
-        str: The formatted date range string.
-    """
-    TODAY = datetime.now()
-    FIRST_DAY = "2024-03-01"
 
-    if "->" in data:
-        date = data
-    elif data == "NULL":
-        date = f"{FIRST_DAY}->{(TODAY - relativedelta(days=1)).strftime('%Y-%m-%d')}"
-    else:
-        temp = data.split("=")
-        _type = temp[0]
-        _value = int(temp[1])
-        delta = 0
-        if _type == "days":
-            delta = relativedelta(days=_value)
-        elif _type == "weeks":
-            delta = relativedelta(weeks=_value)
-        elif _type == "months":
-            delta = relativedelta(months=_value)
-        elif _type == "years":
-            delta = relativedelta(years=_value)
-        
-        if delta == relativedelta():
-            date = f"{(TODAY - delta).strftime('%Y-%m-%d')}->{(TODAY - delta).strftime('%Y-%m-%d')}"
-        else:
-            date = f"{(TODAY - delta).strftime('%Y-%m-%d')}->{(TODAY - relativedelta(days=1)).strftime('%Y-%m-%d')}"
-    return date
 
 def prompt_classifier(input: Question):
     """
@@ -188,53 +157,12 @@ def prompt_classifier(input: Question):
     prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
 
-    # If the label requires a URL generation
-    url = ""
-    if label == "predictions" or label == "kpi_calc":
-        # Format the conversation history again
-        history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-            [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
-        )
-
-        esempi = [
-            {"testo": "Predict for tomorrow the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on last week data", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, weeks=1, days=1"},
-            {"testo": "Predict the future Power Consumption Efficiency for Riveting Machine 2 over the next 5 days", "data": f"Power Consumption Efficiency, Riveting Machine 2, NULL, days=5"},
-            {"testo": "Can you calculate Machine Utilization Rate for Assembly Machine 1 for yesterday?", "data": f"Machine Utilization Rate,  Assembly Machine 1, days=1, NULL"},
-            {"testo": "Calculate Machine Usage Trend for Laser Welding Machine 1 for today", "data": f"Machine Usage Trend, Laser Welding Machine 1, days=0, NULL"},
-            {"testo": "Calculate for the last 2 weeks Cost Per Unit for Laser Welding Machine 2", "data": f"Cost Per Unit, Laser Welding Machine 2, weeks=2, NULL"},
-            {"testo": "Can you predict for the future 3 weeks the Energy Cost Working Time for Large Capacity Cutting Machine 2 based on 24/10/2024 data?", "data": f"Energy Cost Working Time, Large Capacity Cutting Machine 2, 2024-10-24->2024-10-24, weeks=3"}
-        ]
-
-        esempio_template = PromptTemplate(
-            input_variables=["testo", "data"],
-            template="Text: {testo}\nData: {data}\n"
-        )
-
-        few_shot_prompt = FewShotPromptTemplate(
-            examples=esempi,
-            example_prompt=esempio_template,
-            prefix= "{history}\n\nFEW-SHOT EXAMPLES:",
-            suffix= "Task: Fill the Data field for the following prompt \nText: {text_input}\nData:\nThe filled field needs to contain four values as the examples above",
-            input_variables=["history", "text_input"]
-        )
-
-        prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
-        data = llm.invoke(prompt)
-        data = data.content.strip("\n").split(": ")[1].split(", ")
-
-        kpi_id = data[0].lower().replace(" ","_")
-        machine_id = data[1].replace(" ","")
-
-        # first couple of dates parsing
-        date=toDate(data[2]).split("->")
-        url=f"http://127.0.0.1:8000/{label}/{kpi_id}/calculate?machineType={machine_id}&startTime={date[0]}&endTime={date[1]}"
-        if label == "predictions":
-            # second couple of dates parsing
-            # a data labelled as 'predictor' should not be 'NULL', this (before in the pipeline) should be checked to be true 
-            dateP = toDate(data[3]).split("->")
-            url+=f"&startTimeP={dateP[0]}&endTimeP={dateP[1]}"
-
-    return [label,url]
+    # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
+    json_request=""
+    if label == "predictions" or label == "kpi_calc" or label == "report":
+        json_request=query_gen.query_generation(input, label)
+        
+    return [label,json_request]
 
 async def ask_kpi_engine(url):
     """
