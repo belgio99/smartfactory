@@ -24,6 +24,8 @@ class kpi_dataframe_data_extraction:
         float: The total sum of values in the 'sum' column for the filtered dataframe.
         """
         fd = kpi_dataframe_filter.filter_df(kpi, df, machine_id, machine_type, start_period, end_period)
+        if fd.shape[0] == 0: 
+            raise ValueError("Error: filter values are too restrictive: no items are retrived")
         return fd['sum'].sum()
 
     def avg_kpi(kpi, df, machine_id, machine_type, start_period, end_period):
@@ -42,6 +44,8 @@ class kpi_dataframe_data_extraction:
         float: The average value in the 'avg' column for the filtered dataframe.
         """
         fd = kpi_dataframe_filter.filter_df(kpi, df, machine_id, machine_type, start_period, end_period)
+        if fd.shape[0] == 0: 
+            raise ValueError("Error: filter values are too restrictive: no items are retrived")
         return fd['avg'].sum() / fd.shape[0]
 
     def max_kpi(kpi, df, machine_id, machine_type, start_period, end_period):
@@ -60,6 +64,8 @@ class kpi_dataframe_data_extraction:
         float: The maximum value in the 'sum' column for the filtered dataframe.
         """
         fd = kpi_dataframe_filter.filter_df(kpi, df, machine_id, machine_type, start_period, end_period)
+        if fd.shape[0] == 0: 
+            raise ValueError("Error: filter values are too restrictive: no items are retrived")
         return fd['sum'].max()
 
     def min_kpi(kpi, df, machine_id, machine_type, start_period, end_period):
@@ -78,6 +84,8 @@ class kpi_dataframe_data_extraction:
         float: The minimum value in the 'sum' column for the filtered dataframe.
         """
         fd = kpi_dataframe_filter.filter_df(kpi, df, machine_id, machine_type, start_period, end_period)
+        if fd.shape[0] == 0: 
+            raise ValueError("Error: filter values are too restrictive: no items are retrived")
         return fd['sum'].min()
 
     def std_kpi(kpi, df, machine_id, machine_type, start_period, end_period):
@@ -96,6 +104,8 @@ class kpi_dataframe_data_extraction:
         float: The standard deviation of values in the 'sum' column for the filtered dataframe.
         """
         fd = kpi_dataframe_filter.filter_df(kpi, df, machine_id, machine_type, start_period, end_period)
+        if fd.shape[0] == 0: 
+            raise ValueError("Error: filter values are too restrictive: no items are retrived")
         return fd['sum'].std()
 
     def med_kpi(kpi, df, machine_id, machine_type, start_period, end_period):
@@ -114,4 +124,6 @@ class kpi_dataframe_data_extraction:
         float: The median of values in the 'sum' column for the filtered dataframe.
         """
         fd = kpi_dataframe_filter.filter_df(kpi, df, machine_id, machine_type, start_period, end_period)
+        if fd.shape[0] == 0: 
+            raise ValueError("Error: filter values are too restrictive: no items are retrived")
         return fd['sum'].median()
