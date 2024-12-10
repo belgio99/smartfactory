@@ -16,6 +16,7 @@ volumes:
   backrest_cache: {}
   target_volume: {}
   vault_data: {}
+  data_processing_models: {}
 
 services:
   postgres:
@@ -221,7 +222,7 @@ services:
       context: ./data-processing
       dockerfile: Dockerfile
     volumes:
-      - ./models:/models
+      - data_processing_models:/models
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
     ports: 
       - "10030:8000"
