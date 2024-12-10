@@ -631,9 +631,9 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
 
 if __name__ == "__main__":
     # check if the "storage" folder is empty ("./storage")
-    if not os.listdir("./storage"):
+    if not os.path.isfile(ONTOLOGY_PATH):
         # insert ontology file ("./Ontology/sa_ontology.rdf") in the "storage" folder
-        shutil.copyfile("./Ontology/sa_ontology.rdf", "./storage/sa_ontology.rdf")
+        shutil.copyfile("./Ontology/sa_ontology.rdf", ONTOLOGY_PATH)
 
     onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
 
