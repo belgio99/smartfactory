@@ -34,6 +34,9 @@ HISTORY_LEN = 3
 
 # Load environment variables
 load_dotenv()
+import nltk
+nltk.download('punkt_tab')
+
 
 def create_graph(source_file):
     """
@@ -156,7 +159,7 @@ def prompt_classifier(input: Question):
 
     prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
-
+    print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
     if label == "predictions" or label == "kpi_calc" or label == "report":
@@ -184,22 +187,35 @@ async def ask_kpi_engine(json_body):
 
     mock_response = httpx.Response(
       status_code=200,
+
+                            
       json=[{
-        'Machine name': 'Laser Cutter',
-        'KPI name': 'power',
-        'Value': '0,055',
-        'Unit of Measure': 'kW',
-        'Date': '12/10/2024',
-        'Forecast': False
+        "Date_Start": "2024-12-02",
+        "Date_Finish": "2024-12-08",
+        "Machine_Name": "Assembly Machine 1",
+        "KPI_Name": "offline_time_max",
+        "Aggregator": "avg",
+        "Measure_Unit": "s",
+        "Value" : 7000
         },
         {
-        'Machine name': 'Riveting Machine',
-        'KPI name': 'power',
-        'Value': '0,07',
-        'Unit of Measure': 'kW',
-        'Date': '12/10/2024',
-        'Forecast': False
+        "Date_Start": "2024-12-02",
+        "Date_Finish": "2024-12-08",
+        "Machine_Name": "Assembly Machine 2",
+        "KPI_Name": "offline_time_max",
+        "Aggregator": "avg",
+        "Measure_Unit": "s",
+        "Value" : 5000
         },
+        {
+        "Date_Start": "2024-12-02",
+        "Date_Finish": "2024-12-08",
+        "Machine_Name": "Assembly Machine 3",
+        "KPI_Name": "offline_time_max",
+        "Aggregator": "avg",
+        "Measure_Unit": "s",
+        "Value" : 6500
+        }
         ])
     
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):

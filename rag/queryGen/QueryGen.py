@@ -40,13 +40,10 @@ class QueryGenerator:
         res = graph.query(kpi_query)
         self.kpi_res = []
         for row in res:
-            print(row["id"])
             self.kpi_res.append(str(row["id"]))
         res = graph.query(machine_query)
-        print()
         self.machine_res = []
         for row in res:
-            print(row["id"])
             self.machine_res.append(str(row["id"]))
 
     def _last_next_days(self,data,time,days):
