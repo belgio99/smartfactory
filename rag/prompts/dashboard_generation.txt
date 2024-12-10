@@ -3,11 +3,24 @@
 USER QUERY: "{_USER_QUERY_}"
  
 INSTRUCTION: 
-"You're provided with CONTEXT containing a set of graphical elements, each identified by an ID and accompanied by a description, as well as relevant KPIs tracked by the system, useful for accomplish user need.  
+In the CONTEXT section you are provided  with a list of JSON with:
 
-Using the given information about the graphical elements and the KPIs, identify and select the top 5 graphical element IDs that best fulfill the user's requirements as stated in the query. 
+- The available graphical elements (unique ID and description specifying their ideal purposes).
+- The KPIs from the Knowledge Base (KPI ID, description, formula and other information).
 
-Provide as output five pairings of Graphical Element ID and KPI that best satisfy the user's needs."
+TASK: Using the information provided, generates a structured response that satisfies the USER QUERY, mapping the most relevant KPIs to the most appropriate graphical elements.
+
+ANSWER FORMAT: a json with the following two fields: 
+- bindings: A list of 4-8 associations graphical_element_ID - KPI_ID, mapping the best graphical elements to the most relevant KPIs for the user's needs. The list should contain one object for each binding E.g.: [{{‘bar_chart’: ‘consumption’}}, {{‘line_chart’: ‘maintenance’}}...]
+- textualResponse: A short and focused description summarising the choices made to associate graphical elements to KPIs, avoiding redundant explanations.
+
+REQUIREMENTS:
+- each graphical element should bind at most one KPI, so select the best ones
+- you must create at least 4 associations in the bindings list 
+- you must create no more then 8 
+- you can repeat KPI in different bindings with different graphical elements
+- you can repeat graphical elements in different bindings with different KPIs
 
 CONTEXT: 
 {_CONTEXT_}
+

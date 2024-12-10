@@ -1,21 +1,32 @@
-"""
-USAGE:
-- Initialize the PromptManager with the path to the directory containing prompt files.    
-- Get a prompt with get_prompt for a specific task by providing the classification label.
-- If needed reload the prompts from the directory with the load_prompt function.
-"""
-
-
 import os
 import re
 from langchain_core.prompts import PromptTemplate
 
-
 class PromptManager:
+    """
+    Initializes the PromptManager to load and manage task-specific prompts.
+
+    Args:
+        prompts_dir (str): The directory path containing prompt files.
+
+    Attributes:
+        prompts_dir (str): The directory path for loading prompt files.
+        prompts (dict): A dictionary to store prompts by task name.
+        switcher (dict): A dictionary to map classification labels to task names.
+
+    Methods:
+        load_prompts: Loads all prompts from the directory.
+        get_prompt: Retrieves the prompt for a specific task based on the label.
+        convert_string_to_prompt_template: Converts a string into a langchain prompt template.
+        label_to_task_name: Converts the classification label into a task name.
+    """
     def __init__(self, prompts_dir):
-        """Initialize the manager with the directory containing prompt files.
-        
-        :param prompts_dir: The directory path containing prompt files."""
+        """
+        Initializes the manager with the directory containing prompt files.
+
+        Args:
+            prompts_dir (str): The directory path containing prompt files.
+        """
         self.prompts_dir = prompts_dir
         self.prompts = {}
         self.load_prompts()
@@ -25,21 +36,36 @@ class PromptManager:
             "new_kpi": "kpi_generation",
             "report": "report",
             "dashboard": "dashboard_generation",
-            "translate": "translate"
-            }
-    
+            "translate": "translate",
+            "get_language": "get_language"
+        }
+
     def load_prompts(self):
-        """Load all prompts from the directory."""
+        """
+        Loads all prompts from the specified directory.
+
+        This function reads all `.txt` files from the directory and stores the prompt
+        content in a dictionary where the key is the task name (filename) and the value is the prompt text.
+        """
         for filename in os.listdir(self.prompts_dir):
             if filename.endswith(".txt"):
                 task_name = os.path.splitext(filename)[0]
                 with open(os.path.join(self.prompts_dir, filename), 'r') as file:
                     self.prompts[task_name] = file.read().strip()
-    
+
     def get_prompt(self, label):
-        """Return a langchain prompt for a specific task.
-        
-        :param task_name: The string name of the task to retrieve the prompt for."""
+        """
+        Retrieves the prompt for a specific task based on the classification label.
+
+        Args:
+            label (str): The classification label for the task.
+
+        Returns:
+            PromptTemplate: The prompt template for the specified task.
+
+        Raises:
+            ValueError: If no prompt is found for the given label.
+        """
         task_name = self.label_to_task_name(label)
         try:
             prompt = self.prompts[task_name]
@@ -51,22 +77,32 @@ class PromptManager:
 
     def convert_string_to_prompt_template(self, template_string):
         """
-        Converts a string prompt in a langchain prompt.
-        
-        :param template_string: The string prompt to convert.
+        Converts a string into a langchain prompt template.
+
+        Args:
+            template_string (str): The string representing the prompt.
+
+        Returns:
+            PromptTemplate: The langchain prompt template created from the string.
         """
-        # Trova tutti i segnaposto nella stringa (es. {USER_QUERY}, {_CONTEXT_})
+        # Find all placeholders in the string (e.g., {USER_QUERY}, {_CONTEXT_})
         input_variables = re.findall(r"{(_\w+?_)}", template_string)
 
-        # Crea l'oggetto PromptTemplate
+        # Create the PromptTemplate object
         prompt_template = PromptTemplate(
             input_variables=input_variables,
             template=template_string
         )
         return prompt_template
-    
+
     def label_to_task_name(self, label):
-        """Convert the classification label to a task name.
-        
-        :param label: The label to convert."""
+        """
+        Converts the classification label into a task name.
+
+        Args:
+            label (str): The classification label to convert.
+
+        Returns:
+            str: The task name corresponding to the given label.
+        """
         return self.switcher.get(label, label)

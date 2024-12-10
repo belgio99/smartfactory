@@ -8,6 +8,7 @@ sentence_transformers
 rdflib
 nltk
 rapidfuzz
+watchdog
 
 psycopg2-binary==2.9.10
 passlib==1.7.4
