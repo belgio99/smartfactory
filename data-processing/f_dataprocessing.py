@@ -418,7 +418,7 @@ def XAI_PRED(data, model, total_points, seq_length = 10, n_predictions = 30):
   input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
 
   # Generate labels for the input_data
-  start_date = datetime(2020, 1, 1)
+  start_date = datetime.today().date() - timedelta(observation_window - 1)
   input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
   # Initialize the explainer
@@ -525,18 +525,18 @@ def make_prediction(machine, kpi, length):
     return results
 
 def kpi_exists(machine, KPI, host_port, api_key):
-
+  machine = machine.replace(" ", "_")
   headers = {
       "x-api-key": api_key
   }
   
   # Send GET request with headers
   
-  url_KB = f"http://localhost:{host_port}/kb/{machine}/{KPI}/check"
+  url_KB = f"http://kb:{host_port}/kb/{machine}/{KPI}/check"
   # Kpi_info  = requests.post(url_KB)
   Kpi_info = requests.get(url_KB, headers=headers)
 
-  return Kpi_info
+  return Kpi_info.json()
 
 ###########################################
 #####=================================#####

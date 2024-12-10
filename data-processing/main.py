@@ -112,21 +112,9 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             'Forecast': True
         }
         host_port = '8000'
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        print(machine)
-        print(KPI_name)
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
 
         KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_port, API_key)
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        print(KPI_data)
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        # KPI_data = {
-        #     "Status": 0,
-        #     "forecastable": True,
-        #     "unit_measure": "BAU"
-        # }
-
+ 
         if KPI_data['Status'] == 0:
             if KPI_data['forecastable'] == True:
                 horizon = json_in.Date_prediction#['Date_prediction']
@@ -152,76 +140,6 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             out_dicts.append(out_dict)
     return {"result": out_dicts}  # Convert numpy array to list for JSON serialization
 
-
-#TEST FOR OUTPUT FORMAT
-@app.get("/data-processing/Test_predict")
-def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
-    out_dicts = []
-    for json_in in JSONS.value:
-        json_in = {}
-        json_in = {
-            "Machine_name": 'Large Capacity Cutting Machine 1',
-            "KPI_name": 'consumption',
-            "Date_prediction": 5
-        }
-        machine = json_in.Machine_name#['Machine_name'] #direttamente valore DB
-        KPI_name = json_in.KPI_name#['KPI_name']
-
-        out_dict = {
-            'Machine_name': machine,
-            'KPI_name': KPI_name,
-            'Predicted_value': '',
-            'Lower_bound':[], #from XAI
-            'Upper_bound':[], #from XAI
-            'Confidence_score':[], #from XAI
-            'Lime_explaination': [], #from XAI
-            'Measure_unit': '',
-            'Date_prediction': '',
-            'Forecast': True
-        }
-        host_port = '8000'
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        print(machine)
-        print(KPI_name)
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-
-        KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_port)
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        print(KPI_data)
-        print('AAAAAAAAAAAAAAAAAAAAAAAAAAAaa_KPI_DATA')
-        # KPI_data = {
-        #     "Status": 0,
-        #     "forecastable": True,
-        #     "unit_measure": "BAU"
-        # }
-
-        if KPI_data['Status'] == 0:
-            if KPI_data['forecastable'] == True:
-                horizon = json_in.Date_prediction#['Date_prediction']
-                # today = datetime.datetime.now().date()
-                # delta = req_date - today
-                # horizon = delta.days() 
-                if horizon > 0:
-                    if not f_dataprocessing.check_model_exists(machine,KPI_name):
-                       f_dataprocessing.characterize_KPI(machine,KPI_name)
-                    result = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
-                   
-                    out_dict['Predicted_value'] = result['Predicted_value']
-                    out_dict['Lower_bound'] = result['Lower_bound']
-                    out_dict['Upper_bound'] = result['Upper_bound']
-                    out_dict['Measure_unit'] = KPI_data["unit_measure"]
-                    out_dict['Confidence_score'] = result['Confidence_score']
-                    out_dict['Lime_explaination'] = result['Lime_explaination']
-                    out_dict['Date_prediction'] = result['Date_prediction']                  
-                else:
-                    out_dict['Predicted_value'] = 'Errore, la data inserita è precedente alla data odierna'
-            else:
-                out_dict['Predicted_value'] = 'Errore, il KPI inserito non esiste'
-            out_dicts.append(out_dict)
-    return {"result": out_dicts}  # Convert numpy array to list for JSON serialization
-
-
-# TODO: This function should be called once a day and retreive all the models 
 def new_data_polling():
     """
         daily check of new data point to update the models. new data points are extracted 24 hours
