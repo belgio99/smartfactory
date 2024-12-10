@@ -51,7 +51,7 @@ jobs:
           fi
           echo "Changed services: $changed_services"
           echo "::set-output name=changed::$changed_services"
-          
+
   print-changed-containers:
     needs: detect-changes
     runs-on: ubuntu-latest
@@ -97,6 +97,7 @@ jobs:
 
   build-containers:
     needs: detect-changes
+    if: needs.detect-changes.outputs.changed-services != ''
     runs-on: ubuntu-latest
     strategy:
       matrix:
