@@ -80,6 +80,23 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                     },
                 ]);
             }
+            if (userMessage.content === '/report') {
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: messages.length + 2,
+                        sender: 'assistant',
+                        content: 'Your report is ready for review.',
+                        extraData: {
+                            explanation: XAIEX,
+                            report: {
+                                userId: userId,
+                                reportId: 'report_123',
+                            },
+                        },
+                    },
+                ]);
+            }
         }
 
         //if the message is a command, handle it
@@ -111,6 +128,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                                         reportId: response.data,
                                     },
                                 };
+                                response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
                         }
                     }
 

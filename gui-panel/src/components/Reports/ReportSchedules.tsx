@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
 import ScheduleModal from "./ScheduleModal";
-import {loadFromLocal} from "../../api/PersistentDataManager";
-import { scheduleReport } from "../../api/ApiService";
+import PersistentDataManager, {loadFromLocal} from "../../api/PersistentDataManager";
+import {scheduleReport} from "../../api/ApiService";
 
 interface SchedulesListProps {
     schedules: Schedule[];
@@ -14,7 +14,17 @@ interface ScheduleProps {
     userId: string;
     username: string;
 }
+
 const SchedulesList: React.FC<SchedulesListProps> = ({schedules, onEdit, onDelete}) => {
+
+    const dataManager = PersistentDataManager.getInstance();
+
+    function mapKpiIdToName(kpiId: string): string {
+        const kpis = dataManager.getKpiList();
+        const kpi = kpis.find((kpi) => kpi.id === kpiId);
+        return kpi ? kpi.name : kpiId;
+    }
+
     return (
         <div className="space-y-4">
             {schedules.map((schedule) => (
@@ -25,7 +35,7 @@ const SchedulesList: React.FC<SchedulesListProps> = ({schedules, onEdit, onDelet
                             <p className="text-sm text-gray-500">Recurrence: {schedule.recurrence}</p>
                             <p className="text-sm text-gray-500">Email: {schedule.email}</p>
                             <p className="text-sm text-gray-500">Start Date: {schedule.startDate}</p>
-                            <p className="text-sm text-gray-500">KPIs: {schedule.kpis.join(", ")}</p>
+                            <p className="text-sm text-gray-500">KPIs: {schedule.kpis.map(mapKpiIdToName).join(", ")}</p>
                             <p className="text-sm text-gray-500">Machines: {schedule.machines.join(", ")}</p>
                         </div>
                         <div className="flex space-x-2">
@@ -65,11 +75,11 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
     const handleSaveSchedule = async (schedule: Partial<Schedule>) => {
         if (editingSchedule) {
             setSchedules((prev) =>
-                prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...schedule } : s))
+                prev.map((s) => (s.id === editingSchedule.id ? {...s, ...schedule} : s))
             );
         } else {
             const newId = schedules.length ? Math.max(...schedules.map((s) => s.id)) + 1 : 1;
-    
+
             // Crea un nuovo oggetto Schedule
             const newSchedule: Schedule = new Schedule(
                 newId,
@@ -81,16 +91,16 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                 schedule.kpis || [],
                 schedule.machines || []
             );
-    
+
             // Aggiungi " 00:00:00" alla data (formato richiesto dal server)
             newSchedule.startDate = newSchedule.startDate + " 00:00:00";
-    
+
             try {
                 // Prepara il payload per l'API
                 const requestData = {
                     userId: userId,
                     params: {
-                        id: newId.toString(), 
+                        id: newId.toString(),
                         status: newSchedule.status === "Active",
                         name: newSchedule.name,
                         recurrence: newSchedule.recurrence,
@@ -100,14 +110,14 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                         machines: newSchedule.machines,
                     }
                 };
-    
+
                 console.log("Saving schedule with requestData:", requestData);
-                
+
                 setSchedules((prev) => [...prev, newSchedule]);
-    
+
                 //Call the API to save the schedule
                 await scheduleReport(requestData);
-    
+
                 console.log("Schedule saved successfully!");
             } catch (error) {
                 console.error("Failed to save schedule:", error);
@@ -116,7 +126,7 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
             setIsModalOpen(false);
         }
     };
-    
+
 
     const handleDeleteSchedule = (id: number) => {
         setSchedules((prev) => prev.filter((schedule) => schedule.id !== id));
