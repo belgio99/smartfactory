@@ -18,7 +18,7 @@ const App = () => {
     const [email, setEmail] = useState('');
 
     // Loading state to track if data is still being initialized
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     // Method to handle the login event
     const handleLogin = (userId: string, username: string, token: string, role: string, site: string, email: string) => {
@@ -46,6 +46,7 @@ const App = () => {
     async function initializeData() {
         try {
             const dataManager = DataManager.getInstance();
+            dataManager.setUserId(userId);
             await dataManager.initialize();
             console.log("Data initialization completed.");
             console.log("KPI List:", dataManager.getKpiList());
@@ -60,8 +61,11 @@ const App = () => {
 
     // Call initializeData on component mount
     useEffect(() => {
-        initializeData();
-    }, []); // Empty dependency array means this will run only once on mount
+        if(isAuthenticated){
+            console.log("Initializing data...");
+            initializeData();
+        }
+    }, [isAuthenticated]); // Empty dependency array means this will run only once on mount
 
     // Show loading screen while data is being initialized or user is not authenticated
     if (loading) {

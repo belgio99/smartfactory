@@ -23,13 +23,19 @@ class TemporaryLayout {
         return new TemporaryLayout(entries);
     }
 
+    /**
+     * This method saves the layout to a DashboardLayout object
+     * @param layout TemporaryLayout - the layout to be saved
+     * @param name string - the name of the layout
+     * @returns DashboardLayout - the layout to be saved
+     */
     static saveToLayout(layout: TemporaryLayout, name: string): DashboardLayout {
         return new DashboardLayout(name.trim().toLowerCase(), name, layout.charts);
     }
 
 }
 
-const AIDashboard: React.FC = () => {
+const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
     const location = useLocation();
     const metadata = location.state?.metadata;
 
@@ -41,6 +47,10 @@ const AIDashboard: React.FC = () => {
     const [filters, setFilters] = useState(new Filter("All", []));
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: 'hour'});
     const [temporaryName, setTemporaryName] = useState<string>("");
+    const [selectedFolder, setSelectedFolder] = useState<string>("");
+
+    // Set the user ID for the API calls
+    dataManager.setUserId(userId);
 
     //on first data load
     useEffect(() => {
@@ -119,13 +129,31 @@ const AIDashboard: React.FC = () => {
                 className="flex-grow p-2 border border-gray-200 rounded-lg"
                 onChange={(e) => setTemporaryName(e.target.value)}
             />
+            {/*Add select for choose the Dashboard folder where to save it*/}
+            <select
+                className="flex-grow p-2 border border-gray-200 rounded-lg"
+                onChange={(e) => setSelectedFolder(e.target.value)}
+            >
+                {dataManager.getDashboardFolders().map((folder) => (
+                    <option key={folder.id} value={folder.id}>
+                        {folder.name}
+                    </option>
+                ))}
+            </select>
             {/* Save button */}
             <button
                 className="w-fit p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 onClick={
                     () => {
+
+                        // set the dashboard id to a unique id
+                        const dashboardTemporaryId = dataManager.getUniqueDashboardId(temporaryName.trim().toLowerCase());
                         // TODO: Add a way to select the dashboard folder
-                        dataManager.addDashboard(TemporaryLayout.saveToLayout(dashboardData, temporaryName), new DashboardFolder("ai", "Chat Dashboards", []));
+
+                        // Create a new dashboard layout with (name, id, charts)
+                        dataManager.addDashboard(TemporaryLayout.saveToLayout(dashboardData, temporaryName), new DashboardFolder(dashboardTemporaryId, temporaryName, []));
+                        //
+                        console.log("Dashboard saved with name:", temporaryName + " and id: " + dashboardTemporaryId);
                     }
                 }
             >

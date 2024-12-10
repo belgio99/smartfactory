@@ -118,7 +118,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                         <Route path="home" element={<Home username={username} token={token} role={role} site={site} />}/>
                         <Route path="dashboards/:dashboardId" element={<Dashboard/>}/>
                         <Route path="dashboards/:dashboardPath/:dashboardId" element={<Dashboard/>}/>
-                        <Route path="dashboards/new" element={<AIDashboard/>}/>
+                        <Route path="dashboards/new" element={<AIDashboard userId={userId} /> } />
                         <Route path="user-settings" element={<UserSettings userId={userId} username={username} token={token} role={role} site={site} email={email}/>}/>
                         <Route path="data-view" element={<DataView/>}/>
                         <Route path="log" element={<LogPage/>}/>

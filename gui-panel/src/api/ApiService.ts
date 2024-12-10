@@ -50,6 +50,7 @@ export interface HistoricalDataResponse {
  * @param any [key: string] any - The key of the dashboard data
  */
 export interface DashboardData {
+    // json object
     [key: string]: any;
 }
 
