@@ -126,6 +126,4 @@ class kpi_dataframe_filter:
         fd = kpi_dataframe_filter.filter_dataframe_by_typology(fd, machine_type)
         fd = kpi_dataframe_filter.filter_dataframe_by_kpi(fd, kpi)
         fd = kpi_dataframe_filter.filter_dataframe_by_time(fd, start_period, end_period)
-        if fd.empty: 
-            return ValueError("Error: filter values are too restricted: no items are retrived")
         return fd
