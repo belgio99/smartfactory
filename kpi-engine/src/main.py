@@ -41,7 +41,7 @@ while not success:
         success = True
     except requests.exceptions.RequestException as e:
         print(f"An error occurred: {e}")
-        time.sleep(30)
+        time.sleep(5)
 
 df = pd.DataFrame.from_dict(df, orient='columns')
 
@@ -100,7 +100,7 @@ async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify
         if kpiID not in methods:
             result, unitOfMeasure = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
         else:
-            result = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
+            result, unitOfMeasure = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
         
         return {
             "Machine_Name": machineId,
