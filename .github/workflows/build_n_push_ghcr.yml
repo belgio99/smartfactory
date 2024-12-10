@@ -48,11 +48,15 @@ jobs:
           touch "$TEMP_ENV_FILE"
           
           if ls "$SERVICE_DIR"/*.env 1> /dev/null 2>&1; then
-            cat "$SERVICE_DIR"/*.env > "$TEMP_ENV_FILE"
+            for env_file in "$SERVICE_DIR"/*.env; do
+              cat "$env_file" >> "$TEMP_ENV_FILE"
+              echo "" >> "$TEMP_ENV_FILE" # Add a blank line
+            done
           fi
           
           # Add extra environment variable for RAG service
           if [ "${{ matrix.service }}" = "rag" ]; then
+            echo "" >> "$TEMP_ENV_FILE" # Add a blank line before appending
             echo "RAG_ENV=${{ secrets.RAG_ENV }}" >> "$TEMP_ENV_FILE"
           fi
           

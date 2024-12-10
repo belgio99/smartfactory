@@ -1,0 +1,36 @@
+{Qs,As}, label requests, average_exe_time
+
+{
+Q: Generate a dashboard to check the costs
+A: The dashboard will use a scatter plot, a vertical bar chart, and a line chart to visualize the 'energy_cost_per_unit'[1]. The scatter plot helps identify correlations between cost and other factors, the bar chart facilitates comparisons across different time periods or machines, and the line chart displays trends over time[2].
+
+Q: Ho bisogno di monitorare il consumo energetico della mia azienda
+A: Il dashboard utilizzerà un grafico a linee per mostrare l'andamento dell'efficienza energetica nel tempo, un grafico a barre verticali per confrontare l'efficienza tra diverse macchine, un grafico a area per visualizzare l'efficienza energetica cumulativa e uno scatter plot per esplorare le correlazioni tra l'efficienza energetica e altri fattori[1]. Tutti i grafici utilizzeranno il KPI 'working_time_sum/consumption_sum' che rappresenta l'efficienza energetica[1].
+}, dashboard, 9s
+{
+Q: What formula is used to calculate Power Consumption Efficiency ?
+A: The Power Consumption Efficiency is calculated using the formula: working_time_sum divided by consumption_sum.
+
+Q: Descrivimi il material cost per unit
+A: Il'KPI \"offline time med\" è atomico e misura il tempo in cui una macchina è offline, tenendo conto del tempo di mediazione. L'unità di misura è il secondo (s).
+
+Q:what is cost_working_avg unit of measure ?
+A:The unit of measure for cost_working_avg is euro per kWh.
+
+Q: Can you tell me how many Assembly Machines are there ?
+A: There are 3 assembly machines.
+}, kb_q, 3.5s
+
+{
+Q: Generate the KPI cost_working_variance calculated as (cost_working_max - cost_working_avg) + (cost_working_avg - cost_working_min) over a time range
+A: {\n  \"ID\": \"cost_working_variance\",\n  \"Atomic\": false,\n  \"Description\": \"This KPI calculates the variance in electricity cost during machine working time[1]. \",\n  \"Formula (base)\": \"(cost_working_max - cost_working_avg) + (cost_working_avg - cost_working_min)\",\n  \"Unit of Measure\": \"euro per kWh\",\n  \"Domain\": {\n    \"min\": 0,\n    \"max\": null,\n    \"type\": \"numeric\"\n  }\n}[2]
+
+Q: I want a new KPI named consumption_efficiency calculated as consumption_working_avg / consumption_idle_avg
+A: {\n  \"ID\": \"consumption_efficiency\",\n  \"Atomic\": false,\n  \"Description\": \"This KPI calculates the ratio of average energy consumption during working periods to average energy consumption during idle periods[1]. \",\n  \"Formula (base)\": \"consumption_working_avg / consumption_idle_avg\",\n  \"Unit of Measure\": \"unitless\",\n  \"Domain\": {\n    \"min\": 0,\n    \"max\": null,\n    \"type\": \"numeric\"\n  }\n}[1]
+
+Q:Create the KPI total_power
+A: {\n  \"ID\": \"total_power\",\n  \"Atomic\": true,\n  \"Description\": \"This KPI represents the total power consumed[1]. \",\n  \"Formula (base)\": null,\n  \"Unit of Measure\": \"kW\",\n  \"Domain\": {\n    \"min\": 0,\n    \"max\": null,\n    \"type\": \"numeric\"\n  }\n}[1]
+}, new_kpi, 8s
+ 
+
+

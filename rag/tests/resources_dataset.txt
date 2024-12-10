@@ -4,13 +4,13 @@ Compute me idle time both for Riveting Machine and Laser cutter on 12/10/2024
 
 Predict idle time both for Riveting Machine and Laser cutter for today based on last month values
 
-Predict next week cycles of Large Capacity Cutting Machine 1 based on current trend
+Predict next week cycles of Large Capacity Cutting Machine 1 
 
 Return me the report about last month
 
 Generate a new KPI that shows the idle time ratio
 
-Which is most suitable dashboard to visualize energy consumption?
+Generate a suitable dashboard to visualize energy consumption
 
 What formula is used to calculate operative_time ?
 
@@ -18,7 +18,7 @@ Can you tell me a description of Large Capacity Cutting Machine 1 ?
 
 Can you tell me how many Cutting Machines are there ?
 
-What's the Power Consumption Trend's formula ?
+What's the Power Consumption formula ?
 
 Describe me cost_max KPI
 
@@ -28,6 +28,6 @@ Can you tell me how many Assembly Machines are there ?
 
 What formula is used to calculate Power Consumption Efficiency ?
 
-Describe me material cost per unit
+Describe me power max KPI
 
 Can you tell me a description of availability ?
