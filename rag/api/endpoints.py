@@ -278,6 +278,7 @@ async def ask_predictor_engine(url):
       }
     ])
     
+    
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
@@ -498,6 +499,7 @@ async def ask_question(question: Question): # to add or modify the services allo
                 _USER_QUERY_=question.userInput,
                 _CONTEXT_=context
             )
+            print(prompt)
             llm_result = llm.invoke(prompt)
             
             if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
