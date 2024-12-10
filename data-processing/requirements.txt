@@ -7,7 +7,10 @@ requests
 matplotlib
 scikit-learn
 tqdm
-
+xgboost
+torch
+aix360
+lime
 
 psycopg2-binary==2.9.10
 passlib==1.7.4
