@@ -111,17 +111,17 @@ const AIDashboard: React.FC = () => {
             to be recreated if not
             saved.</p>
 
-        <div className="flex w-fit h-fit">
+        <div className="flex gap-5 w-fit h-fit">
             {/* Input field for giving the dashboard a name*/}
             <input
                 type="text"
                 placeholder="Dashboard Name"
-                className="w-full p-2 border border-gray-200 rounded-lg"
+                className="flex-grow p-2 border border-gray-200 rounded-lg"
                 onChange={(e) => setTemporaryName(e.target.value)}
             />
             {/* Save button */}
             <button
-                className="w-full p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                className="w-fit p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 onClick={
                     () => {
                         // TODO: Add a way to select the dashboard folder
