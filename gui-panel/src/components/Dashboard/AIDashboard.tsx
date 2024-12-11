@@ -48,6 +48,7 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: 'hour'});
     const [temporaryName, setTemporaryName] = useState<string>("");
     const [selectedFolder, setSelectedFolder] = useState<string>("");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // Set the user ID for the API calls
     dataManager.setUserId(userId);
@@ -148,10 +149,11 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
 
                         // set the dashboard id to a unique id
                         const dashboardTemporaryId = dataManager.getUniqueDashboardId(temporaryName.trim().toLowerCase());
-                        const dashboardFolder =  selectedFolder ? dataManager.findDashboardFolderByName(selectedFolder) || new DashboardFolder(selectedFolder, selectedFolder, []) : null;
+                        const dashboardFolder =  selectedFolder ? dataManager.findDashboardFolderByName(selectedFolder) : null;
                         // Check if the dashboard pointer is null
                         if (!dashboardFolder) {
                             console.error("Dashboard folder not found");
+                            setErrorMessage("Dashboard folder not found");
                             return;
                         }
                         // Create a new dashboard layout with (name, id, charts)
@@ -163,6 +165,9 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
             >
                 Save Dashboard
             </button>
+            {errorMessage && (
+                <p className="text-red-500 text-sm mb-2">{errorMessage}</p>
+            )}
         </div>
 
         <h1 className="text-3xl font-extrabold text-center text-gray-800">{temporaryName}</h1>

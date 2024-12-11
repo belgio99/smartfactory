@@ -244,6 +244,28 @@ class DataManager {
     }
 
     /**
+     * Add a new dashboard folder to the data manager.
+     * @param name string - The name of the new folder.
+     * @note The new folder is added to the root level of the dashboard tree.
+     */
+    addDashboardFolder(name: string): void {
+        // Create a new folder
+        const newFolder = new DashboardFolder(this.getUniqueDashboardId(name), name, []);
+        // Add the folder to the root level
+        this.dashboards.push(newFolder);
+
+        console.log("Folder added: ", newFolder);
+        console.log("New dashboard tree: ", this.dashboards);
+        // API call to save the new dashboard
+        const json = DashboardFolder.encodeTree(this.dashboards);
+        // If the user is logged in, save the dashboard to the server
+        if (this.userId){
+            postDashboardSettings(this.userId, json);
+        }
+        this.events.emit('change');
+    }
+
+    /**
      * Adds a new dashboard to the data manager.
      * @param dashboard DashboardLayout - The dashboard to add.
      * @param dashboardFolder DashboardFolder - The folder to add the dashboard to.

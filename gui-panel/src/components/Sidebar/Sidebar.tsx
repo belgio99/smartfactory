@@ -11,6 +11,29 @@ const DashboardSidebar: React.FC = () => {
     const [dataManagerVersion, setDataManagerVersion] = useState(0);
     let dataManager = PersistentDataManager.getInstance();
 
+    // State for the new folder form
+    const [isFormVisible, setFormVisible] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
+
+    const handleAddFolder = () => {
+        if (newFolderName.trim()) {
+            // Check if the folder name exists
+            if (dataManager.findDashboardFolderByName(newFolderName)) {
+                console.error('Folder already exists:', newFolderName);
+                // Show an error message
+                setErrorMessage('Folder already exists');
+                return;
+            }
+            // Add the new folder at data manager level
+            dataManager.addDashboardFolder(newFolderName);
+            console.log('Folder name: ', newFolderName);
+            setNewFolderName('');
+            setErrorMessage('');
+            setFormVisible(false); // Hide the form after adding
+        }
+    };
+
     useEffect(() => {
         // Refresh the data manager when a change occurs
         const refresh = () => setDataManagerVersion(prevVersion => prevVersion + 1);
@@ -146,7 +169,95 @@ const DashboardSidebar: React.FC = () => {
             {/* Sidebar Sections */}
             {/* <SidebarSection title="Favorites" items={favoritesItems}/> */}
             <SidebarSection title="Sections" items={sectionsItems}/>
-            <SidebarSection title="Dashboards" items={dashboardsItems}/>
+            {/* Dashboards Section */}
+            {/* Form for Adding a New Dashboard Folder */}
+            {!isFormVisible && (
+                <div className="w-full flex justify-center mt-2">
+                    <button
+                        onClick={() => setFormVisible(true)}
+                        className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-600 transition-transform transform hover:scale-105"
+                        aria-label="Create New Folder"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 4v16m8-8H4"
+                            />
+                        </svg>
+                    </button>
+                </div>
+            )}
+
+            {isFormVisible && (
+                <div className="w-full mt-4 flex flex-col items-center">
+                    <input
+                        type="text"
+                        placeholder="Name of the Folder"
+                        value={newFolderName}
+                        onChange={(e) => setNewFolderName(e.target.value)}
+                        className="border rounded w-full p-2 mb-2"
+                    />
+                    {errorMessage && (
+                        <p className="text-red-500 text-sm mb-2">{errorMessage}</p>
+                    )}
+                    <div className="flex space-x-4">
+                        <button
+                            onClick={handleAddFolder}
+                            className="bg-blue-500 text-white p-2 rounded-full shadow-md hover:bg-blue-600 transition-transform transform hover:scale-105"
+                            aria-label="Create Folder"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 4v16m8-8H4"
+                                />
+                            </svg>
+                        </button>
+                        <button
+                            onClick={() => {
+                                setFormVisible(false);
+                                setNewFolderName('');
+                                setErrorMessage('');
+                            }}
+                            className="bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-transform transform hover:scale-105"
+                            aria-label="Cancel"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-5 w-5"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <SidebarSection title="Dashboard" items={dashboardsItems} />
         </aside>
     );
 };

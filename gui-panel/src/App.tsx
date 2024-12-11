@@ -8,8 +8,8 @@ import LoginForm from "./components/LoginForm";
 const App = () => {
 
     // User authentication state ---  set to true for development purposes
-    //const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(process.env.NODE_ENV === 'development');
+    //const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userId, setUserId] = useState('');
     const [username, setUsername] = useState('Test User');
     const [token, setToken] = useState<string | null>(null);
@@ -42,6 +42,11 @@ const App = () => {
         setEmail('');
     };
 
+    // Method to login the test user
+    const loginTestUser = () => {
+        handleLogin('9', 'user5', '', 'Tester', 'site1', 'test@smartfactory.com');
+    };
+
     // Initialize data and set loading to false once done
     async function initializeData() {
         try {
@@ -62,6 +67,7 @@ const App = () => {
     // Call initializeData on component mount
     useEffect(() => {
         if(isAuthenticated){
+            loginTestUser();
             console.log("Initializing data...");
             initializeData();
         }
