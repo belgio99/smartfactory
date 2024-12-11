@@ -47,10 +47,11 @@ tasks_lock = asyncio.Lock()
 last_task_id = 0
 
 def hash_data(data : tuple) -> tuple:
-    hashed_data = ()
+    hashed_data = []
+    list(data)
     for i in range(len(data)):
-        hashed_data[i] = hashlib.sha256(data[i].encode()).hexdigest()
-    return hashed_data
+        hashed_data[i].append(hashlib.sha256(data[i].encode()).hexdigest())
+    return tuple(hashed_data)
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
