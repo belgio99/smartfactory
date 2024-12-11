@@ -33,8 +33,7 @@ def initialize_minio_client():
 
 def main():
     """
-    Main function to initialize the Minio client, create buckets if they do not exist,
-    and optionally upload files to the specified buckets.
+    Main function to initialize the Minio client, and create buckets if they do not exist.
 
     Globals:
         MINIO_HOST (str): The Minio server host.
