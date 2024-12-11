@@ -32,10 +32,11 @@ import os
 import hashlib
 
 def hash_data(data : tuple) -> tuple:
-    hashed_data = ()
+    hashed_data = []
+    list(data)
     for i in range(len(data)):
-        hashed_data[i] = hashlib.sha256(data[i].encode()).hexdigest()
-    return hashed_data
+        hashed_data.append(hashlib.sha256(data[i].encode()).hexdigest())
+    return tuple(hashed_data)
 
 logging.basicConfig(level=logging.INFO)
 
