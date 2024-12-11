@@ -148,10 +148,14 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
 
                         // set the dashboard id to a unique id
                         const dashboardTemporaryId = dataManager.getUniqueDashboardId(temporaryName.trim().toLowerCase());
-                        // TODO: Add a way to select the dashboard folder
-
+                        const dashboardFolder =  selectedFolder ? dataManager.findDashboardFolderByName(selectedFolder) || new DashboardFolder(selectedFolder, selectedFolder, []) : null;
+                        // Check if the dashboard pointer is null
+                        if (!dashboardFolder) {
+                            console.error("Dashboard folder not found");
+                            return;
+                        }
                         // Create a new dashboard layout with (name, id, charts)
-                        dataManager.addDashboard(TemporaryLayout.saveToLayout(dashboardData, temporaryName), new DashboardFolder(dashboardTemporaryId, temporaryName, []));
+                        dataManager.addDashboard(TemporaryLayout.saveToLayout(dashboardData, temporaryName), dashboardFolder);
                         //
                         console.log("Dashboard saved with name:", temporaryName + " and id: " + dashboardTemporaryId);
                     }
