@@ -112,12 +112,36 @@ interface KPIObject {
 }
 
 /**
+ * Interface KPIRequest, used by the calculateKPIValue API
+ *
+ * @param KPI_Name string - The KPI ID
+ * @param Machine_Name string (optional) - The machine ID
+ * @param Date_Start string (optional) - The start time
+ * @param Date_Finish string (optional) - The end time
+ */
+export interface KPIRequest {
+    KPI_Name: string,
+    Machine_Name?: string,
+    Date_Start?: string,
+    Date_Finish?: string
+}
+
+/**
  * Interface KPIValue
  * @param value string - The value of the KPI
  */
 interface KPIValue {
-    value: string;
+    Machine_Name: string,
+    Machine_Type: string,
+    KPI_Name: string,
+    Value: number,
+    Measure_Unit: string,
+    Date_Start: string,
+    Date_Finish: string,
+    Aggregator: string,
+    Forecast: boolean
 }
+
 
 /**
  * Interface ScheduleRequest
@@ -446,7 +470,7 @@ export const interactWithAgent = async (userId: string, userInput: string): Prom
 };
 
 /**
- * API POST used to get the KPIs
+ * API GET used to get the KPIs
  * @returns KPIObject - Promise will return the KPIs
  */
 export const retrieveKPIs = async (): Promise<KPIObject[]> => {
@@ -468,29 +492,21 @@ export const retrieveKPIs = async (): Promise<KPIObject[]> => {
 };
 
 /**
- * API GET used to calculate the KPI value
- * @param kpiId string - The KPI ID
- * @param machineId string (optional) - The machine ID
- * @param startTime string (optional) - The start time
- * @param endTime string (optional) - The end time
+ * API POST used to calculate the KPI value
+ * @param requests KPIRequest[] - The KPI request list
  * @returns KPIValue - The KPI value
  */
-export const calculateKPIValue = async (
-    kpiId: string,
-    machineId?: string,
-    startTime?: string,
-    endTime?: string
-): Promise<KPIValue> => {
+export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPIValue[]> => {
     try {
-        const response = await axios.get<KPIValue>(
-            `${BASE_URL}/smartfactory/${kpiId}/calculate`,
+        const response = await axios.post<KPIValue[]>(
+            `${BASE_URL}/smartfactory/calculate`,
+            {requests},
             {
-                params: {machineId, startTime, endTime},
                 headers: {
                     "Content-Type": "application/json",
                     "x-api-key": API_KEY,
                 },
-            }
+            },
         );
         return response.data;
     } catch (error: any) {

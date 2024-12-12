@@ -2,6 +2,7 @@ import PersistentDataManager from "./PersistentDataManager";
 import {KPI, Machine} from "./DataStructures";
 import {Filter} from "../components/Selectors/FilterOptions";
 import {TimeFrame} from "../components/Selectors/TimeSelect";
+import {calculateKPIValue, getHistoricalData, KPIRequest} from "./ApiService";
 
 const dataManager = PersistentDataManager.getInstance();
 const smoothData = (data: number[], alpha: number = 0.3): number[] => {
@@ -12,34 +13,8 @@ const smoothData = (data: number[], alpha: number = 0.3): number[] => {
     }
     return ema;
 };
-export const simulateChartData = async (
-    kpi: KPI,
-    timeFrame: TimeFrame,
-    type: string = "line",
-    filters?: Filter
-): Promise<any[]> => {
-    console.log("Fetching data with:", {kpi, timeFrame, type, filters});
-    let query = constructQuery(type, kpi, timeFrame, filters);
-    console.log("Constructed query json: ", query);
-    console.log("Constructed query: ", convertJsonToSql(query));
-    const unfilteredData = dataManager.getMachineList();
-    let filteredData: Machine[];
-    // Apply filters
-    if (filters && filters.machineIds?.length) {
-        filteredData = unfilteredData.filter((data) =>
-            filters.machineIds?.includes(data.machineId)
-        );
-    } else if (filters && filters.machineType !== "All") {
-        // Filter by machineType only if no machineIds are provided
-        filteredData = unfilteredData.filter((data) => data.type === filters.machineType);
-    } else {
-        // Fetch all data when no filters are applied
-        filteredData = unfilteredData
-    }
-    const timePeriods: string[] = [];
 
-    const timeUnit = timeFrame.aggregation || getTimePeriodUnit(timeFrame);
-
+function createTimeSegments(timeFrame: TimeFrame, timeUnit: string, timePeriods: string[]) {
     let startDate = new Date(timeFrame.from);
     if (timeUnit === 'hour') {
         // Split data by hours if the time frame is a single day
@@ -69,6 +44,38 @@ export const simulateChartData = async (
             currentDate.setMonth(currentDate.getMonth() + 1); // Increment by 1 month
         }
     }
+}
+
+export const simulateChartData = async (
+    kpi: KPI,
+    timeFrame: TimeFrame,
+    type: string = "line",
+    filters?: Filter
+): Promise<any[]> => {
+    console.log("Fetching data with:", {kpi, timeFrame, type, filters});
+
+    // Call the fetchData function to get the data based on the selected KPI, time frame, and filters
+    console.log(fetchData(kpi, timeFrame, type, filters));
+
+    const unfilteredData = dataManager.getMachineList();
+    let filteredData: Machine[];
+    // Apply filters
+    if (filters && filters.machineIds?.length) {
+        filteredData = unfilteredData.filter((data) =>
+            filters.machineIds?.includes(data.machineId)
+        );
+    } else if (filters && filters.machineType !== "All") {
+        // Filter by machineType only if no machineIds are provided
+        filteredData = unfilteredData.filter((data) => data.type === filters.machineType);
+    } else {
+        // Fetch all data when no filters are applied
+        filteredData = unfilteredData
+    }
+    const timePeriods: string[] = [];
+
+    const timeUnit = timeFrame.aggregation || getTimePeriodUnit(timeFrame);
+
+    createTimeSegments(timeFrame, timeUnit, timePeriods);
 
     switch (type) {
         case "line":
@@ -141,16 +148,124 @@ const getTimePeriodUnit = (timeFrame: TimeFrame): string => {
         return 'hours'; // If less than a day, group by hours
     } else if (diffDays < 7) {
         return 'days'; // If within a week, group by days
-    } else if (diffDays < 30) {
+    } else if (diffDays < 60) {
         return 'days'; // If within a month, group by days
     } else {
         return 'months'; // If more than a month, group by months
     }
 };
 
-///////////////////////////////////////////////////////////////
+//////////////////////// END OF MOCK DATA GENERATOR ///////////////////////////
+
+/**
+ * Function to fetch data based on the selected KPI, time frame, and filters
+ * KPIS that do not have an aggregation method valid for the historical endpoint are deferred to the calculation endpoint
+ * @param kpi - KPI object
+ * @param timeFrame - TimeFrame object, composed of the start and end dates
+ * @param type - Chart type, to identify if the chart requires time series data
+ * @param filters - Filter object containing machine IDs
+ */
+async function fetchData(
+    kpi: KPI,
+    timeFrame: TimeFrame,
+    type: string,
+    filters?: Filter
+): Promise<any[]> {
+
+    // check if the kpi id contains an aggregation method valid for the historical endpoint
+    // if not, defer the request to the calculation endpoint
+    const aggregationMethods = ['avg', 'sum', 'min', 'max'];
+    const isTimeSeries = type === "line" || type === "scatter" || type === "area";
+
+    // check if the last 3 characters of the kpi id are an aggregation method
+    const kpiId = kpi.id;
+    const aggregationMethod = kpiId.substring(kpiId.length - 3);
+
+    let data: any;
+
+    if (!aggregationMethods.includes(aggregationMethod)) {
+        // if the aggregation method is not found, request calculation
+        const request = requestCalculation(isTimeSeries, kpi, timeFrame, filters);
+
+        const response = await calculateKPIValue(request);
+
+        // if it's a time series, we need to rearrange the data.
+        // grouping the timestamps so that we get something like
+        // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
+        // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
+
+        if (isTimeSeries) {
+            data = response.reduce((acc: any, cur: any) => {
+                const timestamp = cur.Date_Start;
+                const machine = cur.Machine_Name;
+                const value = cur.Value;
+
+                if (!acc[timestamp]) {
+                    acc[timestamp] = {};
+                }
+                acc[timestamp][machine] = value;
+                return acc;
+            }, {});
+        } else {
+            // if it's categorical data, we can just return a reformatted version of the response
+            // format like {name: 'machine1', value: 20}
+
+            data = response.map((entry: any) => {
+                return {
+                    name: entry.Machine_Name,
+                    value: entry.Value,
+                };
+            });
+        }
+
+    } else {
+        // if the aggregation method is found, request historical data
+        const query = constructQuery(isTimeSeries, kpi, timeFrame, filters);
+        // Send the query to the historical data endpoint
+        data = await getHistoricalData(query.toString());
+
+        // if it's a time series, we need to rearrange the data.
+        // grouping the timestamps so that we get something like
+        // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
+        // from a series of objects like {timestamp: '2024-12-02', machine1: 20}
+
+        if (isTimeSeries) {
+            data = data.reduce((acc: any, cur: any) => {
+                const timestamp = cur.timeframe;
+                const machine = cur.name;
+                const value = cur[kpi.id];
+
+                if (!acc[timestamp]) {
+                    acc[timestamp] = {};
+                }
+                acc[timestamp][machine] = value;
+                return acc;
+            }, {});
+        } else {
+            // if it's categorical data, we can just return a reformatted version of the response
+            // format like {name: 'machine1', value: 20}
+            data = data.map((entry: any) => {
+                return {
+                    name: entry.name,
+                    value: entry[kpi.id],
+                };
+            });
+        }
+    }
+
+    return data;
+}
+
+
+/**
+ * Function to construct a JSON query object based on the selected graph type, KPI, timeframe, and filters to send to the historical data endpoint.
+ * @param isTimeSeries - Boolean flag to determine if the chart needs a time series
+ * @param kpi - KPI object
+ * @param timeFrame - TimeFrame composed of the start and end dates
+ * @param filters - Filter object
+ */
 const constructQuery = (
-    graph_type: string,
+    isTimeSeries: boolean,
     kpi: KPI,
     timeFrame: TimeFrame,
     filters?: Filter
@@ -175,46 +290,26 @@ const constructQuery = (
     const from: string = timeFrame.from.toISOString().split('T')[0];
     const to: string = timeFrame.to.toISOString().split('T')[0];
 
-    // Calculate the duration of the timeframe in days
-    const durationInDays = Math.ceil(
-        (timeFrame.to.getTime() - timeFrame.from.getTime()) / (1000 * 60 * 60 * 24)
-    );
-
     // Dynamically determine time grouping based on duration
-    let timeGrouping: string = "day"; // Default to day
-    if (durationInDays <= 1) {
-        timeGrouping = "hour"; // For a single day, group by hour
-    } else if (durationInDays <= 31) {
-        timeGrouping = "day"; // For up to a month, group by day
-    } else if (durationInDays <= 365) {
-        timeGrouping = "month"; // For up to a year, group by month
+    let timeGrouping: string | null; // Default to day
+    // for categorical type graphs, don't use time grouping
+    if (isTimeSeries) {
+        // Calculate the duration of the timeframe in days
+        const durationInDays = Math.ceil(
+            (timeFrame.to.getTime() - timeFrame.from.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (durationInDays <= 1) {
+            timeGrouping = "P1H"; // For a single day, group by hour
+        } else if (durationInDays <= 31) {
+            timeGrouping = "P1D"; // For up to a month, group by day
+        } else if (durationInDays <= 91) {
+            timeGrouping = "P1W"; // For up to three months, group by week
+        } else {
+            timeGrouping = "P1M"; // For periods longer than a year, group by year
+        }
     } else {
-        timeGrouping = "year"; // For periods longer than a year, group by year
-    }
-
-    // Define grouping logic based on graph type
-    let groupBy: { time: string | null; category: string | null } = {time: null, category: null};
-    switch (graph_type) {
-        case "line":
-        case "scatter":
-        case "area":
-            groupBy.time = timeGrouping; // Use dynamically determined time grouping
-            break;
-
-        case "barv":
-        case "barh":
-        case "stacked_bar":
-            groupBy.time = timeGrouping; // Use dynamically determined time grouping
-            break;
-
-        case "hist":
-        case "pie":
-        case "donut":
-            groupBy.time = null; // No time grouping for pie/donut charts
-            break;
-
-        default:
-            throw new Error(`Unsupported graph type: ${graph_type}`);
+        timeGrouping = null;
     }
 
     // Construct the query JSON
@@ -228,6 +323,66 @@ const constructQuery = (
         group_by: timeGrouping, // Grouping logic
     };
 };
+
+/**
+ * Function to request calculation of a KPI based on the selected time frame and filters
+ * @param isTimeSeries - Boolean flag to determine if the chart needs a time series
+ * @param kpi - KPI object
+ * @param timeFrame - TimeFrame object
+ * @param filters - Filter object
+ */
+function requestCalculation(isTimeSeries: boolean, kpi: KPI, timeFrame: TimeFrame, filters?: Filter): KPIRequest[] {
+
+    /* Request format for calculation endpoint
+    {
+        "Date_Start": "2024-12-02",
+        "Date_Finish": "2024-12-08",
+        "Machine_Name": "Assembly Machine 3",
+        "KPI_Name": "offline_time_avg"
+    }*/
+    const machineList: string[] = filters?.machineIds
+        ? filters.machineIds
+        : dataManager.getMachineList().map(machine => machine.machineId);
+
+    if (isTimeSeries) {
+        // Request time series data
+        // For each machine, request the KPI calculation on the kpi over a period of time
+        // Based on the length of the full time period, split it into smaller periods
+        // For each period, request the calculation
+
+        const timePeriods: string[] = [];
+        const timeUnit = timeFrame.aggregation || getTimePeriodUnit(timeFrame);
+        createTimeSegments(timeFrame, timeUnit, timePeriods);
+
+        return timePeriods.map((period) => {
+            return machineList.map((machine) => {
+                return {
+                    Date_Start: period,
+                    Date_Finish: period,
+                    Machine_Name: machine,
+                    KPI_Name: kpi.id,
+                }
+            })
+        }).flat();
+
+    }
+    // for categorical data, request the calculation for the full time period for each machine
+
+    return machineList.map((machine) => {
+        return {
+            Date_Start: timeFrame.from.toISOString().split('T')[0],
+            Date_Finish: timeFrame.to.toISOString().split('T')[0],
+            Machine_Name: machine,
+            KPI_Name: kpi.id,
+        }
+    });
+}
+
+
+/**
+ * Function to convert a JSON query object to a SQL query string for testing
+ * @param query - JSON query object
+ */
 
 const convertJsonToSql = (query: any): string => {
     // Destructure the query object
@@ -299,7 +454,7 @@ const convertJsonToSql = (query: any): string => {
     groupByFields.push(group_by.category);
 
     if (groupByFields.length > 0) {
-        sql += ` GROUP BY ` + groupByFields.join(", ");
+        sql += ` GROUP BY ` + groupByFields.join(", ") + `, name`;
     }
 
     // Add ORDER BY clause for time series
