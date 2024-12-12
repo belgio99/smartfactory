@@ -8,7 +8,6 @@ matplotlib
 scikit-learn
 tqdm
 xgboost
-torch
 aix360
 lime
 
