@@ -106,19 +106,6 @@ prompt_manager = PromptManager('prompts/')
 # Initialize the query generator
 query_gen = QueryGenerator(llm)
 
-def format_docs(docs):
-    """
-    Helper function to format documents for the prompt.
-    
-    Args:
-        docs (list): A list of documents to be formatted.
-    
-    Returns:
-        str: A formatted string of the document contents.
-    """
-    return "\n\n".join(doc.page_content for doc in docs)
-
-
 
 def prompt_classifier(input: Question):
     """
@@ -163,9 +150,9 @@ def prompt_classifier(input: Question):
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
     if label == "predictions" or label == "kpi_calc" or label == "report":
-        json_request=query_gen.query_generation(input, label)
+        json_request = query_gen.query_generation(input, label)
         
-    return label,json_request
+    return label, json_request
 
 async def ask_kpi_engine(json_body):
     """
@@ -424,7 +411,6 @@ async def translate_answer(question: Question, question_language: str, context):
         str: The translated response.
     """
     prompt = prompt_manager.get_prompt('translate').format(
-        _HISTORY_='',
         _CONTEXT_=context,
         _USER_QUERY_=question.userInput,
         _LANGUAGE_=question_language
@@ -438,8 +424,6 @@ async def translate_answer(question: Question, question_language: str, context):
 async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
     try:
         language_prompt = prompt_manager.get_prompt('get_language').format(
-            _HISTORY_='',
-            _CONTEXT_='',
             _USER_QUERY_=question.userInput
         )
         translated_question = llm.invoke(language_prompt).content
@@ -499,7 +483,7 @@ async def ask_question(question: Question): # to add or modify the services allo
                 _USER_QUERY_=question.userInput,
                 _CONTEXT_=context
             )
-            print(prompt)
+            
             llm_result = llm.invoke(prompt)
             
             if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:

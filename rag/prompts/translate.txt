@@ -1,21 +1,16 @@
-{_HISTORY_}
-
 USER QUERY: "{_USER_QUERY_}"
 
 LANGUAGE: "{_LANGUAGE_}"
- 
-INSTRUCTION: 
-"
-0. Skip next points and just return the context if language is english.
-1. Translate the context in the specified language.
-2. Be sure every element is translated except the following:
-- Machine Names like Cutting Machine, Assembly Machine, Laser Welding Machine etc...
-- KPIs (Key Performance Indicators) like EnergyKPI, ProductionKPI, MachineUsageKPI, AtomicAvgCycleTime, AtomicCost, consumption_idle, cost_std, etc...
-- General Ontology Classes like Entity, Operation, Material, Machine etc...
-- Statistical or Temporal Metrics like avg, max, min, std, sum, med, etc...
-- Ontology Properties like ObjectProperty, DatatypeProperty, producesKPI, isConsumedBy, etc...
-3. Return the translated response.
-"
+
+INSTRUCTIONS:
+1. Language Check: If the context is in English, skip the following steps and directly return the context without modifications.  
+2. Translation: Translate the context into the specified language, ensuring all elements are translated except the following:  
+   - Machine Names: Preserve names like Cutting Machine, Assembly Machine, Laser Welding Machine, etc.  
+   - Key Performance Indicators (KPIs): Retain KPIs such as EnergyKPI, ProductionKPI, MachineUsageKPI, availability, consumption_max, consumption_working_avg, bad_cycles_min, cost_sum, and similar metrics. Important: KPI names must be preserved exactly as they appear in the context, regardless of formatting variations (e.g., with or without spaces, uppercase, lowercase, or mixed-case). Avoid translating or rephrasing KPI names, even if they resemble general language terms (e.g., do not translate idle time max into maximum idle time).
+   - General Ontology Classes: Keep terms like Entity, Operation, Material, Machine, etc., unchanged.  
+   - Statistical or Temporal Metrics: Do not translate terms such as avg, max, min, std, sum, med, and similar metrics.  
+   - Ontology Properties: Preserve terms like ObjectProperty, DatatypeProperty, producesKPI, isConsumedBy, etc.  
+3. Output: Return the translated response.
 
 CONTEXT: 
 {_CONTEXT_}
