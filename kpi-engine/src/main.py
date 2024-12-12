@@ -58,7 +58,7 @@ app.add_middleware(
 )
 
 class KPIRequest(BaseModel):
-    KPI_Name: str
+    KPI_Name: Optional[str] = "no_kpi"
     Machine_Name: Optional[str] = "all_machines"
     Machine_Type: Optional[str] = "any"
     Date_Start: Optional[str] = df['time'].min()[:10]
@@ -83,36 +83,52 @@ async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify
     }
 
     def process_single_request(req: KPIRequest):
-        kpiID = req.KPI_Name
-        machineId = req.Machine_Name
-        machineType = req.Machine_Type
-        startPeriod = req.Date_Start
-        endPeriod = req.Date_Finish
-        aggregator = req.Aggregator
-        unitOfMeasure = 'UoM'
-        startPreviousPeriod = req.startPreviousPeriod
-        endPreviousPeriod = req.endPreviousPeriod
-    
-        if(kpiID == "dynamic_kpi"):
-            raise HTTPException(status_code=404, detail=f"'dynamic_kpi' method not directly callable.")
-
-        # If the requested KPI is not in the static methods, call the dynamic KPI method. Otherwise, just call the good old static one
-        if kpiID not in methods:
-            result, unitOfMeasure = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
-        else:
-            result, unitOfMeasure = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
+        try:
+            kpiID = req.KPI_Name
+            machineId = req.Machine_Name
+            machineType = req.Machine_Type
+            startPeriod = req.Date_Start
+            endPeriod = req.Date_Finish
+            aggregator = req.Aggregator
+            unitOfMeasure = 'UoM'
+            startPreviousPeriod = req.startPreviousPeriod
+            endPreviousPeriod = req.endPreviousPeriod
         
-        return {
-            "Machine_Name": machineId,
-            "Machine_Type": machineType,
-            "KPI_Name": kpiID,
-            "Value": result,
-            "Measure_Unit": unitOfMeasure,
-            "Date_Start": startPeriod,
-            "Date_Finish": endPeriod,
-            "Aggregator": aggregator,
-            "Forecast": False
-        }
+            if(kpiID == "dynamic_kpi"):
+                raise HTTPException(status_code=404, detail=f"'dynamic_kpi' method not directly callable.")
+
+            # If the requested KPI is not in the static methods, call the dynamic KPI method. Otherwise, just call the good old static one
+            if kpiID == "no_kpi":
+                result = "Error: KPI name is required"
+                unitOfMeasure = "-"
+            elif kpiID not in methods:
+                result, unitOfMeasure = kpi_engine.dynamic_kpi(df = df, machine_id = machineId, start_period = startPeriod, end_period = endPeriod, machine_type = machineType, kpi_id=kpiID)
+            else:
+                result, unitOfMeasure = methods[kpiID](df = df, machine_id = machineId, machine_type=machineType, start_period = startPeriod, end_period = endPeriod, start_previous_period=startPreviousPeriod, end_previous_period=endPreviousPeriod)
+            
+            return {
+                "Machine_Name": machineId,
+                "Machine_Type": machineType,
+                "KPI_Name": kpiID,
+                "Value": result,
+                "Measure_Unit": unitOfMeasure,
+                "Date_Start": startPeriod,
+                "Date_Finish": endPeriod,
+                "Aggregator": aggregator,
+                "Forecast": False
+            }
+        except Exception as e:
+            return {
+                "Machine_Name": machineId,
+                "Machine_Type": machineType,
+                "KPI_Name": kpiID,
+                "Value": "Error: " + str(e),
+                "Measure_Unit": "-",
+                "Date_Start": startPeriod,
+                "Date_Finish": endPeriod,
+                "Aggregator": aggregator,
+                "Forecast": False
+            }
     
     response = [process_single_request(req) for req in request]
     return response
