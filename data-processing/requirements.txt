@@ -15,5 +15,5 @@ psycopg2-binary==2.9.10
 passlib==1.7.4
 python-jose==3.3.0
 
---extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.5.1
+--index-url https://download.pytorch.org/whl/cpu
+torch
