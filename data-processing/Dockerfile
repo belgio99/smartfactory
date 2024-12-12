@@ -11,7 +11,8 @@ ENV PYTHONUNBUFFERED=1
 
 # Install pip requirements
 COPY ./requirements.txt .
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu \
+      && python -m pip install --no-cache-dir -r requirements.txt
 
 WORKDIR /data-processing
 COPY . /data-processing
