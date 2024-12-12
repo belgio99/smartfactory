@@ -56,7 +56,7 @@ def hello_world():
     return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
-def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent"]))):
+def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent"],["api-layer"]))):
     return 'Hello private World :)'
 
 # ACTUAL PREDICTIONS
@@ -138,7 +138,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             else:
                 out_dict['Predicted_value'] = 'Errore, il KPI inserito non esiste'
             out_dicts.append(out_dict)
-    return {"result": out_dicts}  # Convert numpy array to list for JSON serialization
+    return {"result": out_dicts}
 
 def new_data_polling():
     """
@@ -150,14 +150,14 @@ def new_data_polling():
 
         Returns:
     """
-    query_body = {
-        "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
-    }
-    response = f_dataprocessing.execute_druid_query(query_body)
-    #TODO: link response to available models
-    availableModels = []
-    for m in availableModels:
-        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    # query_body = {
+    #     "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
+    # }
+    # response = f_dataprocessing.execute_druid_query(query_body)
+    # #TODO: link response to available models
+    # availableModels = []
+    # for m in availableModels:
+    #     f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
     print(datetime.datetime.today())
  
 if __name__ == "__main__":

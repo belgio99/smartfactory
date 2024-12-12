@@ -12,6 +12,7 @@ from sklearn.model_selection import GridSearchCV
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from model import Severity, Alert
 
 import json
 import os
@@ -668,8 +669,20 @@ def outlier_check(new_value, data):
 
 
 def send_Alert(url, data):
+
+  new_al = Alert()
+  new_al.title = data["title"]
+  new_al.type = data["type"]
+  new_al.description = data["description"]
+  new_al.triggeredAt = str(datetime.now())
+  new_al.machineName = data["machine"]
+  new_al.isPush = True
+  new_al.isEmail = True
+  new_al.recipients = ["","",""]
+  new_al.severity = data["severity"]
+
   try:
-      response = requests.post(url, json=data)
+      response = requests.post(url, json=new_al)
       print(f"Response status code: {response.status_code}")
       print(f"Response body: {response.json()}")
   except requests.exceptions.RequestException as e:
@@ -717,7 +730,7 @@ def elaborate_new_datapoint(machine, kpi):
   # d = read_value(machine, kpi)
   kpi_data_Date, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
-  d_date = kpi_data_Date[-1]
+  d_date = datetime.date(kpi_data_Date[-1])
   d = kpi_data_Avg[-1]
 
   a_dict = {}
@@ -733,21 +746,35 @@ def elaborate_new_datapoint(machine, kpi):
   # if missing_count >= threshold_count:
   #     return [f"No valid data received for {missing_count} consecutive days."]
   # elif zeros_count >= threshold_count:
-  #     return [f"Zeros data received for {zeros_count} consecutive days."]
-  url_alert = ''
+  #     return [f"Zeros data received for {zeros_count} consecutive days."]  
+  alert_data = {
+     'title': "",
+     'type': "",
+     'description': "",
+     'machine': "",
+     'isPush': True,
+     'isEmail': True,
+     'recipients': ["","",""],
+     'severity': Severity.MEDIUM
+  }
+
+  url_alert = f"http://api:8000/smartfactory/postAlert"
   if last_pred < d_date: # if the prediction is relative to a new date
-    
     is_missing = missingdata_check(d)
     if is_missing == -1: # the data is 'nan', fill it and send an alert
       d = a_dict['predictions']['first_prediction']
-      a_dict['missingval']['alert_sent'] = True
-      alert_data ={'error': 'did not receive any value. filling with last prediction'}
+      alert_data['title'] = 'missing value'
+      alert_data['description'] = f'{machine} did not yield a new value for:{kpi}'
+      alert_data['machine'] = machine
       send_Alert(url_alert, alert_data)
     elif is_missing == 0:
       a_dict['missingval']['missing_streak'] += 1
       if a_dict['missingval']['missing_streak'] > 2 and not a_dict['missingval']['alert_sent']:
-        a_dict['missingval']['alert_sent'] = True
-        alert_data ={'error': 'Too many zeros received'}
+        alert_data['title'] = 'Zero streak'
+        alert_data['description'] = f'{kpi} for {machine} returned zeros for {a_dict['missingval']['missing_streak']} days in a row'
+        alert_data['machine'] = machine
+        if a_dict['missingval']['missing_streak'] > 5:
+           alert_data['severity'] = Severity.HIGH        
         send_Alert(url_alert, alert_data)        
     else:
       a_dict['missingval']['alert_sent'] = False
@@ -757,9 +784,13 @@ def elaborate_new_datapoint(machine, kpi):
       
       is_outlier = outlier_check(d, kpi_data_Avg[-31:-1])
       if is_outlier:
-        prediction_error = d - a_dict['predictions']['first_prediction']
+        alert_data['title'] = 'Outlier detected'
+        alert_data['description'] = f'{kpi} for {machine} returned a value higher than expected'
+        alert_data['machine'] = machine
+        send_Alert(url_alert, alert_data) 
+      prediction_error = d - a_dict['predictions']['first_prediction']
       error = 0
-      if prediction_error > a_dict['predictions']['error_threshold']:
+      if prediction_error > 2*a_dict['trends']['std']: # a_dict['predictions']['error_threshold']:
         error = 1
       # Initialize DDM with warning level and drift level thresholds
       ddm = DDM(warning_level=2.0, drift_level=3.0, state_file=final_path)
