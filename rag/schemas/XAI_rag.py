@@ -1,3 +1,7 @@
+import time
+start_time_1 = time.time()
+
+
 from typing import List, Dict, Any, Tuple
 import numpy as np
 import json
@@ -475,85 +479,40 @@ class RagExplainer:
 
 
 if __name__ == "__main__":
+
+    end_time_1 = time.time()
+    print(f"Time to import: {end_time_1 - start_time_1:.2f} seconds.")
+
+    start_time_2 = time.time()
     # Example usage
     explainer = RagExplainer(
-        threshold=40.0,
+        threshold=15.0,
         verbose=False,
         tokenize_context=True,
         use_embeddings=True
     )
 
-    # Add English context
-    text_context = [
-        ("English Book", "The solar system consists of the Sun and objects bound to it."),
-        ("English Book", "This includes eight planets, their moons, and smaller objects.")
-    ]
-    explainer.add_to_context(text_context)
+    end_time_2 = time.time()
+    print(f"Time to instantiate RagExplainer: {end_time_2 - start_time_2:.2f} seconds.")
+    
+    # Load context from a text file
+    with open('context_cleaned.txt', 'r', encoding='utf-8') as file:
+        context_cleaned = file.read()
 
-    # Add Spanish context
-    spanish_context = [
-        ("Spanish Article", "El Sol es la estrella en el centro del sistema solar.")
-    ]
-    explainer.add_to_context(spanish_context)
-
-    # Add French context
-    french_context = [
-        ("French Article", "L'atmosphère terrestre est cruciale pour la vie sur Terre.")
-    ]
-    explainer.add_to_context(french_context)
-
-    # Add formatted json context
-    json_formatted = [
-        ("Json formatted", '''
-[
-{
-"Machine name": "Laser Cutter",
-"KPI name": "power",
-"Value": "0,055",
-"Unit of Measure": "kW",
-"Date": "12/10/2024",
-"Forecast": false
-},
-{
-"Machine name": "Riveting Machine",
-"KPI name": "power",
-"Value": "0,07",
-"Unit of Measure": "kW",
-"Date": "12/10/2024",
-"Forecast": false
-}
-]
-''')
-    ]
+    start_time_3 = time.time()
+    # Convert the cleaned context into a list of tuples
+    json_formatted = [("Cleaned Context", context_cleaned)]
     explainer.add_to_context(json_formatted)
 
-    # Add JSON context
-    json_multilingual = [
-        ("Json Data", '[{"Machine_name": "Machine_A", "KPI_name": "Temperatura", "Predicted_value": "22", "Measure_unit": "Celsius", "Date_prediction": "12/12/2024", "Forecast": true}, {"Machine_name": "Machine_B", "KPI_name": "Pression", "Predicted_value": "1012", "Measure_unit": "hPa", "Date_prediction": "13/12/2024", "Forecast": true}]')
-    ]
-    explainer.add_to_context(json_multilingual)
+    end_time_3 = time.time()
+    print(f"Time to add_to_context: {end_time_3 - start_time_3:.2f} seconds.")
 
+    start_time_4 = time.time()
     # Multilingual response
     response = (
-        "The solar system is centered on the Sun. "
-        "El Sol es la estrella central del sistema solar. "
-        "L'atmosphère terrestre est essentielle. "
-        "Die industrielle Revolution hat die Gesellschaft verändert. "
-        "Machine_A ha un Temperatura di 22 Gradi Celsius. "
-        "El Sol es la estrella central del sistema solar. "
-        "Laser cutter"
+        "{\n  \"ID\": \"maintenance_time_ratio\",\n  \"Atomic\": false,\n  \"Description\": \"This KPI represents the ratio of maintenance time to total operational time. \",\n  \"Formula (base)\": \"maintenance_time_sum / operative_time\",\n  \"Unit of Measure\": \"%\",\n  \"Domain\": {\n    \"min\": 0,\n    \"max\": 100,\n    \"type\": \"numeric\"\n  }\n}"
     )
-
-
     textResponse, textExplanation, attribution_results = explainer.attribute_response_to_context(response)
 
-    # Output the results
-    print("\nFinal Outputs:")
-    print("Text Response:")
-    print(textResponse)
-    print("\nText Explanation (JSON):")
-
-    print(textExplanation)
-    print("\nAttribution Results:")
-    for result in attribution_results:
-        print(result)
+    end_time_4 = time.time()
+    print(f"Time to attribute_response_to_context: {end_time_4 - start_time_4:.2f} seconds.")
