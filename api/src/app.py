@@ -30,7 +30,7 @@ from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
 from model.historical import HistoricalQueryParams
 # TODO: how to import modules from rag directory ??
-from model.agent import Answer
+from model.agent import Answer, Question
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
@@ -472,7 +472,7 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-def call_ai_agent(input: str):
+def call_ai_agent(input: Question):
     """
     This function performs a call to the RAG AI agent.
     Args:
@@ -485,7 +485,8 @@ def call_ai_agent(input: str):
         'x-api-key': os.getenv('API_KEY')
     }
     body = {
-        'userInput': input
+        'userInput': input.userInput,
+        'userId': input.userId
     }
     print(f"sending request to RAG API: {body}")
     response = requests.post(os.getenv('RAG_API_ENDPOINT'), headers=headers, json=body)
@@ -606,7 +607,8 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
             kpi=",".join(params.kpis),
             machines=",".join(params.machines)
         )
-        ai_response = call_ai_agent(filled_prompt).json()
+        question = Question(userInput=filled_prompt, userId=userId)
+        ai_response = call_ai_agent(question).json()
         logging.info(ai_response)
         answer = Answer.model_validate(ai_response)
         tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
@@ -856,8 +858,10 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         raise HTTPException(status_code=500, detail="Empty user input")
     try:
         # Send the user input to the RAG API and get the response
-        response = call_ai_agent(userInput)
-        answer = response.json()
+        # build the Question object
+        question = Question(userInput=userInput, userId=userId)
+        response = call_ai_agent(question.model_dump_json())
+        answer = response.model_dump_json()
         if answer.label == 'new_kpi':
             # add new kpi
             try:
