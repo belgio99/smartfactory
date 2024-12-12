@@ -272,7 +272,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - rag/.env
-      - rag/paths.env
     volumes:
       - kb:/docs/kb
     ports: 
