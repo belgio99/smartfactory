@@ -2,7 +2,7 @@ import PersistentDataManager from "./PersistentDataManager";
 import {KPI, Machine} from "./DataStructures";
 import {Filter} from "../components/Selectors/FilterOptions";
 import {TimeFrame} from "../components/Selectors/TimeSelect";
-import {calculateKPIValue, getHistoricalData, KPIRequest} from "./ApiService";
+import {calculateKPIValue, getHistoricalData, HistoricalDataRequest, KPIRequest} from "./ApiService";
 
 const dataManager = PersistentDataManager.getInstance();
 const smoothData = (data: number[], alpha: number = 0.3): number[] => {
@@ -55,7 +55,7 @@ export const simulateChartData = async (
     console.log("Fetching data with:", {kpi, timeFrame, type, filters});
 
     // Call the fetchData function to get the data based on the selected KPI, time frame, and filters
-    console.log(fetchData(kpi, timeFrame, type, filters));
+    //console.log('Data fetched from API:', await fetchData(kpi, timeFrame, type, filters));
 
     const unfilteredData = dataManager.getMachineList();
     let filteredData: Machine[];
@@ -165,7 +165,7 @@ const getTimePeriodUnit = (timeFrame: TimeFrame): string => {
  * @param type - Chart type, to identify if the chart requires time series data
  * @param filters - Filter object containing machine IDs
  */
-async function fetchData(
+export async function fetchData(
     kpi: KPI,
     timeFrame: TimeFrame,
     type: string,
@@ -181,12 +181,24 @@ async function fetchData(
     const kpiId = kpi.id;
     const aggregationMethod = kpiId.substring(kpiId.length - 3);
 
+    const timeFrameCopy: TimeFrame = {
+        from: new Date(timeFrame.from),
+        to: new Date(timeFrame.to),
+        aggregation: timeFrame.aggregation,
+    }
+    // set the month of the timeframe to be betweeen 3 and 10, try to keep the same difference if possible
+    const diff = timeFrame.to.getMonth() - timeFrame.from.getMonth();
+    timeFrameCopy.from.setMonth(3);
+    timeFrameCopy.to.setMonth(Math.min(3 + diff, 10));
+
+    timeFrame = timeFrameCopy;
+
     let data: any;
 
     if (!aggregationMethods.includes(aggregationMethod)) {
         // if the aggregation method is not found, request calculation
         const request = requestCalculation(isTimeSeries, kpi, timeFrame, filters);
-
+        console.log("Request:", request);
         const response = await calculateKPIValue(request);
 
         // if it's a time series, we need to rearrange the data.
@@ -195,17 +207,33 @@ async function fetchData(
         // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
 
         if (isTimeSeries) {
-            data = response.reduce((acc: any, cur: any) => {
+            console.log("Time series received:", response);
+
+            // group by timestamp like below
+            // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
+
+            data = response.reduce((acc: Record<string, Record<string, any>>, cur: any) => {
                 const timestamp = cur.Date_Start;
                 const machine = cur.Machine_Name;
                 const value = cur.Value;
 
+                if (!timestamp || !machine || value === undefined) {
+                    console.warn('Invalid entry in data:', cur);
+                    return acc;
+                }
+
                 if (!acc[timestamp]) {
-                    acc[timestamp] = {};
+                    acc[timestamp] = { timestamp }; // Initialize with the timestamp
                 }
                 acc[timestamp][machine] = value;
                 return acc;
             }, {});
+
+            // Convert the grouped object into an array of objects
+            data = Object.values(data);
+
+
+            console.log("Data grouped by timestamp:", data);
         } else {
             // if it's categorical data, we can just return a reformatted version of the response
             // format like {name: 'machine1', value: 20}
@@ -222,7 +250,7 @@ async function fetchData(
         // if the aggregation method is found, request historical data
         const query = constructQuery(isTimeSeries, kpi, timeFrame, filters);
         // Send the query to the historical data endpoint
-        data = await getHistoricalData(query.toString());
+        data = await getHistoricalData(query);
 
         // if it's a time series, we need to rearrange the data.
         // grouping the timestamps so that we get something like
@@ -230,17 +258,25 @@ async function fetchData(
         // from a series of objects like {timestamp: '2024-12-02', machine1: 20}
 
         if (isTimeSeries) {
-            data = data.reduce((acc: any, cur: any) => {
-                const timestamp = cur.timeframe;
+            const groupedData = data.reduce((acc: Record<string, Record<string, any>>, cur: any) => {
+                const timestamp = cur.timestamp;
                 const machine = cur.name;
                 const value = cur[kpi.id];
 
+                if (!timestamp || !machine || value === undefined) {
+                    console.warn('Invalid entry in data:', cur);
+                    return acc;
+                }
+
                 if (!acc[timestamp]) {
-                    acc[timestamp] = {};
+                    acc[timestamp] = { timestamp }; // Initialize with the timestamp
                 }
                 acc[timestamp][machine] = value;
                 return acc;
             }, {});
+
+            // Convert the grouped object into an array of objects
+            data = Object.values(groupedData);
         } else {
             // if it's categorical data, we can just return a reformatted version of the response
             // format like {name: 'machine1', value: 20}
@@ -269,29 +305,18 @@ const constructQuery = (
     kpi: KPI,
     timeFrame: TimeFrame,
     filters?: Filter
-): object => {
+): HistoricalDataRequest => {
     // Get the list of machines from filters or default to all available
     const machineList: string[] = filters?.machineIds
         ? filters.machineIds
         : dataManager.getMachineList().map(machine => machine.machineId);
 
-    const timeFrameCopy: TimeFrame = {
-        from: new Date(timeFrame.from),
-        to: new Date(timeFrame.to),
-        aggregation: timeFrame.aggregation,
-    }
-    // set the month of the timeframe to be betweeen 3 and 10, try to keep the same difference if possible
-    const diff = timeFrame.to.getMonth() - timeFrame.from.getMonth();
-    timeFrameCopy.from.setMonth(3);
-    timeFrameCopy.to.setMonth(Math.min(3 + diff, 10));
-
-    timeFrame = timeFrameCopy;
     // Format dates to `yyyy-mm-dd`
     const from: string = timeFrame.from.toISOString().split('T')[0];
     const to: string = timeFrame.to.toISOString().split('T')[0];
 
     // Dynamically determine time grouping based on duration
-    let timeGrouping: string | null; // Default to day
+    let timeGrouping: string | undefined;
     // for categorical type graphs, don't use time grouping
     if (isTimeSeries) {
         // Calculate the duration of the timeframe in days
@@ -308,8 +333,6 @@ const constructQuery = (
         } else {
             timeGrouping = "P1M"; // For periods longer than a year, group by year
         }
-    } else {
-        timeGrouping = null;
     }
 
     // Construct the query JSON
@@ -320,7 +343,7 @@ const constructQuery = (
             end_date: to,
         },
         machines: machineList, // List of machine IDs
-        group_by: timeGrouping, // Grouping logic
+        group_time: timeGrouping, // Grouping logic
     };
 };
 
@@ -358,7 +381,7 @@ function requestCalculation(isTimeSeries: boolean, kpi: KPI, timeFrame: TimeFram
             return machineList.map((machine) => {
                 return {
                     Date_Start: period,
-                    Date_Finish: period,
+                    Date_End: period,
                     Machine_Name: machine,
                     KPI_Name: kpi.id,
                 }
@@ -371,7 +394,7 @@ function requestCalculation(isTimeSeries: boolean, kpi: KPI, timeFrame: TimeFram
     return machineList.map((machine) => {
         return {
             Date_Start: timeFrame.from.toISOString().split('T')[0],
-            Date_Finish: timeFrame.to.toISOString().split('T')[0],
+            Date_End: timeFrame.to.toISOString().split('T')[0],
             Machine_Name: machine,
             KPI_Name: kpi.id,
         }
