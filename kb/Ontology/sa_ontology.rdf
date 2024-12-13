@@ -1228,7 +1228,7 @@
         <sa-ontology:description>This KPI is atomic, it measures the energy consumption used by a single machine over a idle period, considering the median.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
         <sa-ontology:formula>-</sa-ontology:formula>
-        <sa-ontology:id>consumption_idle_avg</sa-ontology:id>
+        <sa-ontology:id>consumption_idle_med</sa-ontology:id>
         <sa-ontology:unit_measure>kWh</sa-ontology:unit_measure>
     </owl:NamedIndividual>
     
