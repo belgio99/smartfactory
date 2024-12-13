@@ -56,14 +56,14 @@ def hello_world():
     return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
-def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent"],["api-layer"]))):
+def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
     return 'Hello private World :)'
 
 # ACTUAL PREDICTIONS
 #http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
 # @app.post("/data-processing/predict", response_model = Json_out)
 @app.post("/data-processing/predict")
-def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
         given a series of couple MACHINE-KPI and an integer value N, this function predicts
         the next N data points given a certain trained model. If the model does not exist yet

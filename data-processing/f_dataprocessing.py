@@ -3,13 +3,14 @@ import pandas as pd
 import numpy as np
 
 from statsmodels.tsa.stattools import adfuller
-from sklearn.preprocessing import StandardScaler
 import itertools
 from tqdm import notebook
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 import xgboost as xgb
-from sklearn.model_selection import GridSearchCV
 from xgboost import XGBRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import ParameterGrid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from model import Severity, Alert
@@ -227,16 +228,65 @@ def xgboost_parameter_select(X_train,y_train):
       "max_depth": [3, 5, 7],
       "learning_rate": [0.01, 0.1, 0.2],
   }
-
+  param_combinations = list(ParameterGrid(param_grid))
+  # ParameterGrid
   # Set up GridSearchCV
-  grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, cv=3, scoring="neg_mean_squared_error", verbose=1)
+  # grid_search = GridSearchCV(estimator=xgb_model, param_grid=param_grid, cv=3, scoring="neg_mean_squared_error", verbose=1)
 
   # Perform the grid search
-  grid_search.fit(X_train, y_train)
+  # grid_search.fit(X_train, y_train)
 
   # Best parameters and model performance
-  print("Best Parameters:", grid_search.best_params_)
-  return grid_search.best_estimator_ 
+  # print("Best Parameters:", grid_search.best_params_)
+
+  # Data preparation (replace with your dataset)
+  dtrain = xgb.DMatrix(X_train, label=y_train)
+
+  # Perform cross-validation
+  best_params = None
+  best_score = float("inf")
+  best_model = None
+
+  for params in param_combinations:
+      # Create XGBoost parameters
+      xgb_params = {
+          "max_depth": params["max_depth"],
+          "eta": params["learning_rate"],
+          "objective": "reg:squarederror",
+      }
+
+      # Perform cross-validation
+      cv_results = xgb.cv(
+          params=xgb_params,
+          dtrain=dtrain,
+          num_boost_round=params["n_estimators"],
+          nfold=3,
+          metrics="rmse",
+          early_stopping_rounds=10,
+          seed=42,
+      )
+
+      # Extract the best RMSE score
+      mean_rmse = cv_results["test-rmse-mean"].min()
+      best_iteration = cv_results["test-rmse-mean"].idxmin()
+
+      # Update best parameters if score improves
+      if mean_rmse < best_score:
+          best_score = mean_rmse
+          best_params = params
+          best_model = xgb.train(
+            params=xgb_params,
+            dtrain=dtrain,
+            num_boost_round=best_iteration + 1,  # Use the optimal number of iterations
+        )
+
+    # Print the best parameters and score
+    # print("Best Parameters:", best_params)
+    # print("Best RMSE:", best_score)
+
+
+
+  return best_model
 
 
 def custom_tts(data, labels, window_size = 20):
@@ -352,11 +402,12 @@ def characterize_KPI(machine, kpi):
     # parameter selection for xgboost
     X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
 
-    model = xgboost_parameter_select(X_train,y_train)
-    # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
-    model.fit(X_train, y_train)
+    # model = xgboost_parameter_select(X_train,y_train)
+    # # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
+    # model.fit(X_train, y_train)
 
-    booster = model.get_booster()
+    # booster = model.get_booster()
+    booster = xgboost_parameter_select(X_train,y_train)
     model_bytes = booster.save_raw()
     encoded_model = base64.b64encode(model_bytes).decode('utf-8')
     a_dict['model'] = {
@@ -771,7 +822,7 @@ def elaborate_new_datapoint(machine, kpi):
       a_dict['missingval']['missing_streak'] += 1
       if a_dict['missingval']['missing_streak'] > 2 and not a_dict['missingval']['alert_sent']:
         alert_data['title'] = 'Zero streak'
-        alert_data['description'] = f'{kpi} for {machine} returned zeros for {a_dict['missingval']['missing_streak']} days in a row'
+        alert_data['description'] = f"{kpi} for {machine} returned zeros for {a_dict['missingval']['missing_streak']} days in a row"
         alert_data['machine'] = machine
         if a_dict['missingval']['missing_streak'] > 5:
            alert_data['severity'] = Severity.HIGH        

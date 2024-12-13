@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import List
 from typing import Optional
+from enum import Enum
 
 class Json_in_el(BaseModel):
     """
