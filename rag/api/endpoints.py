@@ -78,7 +78,7 @@ class FileUpdateHandler(FileSystemEventHandler):
             graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
             graph.load_schema()
             global history
-            history = deque(maxlen=HISTORY_LEN)
+            history = {}
 
 # Initialize the RDF graph
 graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
@@ -95,7 +95,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 #set_llm_cache(InMemoryCache())
 
 # Initialize the conversation history deque
-history = deque(maxlen=HISTORY_LEN)
+history = {}
 
 # FastAPI router initialization
 router = APIRouter()
@@ -107,7 +107,7 @@ prompt_manager = PromptManager('prompts/')
 query_gen = QueryGenerator(llm)
 
 
-def prompt_classifier(input: Question):
+def prompt_classifier(input: Question, userId: str):
     """
     Classifies an input prompt into a predefined category and generates the associated URL if needed.
     
@@ -119,7 +119,7 @@ def prompt_classifier(input: Question):
     """
     # Format the conversation history
     history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-        [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+        [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
     )
 
     esempi = [
@@ -423,6 +423,17 @@ async def translate_answer(question: Question, question_language: str, context):
 #async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
 async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
     try:
+        # Extract the user ID
+        userId = question.userId
+
+        if userId not in history:
+            history[userId] = deque(maxlen=HISTORY_LEN)
+
+        print("CONVERSATION HISTORY:\n" + "\n\n".join(
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
+            ))
+
+        # Translate the question to English
         language_prompt = prompt_manager.get_prompt('get_language').format(
             _USER_QUERY_=question.userInput
         )
@@ -430,52 +441,56 @@ async def ask_question(question: Question): # to add or modify the services allo
         question_language, question.userInput = translated_question.split("-", 1)
 
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
+
         # Classify the question
-        label, json_body = prompt_classifier(question)
+        label, json_body = prompt_classifier(question, userId)
         #mock url
         url=""
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(url),
-            'new_kpi': lambda: handle_new_kpi(question, llm, graph, history),
+            'new_kpi': lambda: handle_new_kpi(question, llm, graph, history[userId]),
             'report': lambda: handle_report(json_body),
-            'dashboard': lambda: handle_dashboard(question, llm, graph, history),
+            'dashboard': lambda: handle_dashboard(question, llm, graph, history[userId]),
             'kpi_calc': lambda: handle_kpi_calc(json_body),
-            'kb_q': lambda: handle_kb_q(question, llm, graph, history),
+            'kb_q': lambda: handle_kb_q(question, llm, graph, history[userId]),
         }
 
-        # Check if the label is valid
+        # Check if the label is not in the handlers (i.e. extra-domain question)
         if label not in handlers:
             # Format the history
             history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
             )
             llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
+            
+            # Update the history
+            history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
             
             if question_language.lower() != "english":
                 llm_result = await translate_answer(question, question_language, llm_result.content)
                 
-            # Update the history
-            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
             return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
 
         # Execute the handler
         context = await handlers[label]()
 
         if label == 'kb_q':
+            # Update the history
+            history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
+            
+            # Translate the response back to the user's language
             if question_language.lower() != "english":
                 context = await translate_answer(question, question_language, context)
                 context = context.content
 
-            # Update the history
-            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
             return Answer(textResponse=context, textExplanation='', data='', label=label)
 
         # Generate the prompt and invoke the LLM for certain labels
         if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
             # Prepare the history context from previous chat
             history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
             )
             # Prepare the prompt and invoke the LLM
             prompt = prompt_manager.get_prompt(label).format(
@@ -487,10 +502,12 @@ async def ask_question(question: Question): # to add or modify the services allo
             llm_result = llm.invoke(prompt)
             
             if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
+                # Update the history
+                history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+
+                # Translate the response back to the user's language
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, llm_result.content)
-
-                history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
 
             explainer = RagExplainer(threshold = 15.0,)
 
@@ -535,13 +552,14 @@ async def ask_question(question: Question): # to add or modify the services allo
                 # Converting the JSON string to a dictionary
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 response_json = json.loads(response_cleaned)
+
+                # Update the history
+                history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                             
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, response_json["textualResponse"])
-                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
                 else:
-                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
                 
                 data = json.dumps(response_json["bindings"], indent=2)
