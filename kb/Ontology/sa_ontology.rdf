@@ -191,7 +191,6 @@
         <rdfs:subClassOf rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#Machine"/>
     </owl:Class>
     
-    
 
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#CapacityCuttingMachine -->
@@ -728,7 +727,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
-        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
         <sa-ontology:atomic_formula>working_time_sum/(working_time_sum+idle_time_sum)</sa-ontology:atomic_formula>
         <sa-ontology:description>Percentage of time worked compared to time available.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
@@ -3794,7 +3793,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
-        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
         <sa-ontology:atomic_formula>(working_time_sum/(working_time_sum+idle_time_sum))*(cycles_sum/working_time_sum)*(good_cycles_sum/cycles_sum)</sa-ontology:atomic_formula>
         <sa-ontology:description>Plant&apos;s productivity level calculated as a combination of three factors that represent how efficient the plant is during the manufacturing process.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
@@ -4042,7 +4041,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
-        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
         <sa-ontology:atomic_formula>cycles_sum/working_time_sum</sa-ontology:atomic_formula>
         <sa-ontology:description>Percentage of actual work versus planned work, i.e. actual parts produced versus total production time.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
@@ -4282,7 +4281,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_cutter"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_2"/>
-        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#riveting_machine"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3"/>
@@ -4290,7 +4289,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
-        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
         <sa-ontology:atomic_formula>good_cycles_sum/cycles_sum</sa-ontology:atomic_formula>
         <sa-ontology:description>Percentage of correctly produced pieces compared to total pieces.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
@@ -4725,7 +4724,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_cutter"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_2"/>
-        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#riveting_machine"/>
+        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3"/>
@@ -4733,7 +4732,7 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
-        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">true</sa-ontology:atomic>
+        <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
         <sa-ontology:atomic_formula>cycles_sum/(working_time_sum+idle_time_sum)</sa-ontology:atomic_formula>
         <sa-ontology:description>The actual time it takes for an object to go from the raw state to the state to the finished product state, considering all assembly steps. In short, it is the average amount of output produced in a given time interval.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
@@ -4756,7 +4755,6 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_cutter"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#laser_welding_machine_2"/>
-        <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#riveting_machine"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3"/>
