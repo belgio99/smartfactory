@@ -1,4 +1,4 @@
-import PersistentDataManager from "./PersistentDataManager";
+import PersistentDataManager from "./DataManager";
 import {KPI, Machine} from "./DataStructures";
 import {Filter} from "../components/Selectors/FilterOptions";
 import {TimeFrame} from "../components/Selectors/TimeSelect";

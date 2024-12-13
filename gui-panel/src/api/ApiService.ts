@@ -354,30 +354,6 @@ export const getHistoricalData = async (query: HistoricalDataRequest): Promise<H
 };
 
 /**
- * API GET used to get dashboards
- * @param userId string - The user ID
- * @returns Promise will return the dashboards
- */
-export const getDashboards = async (userId: string): Promise<DashboardData> => {
-    try {
-        const response = await axios.get<{ data: DashboardData }>(
-            `${BASE_URL}/smartfactory/dashboards`,
-            {
-                params: {userId},
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": API_KEY,
-                },
-            }
-        );
-        return response.data.data;
-    } catch (error: any) {
-        console.error('Get Dashboards API error:', error);
-        throw new Error(error.response?.data?.message || 'Failed to retrieve dashboards');
-    }
-};
-
-/**
  * API POST used to update user settings
  * @param userId string - The user ID
  * @param settings string - The user settings [key: string]: string | number | boolean

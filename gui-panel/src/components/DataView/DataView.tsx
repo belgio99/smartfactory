@@ -4,7 +4,7 @@ import {KPI} from "../../api/DataStructures";
 import {fetchData} from "../../api/DataFetcher";
 import FilterOptions, {Filter} from "../Selectors/FilterOptions";
 import {TimeFrame} from "../Selectors/TimeSelect"
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 import KpiSelect from "../Selectors/KpiSelect";
 import GraphTypeSelector from "../Selectors/GraphTypeSelector";
 import AdvancedTimeSelect from "../Selectors/AdvancedTimeSelect";

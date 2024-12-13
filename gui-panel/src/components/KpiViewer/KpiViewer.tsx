@@ -1,5 +1,5 @@
 import React, {useState} from "react";
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 
 const KpiViewer = () => {
     const [searchTerm, setSearchTerm] = useState<string>("");

@@ -5,8 +5,8 @@ import EventEmitter from "events";
 import {dummyCheck, retrieveKPIs, retrieveMachines} from "./ApiService";
 
 // API
-import { postDashboardSettings } from "./ApiService";
-import { retrieveDashboardSettings } from "./ApiService";
+import {postDashboardSettings} from "./ApiService";
+import {retrieveDashboardSettings} from "./ApiService";
 
 export async function loadFromApi<T>(apiEndpoint: string, decoder: (json: Record<string, any>) => T): Promise<T[]> {
     try {
@@ -99,42 +99,48 @@ class DataManager {
                     return [];
                 }
             );
-            
+
             if (ping) {
                 this.kpiList = await retrieveKPIs();
                 this.machineList = await retrieveMachines();
-            } else {
+                // Load user-specific dashboards from the API
+                // Check if the user is logged in
+                if (this.userId) {
+                    console.log("User logged in: retrieving user dashboards from server...");
+                    try {
+                        const serverData = await retrieveDashboardSettings(this.userId);
+                        const serverDashboards = serverData.dashboards || [];
 
-            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
-                kpiToUnwrap => kpiToUnwrap[0] || [],
-                error => {
-                    console.error("Error loading kpis:", error);
-                    return [];
-                }
-            );
-            
-    
-            // Load user-specific dashboards from the API     
-            // Check if the user is logged in
-            if (this.userId) {
-                console.log("User logged in: retrieving user dashboards from server...");
-                try {
-                    const serverData = await retrieveDashboardSettings(this.userId);
-                    const serverDashboards = serverData.dashboards || [];
-    
-                    // Merge local and server dashboards
-                    const mergedDashboards = mergeDashboards(localDashboards, serverDashboards);
-                    this.dashboards = mergedDashboards;
-                    console.log("Merged dashboards:", mergedDashboards);
-                } catch (error) {
-                    console.error("Error retrieving user dashboards from server:", error);
-                    // If there is an error, use only local dashboards
+                        // Merge local and server dashboards
+                        const mergedDashboards = mergeDashboards(localDashboards, serverDashboards);
+                        this.dashboards = mergedDashboards;
+                        console.log("Merged dashboards:", mergedDashboards);
+                    } catch (error) {
+                        console.error("Error retrieving user dashboards from server:", error);
+                        // If there is an error, use only local dashboards
+                        this.dashboards = localDashboards;
+                    }
+                } else {
+                    // No user logged in: use only local dashboards
                     this.dashboards = localDashboards;
                 }
             } else {
-                // No user logged in: use only local dashboards
-                this.dashboards = localDashboards;
-            }
+
+                this.kpiList = await loadFromLocal('/mockData/kpis.json', KPI.decodeGroups).then(
+                    kpiToUnwrap => kpiToUnwrap[0] || [],
+                    error => {
+                        console.error("Error loading kpis:", error);
+                        return [];
+                    }
+                );
+
+                this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
+                    kpiToUnwrap => kpiToUnwrap[0] || [],
+                    error => {
+                        console.error("Error loading kpis:", error);
+                        return [];
+                    }
+                );
             }
 
         } catch (error) {
@@ -180,22 +186,22 @@ class DataManager {
      * Set the unique ID for a dashboard.
      * @param dashboardId string - The ID of the dashboard to check.
      * @returns string - The unique ID for the dashboard.
-     * @note Function to get if that dashboard id exists:   
-     *          -   If yes return the same id with _1 appended or more if needed;   
+     * @note Function to get if that dashboard id exists:
+     *          -   If yes return the same id with _1 appended or more if needed;
      *          -   If not return the same id;
      */
     getUniqueDashboardId(dashboardId: string): string {
         let newId = dashboardId;
         let i = 1;
-    
+
         // Controlla se l'ID esiste già tra le dashboard
         while (this.dashboards.some((d) => d.id === newId)) {
             newId = `${dashboardId}_${i}`; // Aggiunge un suffisso numerico
             i++;
         }
-    
+
         return newId;
-    }    
+    }
 
     /**
      * Search a Dashboard folder with same name in the dashboard list.
@@ -269,7 +275,7 @@ class DataManager {
         // API call to save the new dashboard
         const json = DashboardFolder.encodeTree(this.dashboards);
         // If the user is logged in, save the dashboard to the server
-        if (this.userId){
+        if (this.userId) {
             postDashboardSettings(this.userId, json);
         }
         this.events.emit('change');
@@ -299,7 +305,7 @@ class DataManager {
         // API call to save the new dashboard
         const json = DashboardFolder.encodeTree(this.dashboards);
         // If the user is logged in, save the dashboard to the server
-        if (this.userId){
+        if (this.userId) {
             postDashboardSettings(this.userId, json);
         }
         this.events.emit('change');
@@ -358,7 +364,7 @@ function mergeDashboards(
  * @returns serverItem DashboardFolder | DashboardLayout - The merged item.
  */
 function mergeSingleItem(
-    localItem: DashboardFolder | DashboardLayout, 
+    localItem: DashboardFolder | DashboardLayout,
     serverItem: DashboardFolder | DashboardLayout): DashboardFolder | DashboardLayout {
     // If both are folders, merge recursively the children
     if (localItem instanceof DashboardFolder && serverItem instanceof DashboardFolder) {

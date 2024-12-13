@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 import {fetchData, simulateChartData} from "../../api/DataFetcher";
 import FutureTimeFrameSelector from "./FutureTimeSelector";
 import {TimeFrame} from "../Selectors/TimeSelect";

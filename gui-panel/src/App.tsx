@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {BrowserRouter as Router, Navigate, Route, Routes} from 'react-router-dom';
-import DataManager from "./api/PersistentDataManager";
+import DataManager from "./api/DataManager";
 import Home from "./components/Home";
 import LoginForm from "./components/LoginForm";
 

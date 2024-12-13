@@ -5,7 +5,7 @@ import Chart from "../Chart/Chart";
 import {simulateChartData} from "../../api/DataFetcher";
 import FilterOptionsV2, {Filter} from "../Selectors/FilterOptions";
 import TimeSelector, {TimeFrame} from "../Selectors/TimeSelect";
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 
 const Dashboard: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
