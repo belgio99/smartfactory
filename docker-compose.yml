@@ -207,7 +207,7 @@ services:
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
     volumes:
-      - kb:/app/storage
+      - kb:/KB/storage
     platform: linux/amd64
     ports: 
       - "10010:8000"
