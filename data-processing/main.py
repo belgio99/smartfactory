@@ -56,14 +56,14 @@ def hello_world():
     return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
-def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent"]))):
+def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
     return 'Hello private World :)'
 
 # ACTUAL PREDICTIONS
 #http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
 # @app.post("/data-processing/predict", response_model = Json_out)
 @app.post("/data-processing/predict")
-def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
         given a series of couple MACHINE-KPI and an integer value N, this function predicts
         the next N data points given a certain trained model. If the model does not exist yet
@@ -138,7 +138,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             else:
                 out_dict['Predicted_value'] = 'Errore, il KPI inserito non esiste'
             out_dicts.append(out_dict)
-    return {"result": out_dicts}  # Convert numpy array to list for JSON serialization
+    return {"result": out_dicts}
 
 def new_data_polling():
     """
@@ -150,14 +150,14 @@ def new_data_polling():
 
         Returns:
     """
-    query_body = {
-        "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
-    }
-    response = f_dataprocessing.execute_druid_query(query_body)
-    #TODO: link response to available models
-    availableModels = []
-    for m in availableModels:
-        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    # query_body = {
+    #     "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
+    # }
+    # response = f_dataprocessing.execute_druid_query(query_body)
+    # #TODO: link response to available models
+    # availableModels = []
+    # for m in availableModels:
+    #     f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
     print(datetime.datetime.today())
  
 if __name__ == "__main__":

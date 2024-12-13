@@ -108,7 +108,6 @@ export class KPI {
 
     static decodeGroups(groups: Record<string, Record<string, any>>): KPI[] {
         const kpis: KPI[] = [];
-
         Object.entries(groups).forEach(([groupName, metrics]) => {
             Object.entries(metrics).forEach(([metricName, metricData]) => {
                 if (
@@ -116,13 +115,10 @@ export class KPI {
                     typeof metricData.description !== "string" ||
                     typeof metricData.unit_measure !== "string" ||
                     typeof metricData.type !== "string" ||
-                    typeof metricData.forecastable !== "boolean"
+                    (metricData.forecastable && typeof metricData.forecastable !== "boolean")
                 ) {
                     throw new Error(`Invalid KPI structure in group ${groupName}, metric ${metricName}`);
                 }
-
-                // if the metricName contains _med or _std set forecastable to false
-                metricData.forecastable = metricData.forecastable && !metricName.includes("_med") && !metricName.includes("_std");
 
                 // reformat kpi name with regex
                 // if followed by _avg, _min, _max, _sum, _med change it to (Avg), (Min), (Max), (Sum), (Med)
@@ -147,7 +143,7 @@ export class KPI {
                     metricName, // Metric name as the display name
                     metricData.description,
                     metricData.unit_measure, // Use unit_measure for unit
-                    metricData.forecastable // Forecastable flag
+                    metricData.forecastable ? metricData.forecastable : false // Forecastable flag
                 );
                 kpis.push(kpi);
             });

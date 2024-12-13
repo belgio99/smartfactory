@@ -9,6 +9,7 @@ class Question(BaseModel):
         userInput (str): The input question.
     """
     userInput: str
+    userId: str
 
 
 class Answer(BaseModel):
