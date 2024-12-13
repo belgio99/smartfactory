@@ -2,7 +2,7 @@ import {useLocation} from "react-router-dom";
 import {DashboardEntry, DashboardFolder, DashboardLayout} from "../../api/DataStructures";
 import React, {useEffect, useState} from "react";
 import Chart from "../Chart/Chart";
-import {simulateChartData} from "../../api/QuerySimulator";
+import {simulateChartData} from "../../api/DataFetcher";
 import FilterOptionsV2, {Filter} from "../Selectors/FilterOptions";
 import TimeSelector, {TimeFrame} from "../Selectors/TimeSelect";
 import PersistentDataManager from "../../api/PersistentDataManager";

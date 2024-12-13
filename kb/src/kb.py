@@ -6,13 +6,13 @@
 
 from owlready2 import *
 import sympy
-
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends
 import json
 from api_auth.api_auth import get_verify_api_key
 from pydantic import BaseModel
+import shutil
 
 
 app = FastAPI()
@@ -25,8 +25,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
-onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
+ONTOLOGY_PATH = "./storage/sa_ontology.rdf"
+onto = None
 
 
 def get_kpi(kpi_id):
@@ -629,5 +629,17 @@ async def add_kpi_endpoint(kpi_info: KPI_Info, api_key: str = Depends(get_verify
 
 # -------------------------------------------- Main --------------------------------------------
 
+
 if __name__ == "__main__":
+    # check if the "storage" folder exists
+    if not os.path.exists("./storage"):
+        # create the "storage" folder
+        os.makedirs("./storage")
+    # check if the "storage" folder is empty ("./storage")
+    if not os.path.isfile(ONTOLOGY_PATH):
+        # insert ontology file ("./Ontology/sa_ontology.rdf") in the "storage" folder
+        shutil.copyfile("./Ontology/sa_ontology.rdf", ONTOLOGY_PATH)
+
+    onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
+
     uvicorn.run(app, port=8000, host="0.0.0.0")

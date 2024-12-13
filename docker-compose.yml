@@ -16,6 +16,7 @@ volumes:
   backrest_cache: {}
   target_volume: {}
   vault_data: {}
+  data_processing_models: {}
 
 services:
   postgres:
@@ -206,7 +207,7 @@ services:
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
     volumes:
-      - kb:/kb
+      - kb:/KB/storage
     platform: linux/amd64
     ports: 
       - "10010:8000"
@@ -220,6 +221,8 @@ services:
     build:
       context: ./data-processing
       dockerfile: Dockerfile
+    volumes:
+      - data_processing_models:/models
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
     ports: 
       - "10030:8000"
@@ -228,6 +231,9 @@ services:
       - not-db-init
     env_file:
       - database/.env
+    depends_on:
+      router:
+        condition: service_healthy
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest

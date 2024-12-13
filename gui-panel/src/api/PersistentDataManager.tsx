@@ -2,6 +2,7 @@
 import {DashboardFolder, DashboardLayout, KPI, Machine} from "./DataStructures";
 import axios from "axios";
 import EventEmitter from "events";
+import {dummyCheck, retrieveKPIs, retrieveMachines} from "./ApiService";
 
 // API
 import { postDashboardSettings } from "./ApiService";
@@ -80,22 +81,16 @@ class DataManager {
     }
 
     async initialize(): Promise<void> {
+        let ping = true;
         try {
-            this.kpiList = await loadFromLocal('/mockData/kpis.json', KPI.decodeGroups).then(
-                kpiToUnwrap => kpiToUnwrap[0] || [],
-                error => {
-                    console.error("Error loading kpis:", error);
-                    return [];
-                }
-            );
-
-            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
-                kpiToUnwrap => kpiToUnwrap[0] || [],
-                error => {
-                    console.error("Error loading kpis:", error);
-                    return [];
-                }
-            );
+            //try to connect  to dummy, if it fails, load from local
+            await dummyCheck();
+            console.log("Ping to dummy successful.");
+        } catch (error) {
+            console.error("Error connecting to dummy:", error);
+            ping = false;
+        }
+        try {
             // Load local dashboards
             let localDashboards = await loadFromLocal('/mockData/dashboards.json', DashboardFolder.decode).then(
                 dashboards => dashboards[0]?.children || [],
@@ -104,6 +99,20 @@ class DataManager {
                     return [];
                 }
             );
+            
+            if (ping) {
+                this.kpiList = await retrieveKPIs();
+                this.machineList = await retrieveMachines();
+            } else {
+
+            this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
+                kpiToUnwrap => kpiToUnwrap[0] || [],
+                error => {
+                    console.error("Error loading kpis:", error);
+                    return [];
+                }
+            );
+            
     
             // Load user-specific dashboards from the API     
             // Check if the user is logged in
@@ -125,6 +134,7 @@ class DataManager {
             } else {
                 // No user logged in: use only local dashboards
                 this.dashboards = localDashboards;
+            }
             }
 
         } catch (error) {

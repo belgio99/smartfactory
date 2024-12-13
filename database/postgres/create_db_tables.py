@@ -66,11 +66,11 @@ if __name__ == "__main__":
             """
             CREATE TABLE IF NOT EXISTS Users (
             UserID SERIAL PRIMARY KEY,
-            Username VARCHAR(50) NOT NULL,
-            Email VARCHAR(50) NOT NULL,
-            Role VARCHAR(50) NOT NULL,
+            Username VARCHAR(300) NOT NULL,
+            Email VARCHAR(300) NOT NULL,
+            Role VARCHAR(300) NOT NULL,
             Password VARCHAR(255) NOT NULL,
-            SiteName VARCHAR(50) NOT NULL,
+            SiteName VARCHAR(300) NOT NULL,
             UserSettings TEXT,
             UserDashboards TEXT,
             UserSchedules TEXT

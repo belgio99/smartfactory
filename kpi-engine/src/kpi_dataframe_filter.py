@@ -18,7 +18,7 @@ class kpi_dataframe_filter:
                 the original dataframe is returned without any changes.
         """
         if machine_id != 'all_machines':
-            return df[df['asset_id'] == machine_id]
+            return df[df['name'] == machine_id]
         return df
 
 
@@ -126,6 +126,4 @@ class kpi_dataframe_filter:
         fd = kpi_dataframe_filter.filter_dataframe_by_typology(fd, machine_type)
         fd = kpi_dataframe_filter.filter_dataframe_by_kpi(fd, kpi)
         fd = kpi_dataframe_filter.filter_dataframe_by_time(fd, start_period, end_period)
-        if fd.empty: 
-            return ValueError("Error: filter values are too restricted: no items are retrived")
         return fd

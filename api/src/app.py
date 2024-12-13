@@ -30,7 +30,7 @@ from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
 from model.historical import HistoricalQueryParams
 # TODO: how to import modules from rag directory ??
-from model.agent import Answer
+from model.agent import Answer, Question
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
@@ -46,11 +46,12 @@ tasks: dict[str, Task] = dict()
 tasks_lock = asyncio.Lock()
 last_task_id = 0
 
-def hash_data(data : tuple) -> tuple:
-    hashed_data = ()
-    for i in range(len(data)):
-        hashed_data[i] = hashlib.sha256(data[i].encode()).hexdigest()
-    return hashed_data
+def hash_data(data: tuple) -> tuple:
+    hashed_data = [] 
+    for item in data: 
+        hashed_value = hashlib.sha256(str(item).encode('utf-8')).hexdigest()  
+        hashed_data.append(hashed_value)  
+    return tuple(hashed_data)  
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
@@ -294,10 +295,12 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             logging.error("User already registered")
             raise HTTPException(status_code=400, detail="User already registered")
         else:
+            hashed_username, hashed_email, hashed_role = hash_data((body.username, body.email, body.role))
+            hashed_site = hash_data((body.site,))[0]
 
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
-            cursor.execute(query_insert, hash_data((body.username, body.email, body.role)) + body.password + hash_data((body.site,)))
+            cursor.execute(query_insert, (hashed_username, hashed_username, hashed_role, body.password, hashed_site))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
@@ -472,7 +475,7 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-def call_ai_agent(input: str):
+def call_ai_agent(input: Question):
     """
     This function performs a call to the RAG AI agent.
     Args:
@@ -485,7 +488,8 @@ def call_ai_agent(input: str):
         'x-api-key': os.getenv('API_KEY')
     }
     body = {
-        'userInput': input
+        'userInput': input.userInput,
+        'userId': input.userId
     }
     print(f"sending request to RAG API: {body}")
     response = requests.post(os.getenv('RAG_API_ENDPOINT'), headers=headers, json=body)
@@ -606,7 +610,8 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
             kpi=",".join(params.kpis),
             machines=",".join(params.machines)
         )
-        ai_response = call_ai_agent(filled_prompt).json()
+        question = Question(userInput=filled_prompt, userId=userId)
+        ai_response = call_ai_agent(question).json()
         logging.info(ai_response)
         answer = Answer.model_validate(ai_response)
         tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
@@ -856,8 +861,10 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         raise HTTPException(status_code=500, detail="Empty user input")
     try:
         # Send the user input to the RAG API and get the response
-        response = call_ai_agent(userInput)
-        answer = response.json()
+        # build the Question object
+        question = Question(userInput=userInput, userId=userId)
+        response = call_ai_agent(question.model_dump_json())
+        answer = response.model_dump_json()
         if answer.label == 'new_kpi':
             # add new kpi
             try:
@@ -901,17 +908,37 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     Raises:
         HTTPException: If the query parameters are malformed or an unexpected error occurs.
     """
-    
+
     # check if group_time has valid values
     if historical_params.group_time and historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
         raise HTTPException(status_code=400, detail="Invalid group_time value")
-    
+
     # check if necessary fields are not empty
     if not historical_params.kpi or not historical_params.timeframe or not historical_params.machines:
         raise HTTPException(status_code=400, detail="Missing required fields")
 
+    # The database only supports the following fields for a KPI ID
+    # the others will need to be requested using the calculate KPI endpoint
+    valid_fields = {"sum", "min", "max", "avg"}
+    kpi_id = historical_params.kpi
+    kpi_name, field = None, None
+
+    # Check the last 3 characters of the KPI ID
+    # Extract the suffix to get the field
+    if kpi_id[-3:] in valid_fields:
+        # Find the last underscore
+        split_index = kpi_id.rfind("_")
+
+        # Dividi il nome del KPI
+        kpi_name = kpi_id[:split_index]
+        field = kpi_id[split_index + 1:]
+
+    # check if the kpi is valid and was split correctly
+    if not kpi_name or not field:
+        raise HTTPException(status_code=400, detail="Invalid KPI ID")
+
     # substitute square brackets with parentheses in machine list
-    historical_params.machines = tuple(historical_params.machines) 
+    historical_params.machines = tuple(historical_params.machines)
 
     # remove commas from machines string in case it's a single one
     if len(historical_params.machines) == 1:
@@ -922,26 +949,53 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     try:
         # Build the query body
 
-        # group_time is optional and has values: 
+        # group_time is optional and has values:
         # 'P1D'for daily intervals
         # 'P1W' for weekly intervals
         # 'P1M' for monthly intervals.
-        
-        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
-                    AND asset_id IN {} GROUP BY 
+
+        ''' previous code
+        query = """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND name IN {} GROUP BY 
         """.format(
             historical_params.kpi, historical_params.timeframe["start_date"],
             historical_params.timeframe["end_date"], machines
-            )
-        
+        )
+
         # append optional group by time clause
-        if historical_params.group_time :
+        if historical_params.group_time:
             query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'),"""
-        
+
         query += "name, __time"
-        
+        '''
+
+        # Base SELECT and FROM
+        query = f"""
+                    SELECT name,
+                """
+
+        # Include time formatting only for time series (group_time is present)
+        if historical_params.group_time:
+            query += f"TIME_FORMAT(TIME_FLOOR(__time, '{historical_params.group_time}'), 'yyyy-MM-dd') AS \"timestamp\", "
+
+        # Add KPI field aggregation, since max,avg etc. are keywords, they need to be enclosed in double quotes
+        query += f"SUM(\"{field}\") AS {kpi_id} FROM \"timeseries\" WHERE kpi = '{kpi_name}'"
+
+        # Add WHERE clause for timeframe and machines
+        query += f"""
+                      AND __time >= TIMESTAMP '{historical_params.timeframe["start_date"]}'
+                      AND __time < TIMESTAMP '{historical_params.timeframe["end_date"]}'
+                      AND name IN {machines}
+                """
+
+        # Add GROUP BY clause
+        query += " GROUP BY name"
+        # Group by time if present
+        if historical_params.group_time:
+            query += f", TIME_FLOOR(__time, '{historical_params.group_time}')"
+
         # Execute the query
-        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
+        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query": query})
         if response:
             print("Query response:", response)
         else:
@@ -950,7 +1004,7 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     return response
 
 @app.get("/smartfactory/dummy")
