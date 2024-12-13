@@ -1028,7 +1028,7 @@ def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_
     logging.info("sending request to data processing: %s", pred_request)
     try:
         # Send the prediction request to the data processing module and get the response
-        response = requests.post(os.getenv('DATA_PROCESSING_ENDPOINT'), json=pred_request, headers=headers)
+        response = requests.post(os.getenv('DATA_PROCESSING_ENDPOINT'), json=jsonable_encoder(pred_request), headers=headers)
         response.raise_for_status()
     except Exception as e:
         logging.error("Exception: %s", str(e))
