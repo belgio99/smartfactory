@@ -12,7 +12,6 @@ OUTPUT FORMAT:
 - Atomic: Boolean indicating if the KPI is atomic (true) or derived using other KPIs (false).  
 - Description: Brief explanation of what the KPI measures (e.g., "This indicator calculates the energy efficiency of a specific machine in a given time interval.").  
 - Formula (base): Basic formula used for the KPI (e.g., "power_consumption_efficiency = working_time_sum / consumption_sum").  
-- Forecastable = false
 - Unit of Measure: Unit associated with the KPI (e.g., %, kW, m).  
 - Domain: Definition of the KPI's value range (min, max, type).  
 
@@ -20,8 +19,6 @@ REQUIREMENTS:
 1. Generate only the best possible KPI that fully satisfies the user’s query.  
 2. Ensure descriptions and formulas are concise, accurate, and tailored to the user's needs.  
 3. Avoid unnecessary commentary or alternative KPI suggestions.  
-4. "Forecastable" MUST BE alwaysfalse.
-
 
 CONTEXT: 
 {_CONTEXT_}
