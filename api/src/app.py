@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.kpi import Kpi
 from model.kpi_calculate_request import KpiRequest
+from model.prediction import Json_in, Json_out
 from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
@@ -1006,6 +1007,34 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
         raise HTTPException(status_code=500, detail=str(e))
 
     return response
+
+@app.post('/smartfactory/predict', response_model=Json_out)
+def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to get a prediction from the ML model.
+    This endpoint receives a set of parameters and retrieves a prediction from the ML model based on those parameters.
+    Args:
+        pred_request (Json_in): The parameters for the prediction request.
+        api_key (str): The API key for authentication.
+    Returns:
+        response: The prediction data retrieved from the ML model.
+    Raises:
+        HTTPException: If the prediction request is malformed or an unexpected error occurs.
+    """
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': os.getenv('API_KEY')
+    }  
+    logging.info("sending request to data processing: %s", pred_request)
+    try:
+        # Send the prediction request to the data processing module and get the response
+        response = requests.post(os.getenv('DATA_PROCESSING_ENDPOINT'), json=jsonable_encoder(pred_request), headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    return response.json()
+
 
 @app.get("/smartfactory/dummy")
 async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
