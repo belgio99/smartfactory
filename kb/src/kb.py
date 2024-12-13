@@ -217,7 +217,7 @@ def get_kpi_hierarchy():
 
     def remove_empty_classes(hierarchy):
         """
-        Recursively removes empty classes from the hierarchy.
+        Recursively removes empty classes from the hierarchy, while preserving boolean values.
 
         Args:
             hierarchy (dict): The hierarchy to clean.
@@ -232,7 +232,8 @@ def get_kpi_hierarchy():
                 nested = remove_empty_classes(value)
                 if nested:  # Only include non-empty classes
                     cleaned_hierarchy[key] = nested
-            elif value:  # Include non-dict non-empty values
+            else:
+                # Include all non-dict values, including booleans and falsy values
                 cleaned_hierarchy[key] = value
         return cleaned_hierarchy
 
