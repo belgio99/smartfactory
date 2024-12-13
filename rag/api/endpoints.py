@@ -130,10 +130,7 @@ def prompt_classifier(input: Question):
     Returns:
         tuple: A tuple containing the label and the extracted json_obj from the input (if applicable).
     """
-    # Format the conversation history
-    history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-        [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
-    )
+
 
     esempi = [
         {"text": "Predict for the next month the cost_working_avg for Large Capacity Cutting Machine 2 based on last three months data", "label": "predictions"},
@@ -152,12 +149,12 @@ def prompt_classifier(input: Question):
     few_shot_prompt = FewShotPromptTemplate(
         examples=esempi,
         example_prompt=esempio_template,
-        prefix= "{history}\n\nFEW-SHOT EXAMPLES:",
+        prefix= "FEW-SHOT EXAMPLES:",
         suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
-        input_variables=["history", "text_input"]
+        input_variables=["text_input"]
     )
 
-    prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
+    prompt = few_shot_prompt.format(text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
