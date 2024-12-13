@@ -93,7 +93,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
         ...selectedExplanationData.map((d: { feature: string; importance: number; }) => Math.abs(d.importance))
     ) : 0;
 
-    const breakpoint = pastData.length;
+    const breakpoint = pastData.length - 1; // point to the last past data point
     const dataWithBounds = data.map((point, index) => {
         const newPoint = {...point};
 

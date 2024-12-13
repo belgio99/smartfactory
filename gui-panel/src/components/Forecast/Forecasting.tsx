@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import PersistentDataManager from "../../api/PersistentDataManager";
-import {simulateChartData} from "../../api/QuerySimulator";
+import {fetchData, simulateChartData} from "../../api/DataFetcher";
 import FutureTimeFrameSelector from "./FutureTimeSelector";
 import {TimeFrame} from "../Selectors/TimeSelect";
 import KpiSelect from "../Selectors/KpiSelect";
@@ -140,7 +140,7 @@ const ForecastingPage: React.FC = () => {
         if (selectedKpi.id !== "none" && timeFrame !== null && selectedMachine.machineId !== "None Selected") {
             setLoading(true);
             const machineFilter = new Filter(selectedMachine.type, [selectedMachine.machineId]);
-            const pastData = await simulateChartData(selectedKpi, timeFrame.past, "line", machineFilter);
+            const pastData = await fetchData(selectedKpi, timeFrame.past, "line", machineFilter);
             const futureData = await simulateChartData(selectedKpi, timeFrame.future, "line", machineFilter);
             // Add default confidence value to each data point
             const combinedData = futureData.map(dataPoint => ({
