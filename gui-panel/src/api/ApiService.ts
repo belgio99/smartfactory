@@ -3,8 +3,8 @@ import {KPI, Machine} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
-const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
-
+// get the API key from the environment variables
+const API_KEY = process.env.REACT_APP_API_KEY || '';
 
 /**
  * Interface UserInfo
