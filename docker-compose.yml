@@ -343,7 +343,7 @@ services:
       VAULT_ADDR: "http://0.0.0.0:8200"
       VAULT_STORAGE_BACKEND: "file"  
     ports:
-      - "8200:8200"
+      - "18200:8200"
     profiles:
       - database
     logging:
