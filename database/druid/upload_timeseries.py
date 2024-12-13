@@ -15,8 +15,6 @@ load_dotenv(dotenv_path=env_path)
 # Add the parent directory of 'vault' to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from vault.crypto_lib import encrypt_csv
-
 def convert_to_csv(file_path):
     """
     Converts a given file to CSV format if necessary.
