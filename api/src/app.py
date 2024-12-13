@@ -863,8 +863,8 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         # Send the user input to the RAG API and get the response
         # build the Question object
         question = Question(userInput=userInput, userId=userId)
-        response = call_ai_agent(question.model_dump_json())
-        answer = response.model_dump_json()
+        response = call_ai_agent(question)
+        answer = response.json()
         if answer.label == 'new_kpi':
             # add new kpi
             try:
