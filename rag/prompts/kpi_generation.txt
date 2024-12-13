@@ -8,12 +8,11 @@ In the CONTEXT section you are provided with information about existing tracked 
 TASK: using the provided context, generate the new KPI requested by the user. Your response must strictly adhere to the specified format and provide only the most suitable KPI to meet the user’s needs.
 
 OUTPUT FORMAT:  
-- ID: Unique identifier for the KPI (e.g., power_consumption_efficiency).  
-- Atomic: Boolean indicating if the KPI is atomic (true) or derived using other KPIs (false).  
-- Description: Brief explanation of what the KPI measures (e.g., "This indicator calculates the energy efficiency of a specific machine in a given time interval.").  
-- Formula (base): Basic formula used for the KPI (e.g., "power_consumption_efficiency = working_time_sum / consumption_sum").  
-- Unit of Measure: Unit associated with the KPI (e.g., %, kW, m).  
-- Domain: Definition of the KPI's value range (min, max, type).  
+- id: Unique identifier for the KPI (e.g., power_consumption_efficiency).  
+- description: Brief explanation of what the KPI measures (e.g., "This indicator calculates the energy efficiency of a specific machine in a given time interval.").  
+- formula (base): Basic formula used for the KPI (e.g., "power_consumption_efficiency = working_time_sum / consumption_sum").  
+- unit of measure: Unit associated with the KPI (e.g., %, kW, m).  
+- atomic: Boolean indicating if the KPI is atomic (true) or derived using other KPIs (false).  
 
 REQUIREMENTS:  
 1. Generate only the best possible KPI that fully satisfies the user’s query.  

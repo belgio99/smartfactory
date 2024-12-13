@@ -117,10 +117,6 @@ def prompt_classifier(input: Question, userId: str):
     Returns:
         tuple: A tuple containing the label and the extracted json_obj from the input (if applicable).
     """
-    # Format the conversation history
-    history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-        [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
-    )
 
     esempi = [
         {"text": "Predict for the next month the cost_working_avg for Large Capacity Cutting Machine 2 based on last three months data", "label": "predictions"},
@@ -429,10 +425,6 @@ async def ask_question(question: Question): # to add or modify the services allo
         if userId not in history:
             history[userId] = deque(maxlen=HISTORY_LEN)
 
-        print("CONVERSATION HISTORY:\n" + "\n\n".join(
-                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
-            ))
-
         # Translate the question to English
         language_prompt = prompt_manager.get_prompt('get_language').format(
             _USER_QUERY_=question.userInput
@@ -501,11 +493,11 @@ async def ask_question(question: Question): # to add or modify the services allo
             
             llm_result = llm.invoke(prompt)
             
-            if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
+            if label in ['predictions', 'report', 'kpi_calc']:
                 # Update the history
                 history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
 
-                # Translate the response back to the user's language
+                # Translate the response back to thqser's language
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, llm_result.content)
 
@@ -532,10 +524,11 @@ async def ask_question(question: Question): # to add or modify the services allo
                 
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, response_cleaned)
-                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                    textResponse = textResponse.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 else:
-                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
                                 
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label) 
