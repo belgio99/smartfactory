@@ -11,6 +11,8 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
     const getFutureTimeFrame = (days: number): TimeFrame => {
         const today = new Date();
         const from = new Date(today);
+        // avoid including today in the future period
+        from.setDate(from.getDate() + 1);
         const to = new Date(today.setDate(today.getDate() + days)); // After `days` days
         console.log("Future period:", from, to);
         return {from, to, aggregation: 'day'};
@@ -28,6 +30,7 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
     const getFutureWeekTimeFrame = (): TimeFrame => {
         const today = new Date();
         const from = new Date(today);
+        from.setDate(from.getDate() + 1); // Avoid including today in the future period
         const to = new Date(today.setDate(today.getDate() + 6)); // End of the next week
         console.log("Future week:", from, to);
         return {from, to, aggregation: 'day'};
