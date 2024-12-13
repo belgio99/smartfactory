@@ -594,7 +594,7 @@ class KPI_Info(BaseModel):
     description: str
     formula: str
     unit_measure: str
-    forecastable: bool
+    #forecastable: bool
     atomic: bool
 
 @app.post("/kb/insert")
@@ -614,7 +614,7 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
         "description": [kpi_info.description],
         "formula": [kpi_info.formula],
         "unit_measure": [kpi_info.unit_measure],
-        "forecastable": [kpi_info.forecastable],
+        "forecastable": [False],
         "atomic": [kpi_info.atomic],
     }
 
