@@ -139,12 +139,12 @@ def prompt_classifier(input: Question, userId: str):
     few_shot_prompt = FewShotPromptTemplate(
         examples=esempi,
         example_prompt=esempio_template,
-        prefix= "{history}\n\nFEW-SHOT EXAMPLES:",
+        prefix= "FEW-SHOT EXAMPLES:",
         suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
-        input_variables=["history", "text_input"]
+        input_variables=["text_input"]
     )
 
-    prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
+    prompt = few_shot_prompt.format(text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
@@ -527,9 +527,18 @@ async def ask_question(question: Question): # to add or modify the services allo
                 # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
                 context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 explainer.add_to_context([("Knowledge Base", context_cleaned)])
+                
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
+                
+                if question_language.lower() != "english":
+                    llm_result = await translate_answer(question, question_language, response_cleaned)
+                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                else:
+                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
+                                
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label) 
 
             if label == 'report':
                 # Response: No chat response, Explanation: TODO, Data: Report in str format
