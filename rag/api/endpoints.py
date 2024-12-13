@@ -483,7 +483,7 @@ async def ask_question(question: Question): # to add or modify the services allo
             
             llm_result = llm.invoke(prompt)
             
-            if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
+            if label in ['predictions', 'report', 'kpi_calc']:
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, llm_result.content)
 
@@ -507,9 +507,18 @@ async def ask_question(question: Question): # to add or modify the services allo
                 # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
                 context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 explainer.add_to_context([("Knowledge Base", context_cleaned)])
+                
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
+                
+                if question_language.lower() != "english":
+                    llm_result = await translate_answer(question, question_language, response_cleaned)
+                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                else:
+                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
+                                
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label) 
 
             if label == 'report':
                 # Response: No chat response, Explanation: TODO, Data: Report in str format
