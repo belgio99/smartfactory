@@ -10,8 +10,8 @@ TASK: using the provided context, generate the new KPI requested by the user. Yo
 OUTPUT FORMAT:  
 - id: Unique identifier for the KPI (e.g., power_consumption_efficiency).  
 - description: Brief explanation of what the KPI measures (e.g., "This indicator calculates the energy efficiency of a specific machine in a given time interval.").  
-- formula (base): Basic formula used for the KPI (e.g., "power_consumption_efficiency = working_time_sum / consumption_sum").  
-- unit of measure: Unit associated with the KPI (e.g., %, kW, m).  
+- formula: Basic formula used for the KPI (e.g., "power_consumption_efficiency = working_time_sum / consumption_sum").  
+- unit_measure: Unit of measure associated with the KPI (e.g., %, kW, m).  
 - atomic: Boolean indicating if the KPI is atomic (true) or derived using other KPIs (false).  
 
 REQUIREMENTS:  
