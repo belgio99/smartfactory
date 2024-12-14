@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
 import ScheduleModal from "./ScheduleModal";
-import PersistentDataManager, {loadFromLocal} from "../../api/PersistentDataManager";
+import PersistentDataManager, {loadFromLocal} from "../../api/DataManager";
 import {scheduleReport} from "../../api/ApiService";
 
 interface SchedulesListProps {
@@ -100,7 +100,7 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                 const requestData = {
                     userId: userId,
                     params: {
-                        id: newId.toString(),
+                        id: newId,
                         status: newSchedule.status === "Active",
                         name: newSchedule.name,
                         recurrence: newSchedule.recurrence,

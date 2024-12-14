@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {KPI} from "../../api/DataStructures";
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 import FilterOptions from "../Selectors/FilterOptions";
 
 interface ModalProps {

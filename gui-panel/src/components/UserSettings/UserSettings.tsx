@@ -19,6 +19,26 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
   const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [firstName, setFirstName] = useState("John");
+  const [lastName, setLastName] = useState("Doe");
+
+  const handleSubmit = () => {
+    // Send data to API
+    const payload = { firstName, lastName };
+    fetch("/api/update-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+          console.log("Success:", data);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+  };
+
   const handleOpenDialog = () => {
     setOldPassword('');
     setNewPassword('');
@@ -68,10 +88,11 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
                 First Name
               </label>
               <input
-                type="text"
-                id="first-name"
-                className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                defaultValue="John"
+                  type="text"
+                  id="first-name"
+                  value={firstName}
+                  onBlur={(e) => setFirstName(e.target.value)} // Save onBlur
+                  className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
 
@@ -80,15 +101,22 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
                 Last Name
               </label>
               <input
-                type="text"
-                id="last-name"
-                className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                defaultValue="Doe"
+                  type="text"
+                  id="last-name"
+                  value={lastName}
+                  onBlur={(e) => setLastName(e.target.value)} // Save onBlur
+                  className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
             </div>
           </div>
+          <button
+              type="button"
+              onClick={handleSubmit}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Save
+          </button>
         </section>
-
         {/* Account Details Section */}
         <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <h2 className="text-2xl font-semibold mb-6 text-gray-800 border-b pb-2">Account Details</h2>
@@ -97,10 +125,10 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
               Email Address
             </label>
             <input
-              type="email"
-              id="email"
-              className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-              defaultValue={email}
+                type="email"
+                id="email"
+                className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                defaultValue={email}
             />
           </div>
 
@@ -109,8 +137,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
               Change Email
             </button>
             <button
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-              onClick={handleOpenDialog}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
+                onClick={handleOpenDialog}
             >
               Change Password
             </button>
@@ -120,18 +148,18 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
 
       {/* Dialog per la modifica della password */}
       {isDialogOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <h3 className="text-xl font-semibold mb-4">Change Password</h3>
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+              <h3 className="text-xl font-semibold mb-4">Change Password</h3>
 
-            <div className="mb-4">
-              <label htmlFor="old-password" className="block text-sm font-medium text-gray-700 mb-1">
-                Old Password
-              </label>
-              <input
-                type="password"
-                id="old-password"
-                className="w-full p-2 border-gray-300 rounded-md"
+              <div className="mb-4">
+                <label htmlFor="old-password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Old Password
+                </label>
+                <input
+                    type="password"
+                    id="old-password"
+                    className="w-full p-2 border-gray-300 rounded-md"
                 value={oldPassword}
                 onChange={(e) => setOldPassword(e.target.value)}
               />

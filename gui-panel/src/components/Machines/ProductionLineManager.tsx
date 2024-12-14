@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from "react";
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 import {Machine} from "../../api/DataStructures";
 import ProductionLineEditor from "./ProductionLineEditor";
 

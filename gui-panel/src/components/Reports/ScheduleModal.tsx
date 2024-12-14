@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from "react";
 import {KPI, Schedule} from "../../api/DataStructures";
 import FilterOptions from "../Selectors/FilterOptions";
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 
 interface ModalProps {
     isOpen: boolean;

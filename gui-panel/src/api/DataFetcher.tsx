@@ -1,4 +1,4 @@
-import PersistentDataManager from "./PersistentDataManager";
+import PersistentDataManager from "./DataManager";
 import {KPI, Machine} from "./DataStructures";
 import {Filter} from "../components/Selectors/FilterOptions";
 import {TimeFrame} from "../components/Selectors/TimeSelect";
@@ -175,23 +175,11 @@ export async function fetchData(
     // check if the kpi id contains an aggregation method valid for the historical endpoint
     // if not, defer the request to the calculation endpoint
     const aggregationMethods = ['avg', 'sum', 'min', 'max'];
-    const isTimeSeries = type === "line" || type === "scatter" || type === "area";
-
+    const isTimeSeries = type === "line" || type === "scatter" || type === "area" || type === "stacked_bar" || type === "hist";
+    const isHist = type === "hist";
     // check if the last 3 characters of the kpi id are an aggregation method
     const kpiId = kpi.id;
     const aggregationMethod = kpiId.substring(kpiId.length - 3);
-
-    const timeFrameCopy: TimeFrame = {
-        from: new Date(timeFrame.from),
-        to: new Date(timeFrame.to),
-        aggregation: timeFrame.aggregation,
-    }
-    // set the month of the timeframe to be betweeen 3 and 10, try to keep the same difference if possible
-    const diff = timeFrame.to.getMonth() - timeFrame.from.getMonth();
-    timeFrameCopy.from.setMonth(3);
-    timeFrameCopy.to.setMonth(Math.min(3 + diff, 10));
-
-    timeFrame = timeFrameCopy;
 
     let data: any;
 
@@ -201,16 +189,56 @@ export async function fetchData(
         console.log("Request:", request);
         const response = await calculateKPIValue(request);
 
-        // if it's a time series, we need to rearrange the data.
-        // grouping the timestamps so that we get something like
-        // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
-        // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
+        if (isHist) {
+            // if it's a histogram, we need to group the data by bins and calculate the frequency
+            // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
+            // to something like [{bin: '0-10', value: 20}, {bin: '10-20', value: 30}]
+
+            // Extract all numerical values from the input data, ignoring timestamp and machine
+            const values: number[] = response.map((entry: Record<string, any>) => entry.Value).filter((value: any) => typeof value === 'number');
+
+            if (values.length === 0) {
+                console.warn('No valid data available for histogram generation');
+                return [];
+            }
+
+            // Determine the range of the data
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+
+            // Calculate the number of bins using Sturges's formula
+            const binCount = Math.ceil(Math.log2(values.length) + 1);
+            const binWidth = (max - min) / binCount;
+
+            // Initialize bins
+            const bins = Array.from({ length: binCount }, (_, i) => ({
+                bin: `${(min + i * binWidth).toFixed(2)}-${(min + (i + 1) * binWidth).toFixed(2)}`,
+                value: 0
+            }));
+
+            // Populate the bins with data
+            values.forEach((value: number) => {
+                const binIndex = Math.min(
+                    Math.floor((value - min) / binWidth),
+                    binCount - 1 // Ensure the max value falls into the last bin
+                );
+                bins[binIndex].value += 1;
+            });
+
+            data = bins;
+
+        } else
+            // if it's a time series, we need to rearrange the data.
+            // grouping the timestamps so that we get something like
+            // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
+            // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
 
         if (isTimeSeries) {
             console.log("Time series received:", response);
 
             // group by timestamp like below
             // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
+
 
             data = response.reduce((acc: Record<string, Record<string, any>>, cur: any) => {
                 const timestamp = cur.Date_Start;
@@ -223,7 +251,7 @@ export async function fetchData(
                 }
 
                 if (!acc[timestamp]) {
-                    acc[timestamp] = { timestamp }; // Initialize with the timestamp
+                    acc[timestamp] = {timestamp}; // Initialize with the timestamp
                 }
                 acc[timestamp][machine] = value;
                 return acc;
@@ -252,11 +280,48 @@ export async function fetchData(
         // Send the query to the historical data endpoint
         data = await getHistoricalData(query);
 
-        // if it's a time series, we need to rearrange the data.
-        // grouping the timestamps so that we get something like
-        // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
-        // from a series of objects like {timestamp: '2024-12-02', machine1: 20}
+        if (isHist) {
+            // here data is formatted like [{timestamp: '2024-12-02', machine1: 20}, {timestamp: '2024-12-02', machine2: 40}]
 
+            // if it's a histogram, we can need to group the time series data into bins and calculate the frequency
+            // Extract all numerical values from the input data, ignoring timestamp and machine
+            const values = data.flatMap((entry: Record<string, any>) => Object.values(entry).filter(value => typeof value === 'number'));
+
+            if (values.length === 0) {
+                console.warn('No valid data available for histogram generation');
+                return [];
+            }
+
+            // Determine the range of the data
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+
+            // Calculate the number of bins using Sturges's formula
+            const binCount = Math.ceil(Math.log2(values.length) + 1);
+            const binWidth = (max - min) / binCount;
+
+            // Initialize bins
+            const bins = Array.from({length: binCount}, (_, i) => ({
+                bin: `${(min + i * binWidth).toFixed(2)}-${(min + (i + 1) * binWidth).toFixed(2)}`,
+                value: 0
+            }));
+
+            // Populate the bins with data
+            values.forEach((value: number) => {
+                const binIndex = Math.min(
+                    Math.floor((value - min) / binWidth),
+                    binCount - 1 // Ensure the max value falls into the last bin
+                );
+                bins[binIndex].value += 1;
+            });
+
+            data = bins;
+
+        } else
+            // if it's a time series, we need to rearrange the data.
+            // grouping the timestamps so that we get something like
+            // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
+            // from a series of objects like {timestamp: '2024-12-02', machine1: 20}
         if (isTimeSeries) {
             const groupedData = data.reduce((acc: Record<string, Record<string, any>>, cur: any) => {
                 const timestamp = cur.timestamp;
@@ -269,7 +334,7 @@ export async function fetchData(
                 }
 
                 if (!acc[timestamp]) {
-                    acc[timestamp] = { timestamp }; // Initialize with the timestamp
+                    acc[timestamp] = {timestamp}; // Initialize with the timestamp
                 }
                 acc[timestamp][machine] = value;
                 return acc;

@@ -4,10 +4,11 @@ import {KPI} from "../../api/DataStructures";
 import {fetchData} from "../../api/DataFetcher";
 import FilterOptions, {Filter} from "../Selectors/FilterOptions";
 import {TimeFrame} from "../Selectors/TimeSelect"
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 import KpiSelect from "../Selectors/KpiSelect";
 import GraphTypeSelector from "../Selectors/GraphTypeSelector";
 import AdvancedTimeSelect from "../Selectors/AdvancedTimeSelect";
+import DataManager from "../../api/DataManager";
 
 
 const KpiSelector: React.FC<{
@@ -92,8 +93,12 @@ const DataView: React.FC = () => {
     const fetchChartData = async () => {
         try {
             setLoading(true);
-            const data = await fetchData(kpi, timeFrame, graphType, filters);
-            setChartData(data);
+
+            // if one of the parameters is not set, return
+            if (kpi && timeFrame && graphType && DataManager.getInstance().getMachineList()) {
+                const data = await fetchData(kpi, timeFrame, graphType, filters);
+                setChartData(data);
+            }
         } catch (e) {
         } finally {
             setLoading(false);
