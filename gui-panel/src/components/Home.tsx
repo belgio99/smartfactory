@@ -18,6 +18,7 @@ import ReportSchedules from "./Reports/ReportSchedules";
 import Dashboard from "./Dashboard/Dashboard";
 import ProductionLineManager from "./Machines/ProductionLineManager";
 import AIDashboard from "./Dashboard/AIDashboard";
+import DataManager from "../api/DataManager";
 
 interface UserProps {
     userId: string;
@@ -79,6 +80,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
         console.log('Current logs:', currentLogs);
     }, [username]);
 
+
     return (
         <div className="flex min-h-screen bg-gray-100">
             {/* Notifiche Temporanee */}
@@ -94,7 +96,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                 <Header
                     path={location.pathname}
                     userAvatar={userAvatar || '/default-avatar.png'}
-                    userName={username}
+                    userName={DataManager.getInstance().userName}
                     userId={userId}
                     role={role}
                     logoutHook={onLogout}

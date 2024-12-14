@@ -16,6 +16,7 @@ const App = () => {
     const [role, setRole] = useState('Tester');
     const [site, setSite] = useState('');
     const [email, setEmail] = useState('');
+    const dataManager = DataManager.getInstance(); // force creation of the static instance on boot
 
     // Loading state to track if data is still being initialized
     const [loading, setLoading] = useState(false);
@@ -51,7 +52,6 @@ const App = () => {
     // Initialize data and set loading to false once done
     async function initializeData() {
         try {
-            const dataManager = DataManager.getInstance();
             dataManager.setUserId(userId);
             await dataManager.initialize();
             console.log("Data initialization completed.");
@@ -67,10 +67,12 @@ const App = () => {
 
     // Call initializeData on component mount
     useEffect(() => {
-        if(isAuthenticated){
+        if (isAuthenticated) {
             //loginTestUser();
+            setLoading(true);
             console.log("Initializing data...");
             initializeData();
+            setLoading(false);
         }
     }, [isAuthenticated]); // Empty dependency array means this will run only once on mount
 
@@ -78,7 +80,9 @@ const App = () => {
     if (loading) {
         return (
             <div className="loading-screen">
-                <h1>Loading...</h1>
+                <div className="flex justify-center items-center h-40">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900"/>
+                </div>
             </div>
         );
     }
@@ -88,8 +92,8 @@ const App = () => {
         return (
             <Router>
                 <Routes>
-                    <Route path="/" element={<LoginForm onLogin={handleLogin} />} />
-                    <Route path="*" element={<Navigate to="/" />} />
+                    <Route path="/" element={<LoginForm onLogin={handleLogin}/>}/>
+                    <Route path="*" element={<Navigate to="/"/>}/>
                 </Routes>
             </Router>
         );
@@ -105,7 +109,7 @@ const App = () => {
                         element={<Home userId={userId} username={username} role={role} token={token || ''} site={site}
                                        email={email} onLogout={handleLogout}/>}
                     />
-                    <Route path="*" element={<Navigate to="/" />} />
+                    <Route path="*" element={<Navigate to="/"/>}/>
                 </Routes>
             </div>
         </Router>

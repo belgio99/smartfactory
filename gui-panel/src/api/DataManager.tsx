@@ -1,12 +1,16 @@
-//in this file we store the temporary memory the data loaded from json and save to json the files for persistency
+//in this file we store the temporary memory the data loaded from json and save to json the files for persistence
 import {DashboardFolder, DashboardLayout, KPI, Machine} from "./DataStructures";
 import axios from "axios";
 import EventEmitter from "events";
-import {dummyCheck, retrieveKPIs, retrieveMachines} from "./ApiService";
-
 // API
-import {postDashboardSettings} from "./ApiService";
-import {retrieveDashboardSettings} from "./ApiService";
+import {
+    dummyCheck,
+    getUserSettings, postDashboardSettings,
+    retrieveDashboardSettings,
+    retrieveKPIs,
+    retrieveMachines,
+    UserSettings
+} from "./ApiService";
 
 export async function loadFromApi<T>(apiEndpoint: string, decoder: (json: Record<string, any>) => T): Promise<T[]> {
     try {
@@ -58,9 +62,11 @@ type DataManagerChangeCallback = () => void;
 
 // DataManager.ts
 class DataManager {
-    static instance: DataManager | null = null;
-    private userId: string | null = null;
 
+    private static instance: DataManager | null = null;
+    private userId: string | null = null;
+    private _userSettings: UserSettings | null = null;
+    private initialized = false;
     private kpiList: KPI[] = [];
     private machineList: Machine[] = [];
     private dashboards: (DashboardFolder | DashboardLayout)[] = [];
@@ -82,6 +88,7 @@ class DataManager {
 
     async initialize(): Promise<void> {
         let ping = true;
+        console.log("Initializing DataManager...");
         try {
             //try to connect  to dummy, if it fails, load from local
             await dummyCheck();
@@ -125,6 +132,11 @@ class DataManager {
                         // If there is an error, use only local dashboards
                         this.dashboards = localDashboards;
                     }
+                    console.log("Retrieving User Settings from the API...");
+                    // Retrieve user settings
+                    this._userSettings = await getUserSettings(this.userId);
+                    console.log("User Settings loaded:", this._userSettings);
+
                 } else {
                     // No user logged in: use only local dashboards
                     this.dashboards = localDashboards;
@@ -151,6 +163,8 @@ class DataManager {
         } catch (error) {
             console.error("Error during initialization:", error);
             throw error;
+        }finally {
+            this.initialized = true;
         }
     }
 
@@ -199,10 +213,9 @@ class DataManager {
         let newId = dashboardId;
         let i = 1;
 
-        // Controlla se l'ID esiste già tra le dashboard
+        // Check if the ID already exists among the dashboards
         while (this.dashboards.some((d) => d.id === newId)) {
-            newId = `${dashboardId}_${i}`; // Aggiunge un suffisso numerico
-            i++;
+            newId = `${dashboardId}_${i++}`; // prefix the id with a number
         }
 
         return newId;
@@ -290,7 +303,6 @@ class DataManager {
      * Adds a new dashboard to the data manager.
      * @param dashboard DashboardLayout - The dashboard to add.
      * @param dashboardFolder DashboardFolder - The folder to add the dashboard to.
-     * @param userId string - The ID of the user who owns the dashboard.
      */
     addDashboard(dashboard: DashboardLayout, dashboardFolder: DashboardFolder): void {
         // locate the folder
@@ -316,6 +328,15 @@ class DataManager {
         this.events.emit('change');
     }
 
+    get userName(): string {
+        return this._userSettings?.name || 'MissingName' as string;
+    }
+
+    async waitUntilInitialized() {
+        while (!this.initialized) {
+            await new Promise(resolve => setTimeout(resolve, 100)); // Poll every 100ms
+        }
+    }
 }
 
 // POLICY FOR MERGING DASHBOARDS

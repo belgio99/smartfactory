@@ -71,7 +71,7 @@ export interface DashboardData {
  * @param any [key: string] string | number | boolean - The key of the user settings
  */
 export interface UserSettings {
-    [key: string]: string | number | boolean;
+    [key: string]: string;
 }
 
 /**
@@ -125,7 +125,7 @@ export interface KPIRequest {
     Date_End?: string
 }
 
-export interface KPICalculation{
+export interface KPICalculation {
     Machine_Name: string,
     Machine_Type: string,
     KPI_Name: string,
@@ -584,7 +584,6 @@ export const instantReport = async (userId: string, params: ScheduleParams): Pro
         throw new Error(error.response?.data?.message || 'Failed to create instant report');
     }
 }
-
 
 
 /**
