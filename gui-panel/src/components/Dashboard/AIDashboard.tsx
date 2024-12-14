@@ -35,7 +35,7 @@ class TemporaryLayout {
 
 }
 
-const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
+const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
     const location = useLocation();
     const metadata = location.state?.metadata;
 
@@ -47,7 +47,8 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
     const [filters, setFilters] = useState(new Filter("All", []));
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: 'hour'});
     const [temporaryName, setTemporaryName] = useState<string>("");
-    const [selectedFolder, setSelectedFolder] = useState<string>("");
+    const [temporaryFolder, setTemporaryFolder] = useState<string>("");
+    const [selectedFolder, setSelectedFolder] = useState<string>("new");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // Set the user ID for the API calls
@@ -135,12 +136,22 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
                 className="flex-grow p-2 border border-gray-200 rounded-lg"
                 onChange={(e) => setSelectedFolder(e.target.value)}
             >
+                <option value="new">Create New Folder</option>
                 {dataManager.getDashboardFolders().map((folder) => (
                     <option key={folder.id} value={folder.id}>
                         {folder.name}
                     </option>
                 ))}
             </select>
+            {/* Add an input to create a new folder, if CreateNewFolder */}
+            {selectedFolder === "new" && (
+                <input
+                    type="text"
+                    placeholder="Folder Name"
+                    className="flex-grow p-2 border border-gray-200 rounded-lg"
+                    onChange={(e) => setTemporaryFolder(e.target.value)}
+                />
+            )}
             {/* Save button */}
             <button
                 className="w-fit p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
@@ -149,7 +160,16 @@ const AIDashboard: React.FC<{userId: string}> = ({userId}) => {
 
                         // set the dashboard id to a unique id
                         const dashboardTemporaryId = dataManager.getUniqueDashboardId(temporaryName.trim().toLowerCase());
-                        const dashboardFolder =  selectedFolder ? dataManager.findDashboardFolderByName(selectedFolder) : null;
+
+                        let dashboardFolder;
+                        if (selectedFolder) {
+                            if (selectedFolder === "new") {
+                                // Create a new dashboard folder named temporaryFolder
+                                dashboardFolder = new DashboardFolder(temporaryFolder.trim().toLowerCase(), temporaryFolder, []);
+                            } else {
+                                dashboardFolder = dataManager.findDashboardFolderByName(selectedFolder)
+                            }
+                        }
                         // Check if the dashboard pointer is null
                         if (!dashboardFolder) {
                             console.error("Dashboard folder not found");
