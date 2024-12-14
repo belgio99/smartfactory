@@ -101,10 +101,15 @@ class DataManager {
             );
 
             if (ping) {
+                console.log("Retrieving KPIs and Machines from the API...");
                 this.kpiList = await retrieveKPIs();
+                console.log("KPIs loaded:", this.kpiList);
+                console.log("Retrieving Machines from the API...");
                 this.machineList = await retrieveMachines();
+                console.log("Machines loaded:", this.machineList);
                 // Load user-specific dashboards from the API
                 // Check if the user is logged in
+                console.log("User ID:", this.userId);
                 if (this.userId) {
                     console.log("User logged in: retrieving user dashboards from server...");
                     try {

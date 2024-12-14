@@ -44,6 +44,7 @@ const App = () => {
 
     // Method to login the test user
     const loginTestUser = () => {
+        setUserId('9');
         handleLogin('9', 'user5', '', 'Tester', 'site1', 'test@smartfactory.com');
     };
 
@@ -67,7 +68,7 @@ const App = () => {
     // Call initializeData on component mount
     useEffect(() => {
         if(isAuthenticated){
-            loginTestUser();
+            //loginTestUser();
             console.log("Initializing data...");
             initializeData();
         }

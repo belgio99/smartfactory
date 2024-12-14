@@ -172,86 +172,46 @@ const DashboardSidebar: React.FC = () => {
             {/* Dashboards Section */}
             {/* Form for Adding a New Dashboard Folder */}
             {!isFormVisible && (
-                <div className="w-full flex justify-center mt-2">
+                <div className="w-full flex justify-center mt-4">
                     <button
                         onClick={() => setFormVisible(true)}
-                        className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-600 transition-transform transform hover:scale-105"
-                        aria-label="Create New Folder"
+                        className="bg-blue-100 text-blue-600 font-medium py-1.5 px-4 rounded-md hover:bg-blue-200 transition duration-200"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 4v16m8-8H4"
-                            />
-                        </svg>
+                        New Folder
                     </button>
                 </div>
             )}
 
             {isFormVisible && (
-                <div className="w-full mt-4 flex flex-col items-center">
+                <div className="w-full mt-4 flex flex-col items-center bg-gray-50 p-3 rounded-md border border-gray-200">
                     <input
                         type="text"
-                        placeholder="Name of the Folder"
+                        placeholder="Enter folder name"
                         value={newFolderName}
                         onChange={(e) => setNewFolderName(e.target.value)}
-                        className="border rounded w-full p-2 mb-2"
+                        className="w-full border border-gray-300 rounded-md py-1.5 px-3 mb-2 focus:outline-none focus:ring focus:border-blue-400 text-sm"
                     />
                     {errorMessage && (
-                        <p className="text-red-500 text-sm mb-2">{errorMessage}</p>
+                        <p className="text-red-500 text-xs mb-2">{errorMessage}</p>
                     )}
-                    <div className="flex space-x-4">
+                    <div className="flex space-x-3">
+                        {/* Button Create */}
                         <button
                             onClick={handleAddFolder}
-                            className="bg-blue-500 text-white p-2 rounded-full shadow-md hover:bg-blue-600 transition-transform transform hover:scale-105"
-                            aria-label="Create Folder"
+                            className="bg-blue-100 text-blue-600 font-medium py-1.5 px-4 rounded-md hover:bg-blue-200 transition duration-200 text-sm"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M12 4v16m8-8H4"
-                                />
-                            </svg>
+                            Create
                         </button>
+                        {/* Button Cancel */}
                         <button
                             onClick={() => {
                                 setFormVisible(false);
                                 setNewFolderName('');
                                 setErrorMessage('');
                             }}
-                            className="bg-red-500 text-white p-2 rounded-full shadow-md hover:bg-red-600 transition-transform transform hover:scale-105"
-                            aria-label="Cancel"
+                            className="bg-red-100 text-red-600 font-medium py-1.5 px-4 rounded-md hover:bg-red-200 transition duration-200 text-sm"
                         >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                className="h-5 w-5"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                />
-                            </svg>
+                            Cancel
                         </button>
                     </div>
                 </div>
