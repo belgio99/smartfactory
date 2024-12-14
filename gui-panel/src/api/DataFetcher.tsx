@@ -181,18 +181,6 @@ export async function fetchData(
     const kpiId = kpi.id;
     const aggregationMethod = kpiId.substring(kpiId.length - 3);
 
-    const timeFrameCopy: TimeFrame = {
-        from: new Date(timeFrame.from),
-        to: new Date(timeFrame.to),
-        aggregation: timeFrame.aggregation,
-    }
-    // set the month of the timeframe to be betweeen 3 and 10, try to keep the same difference if possible
-    const diff = timeFrame.to.getMonth() - timeFrame.from.getMonth();
-    timeFrameCopy.from.setMonth(3);
-    timeFrameCopy.to.setMonth(Math.min(3 + diff, 10));
-
-    timeFrame = timeFrameCopy;
-
     let data: any;
 
     if (!aggregationMethods.includes(aggregationMethod)) {

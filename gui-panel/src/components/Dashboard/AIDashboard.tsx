@@ -129,7 +129,7 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                 type="text"
                 placeholder="Dashboard Name"
                 className="flex-grow p-2 border border-gray-200 rounded-lg"
-                onChange={(e) => setTemporaryName(e.target.value)}
+                onBlur={(e) => setTemporaryName(e.target.value)}
             />
             {/*Add select for choose the Dashboard folder where to save it*/}
             <select
@@ -149,7 +149,7 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                     type="text"
                     placeholder="Folder Name"
                     className="flex-grow p-2 border border-gray-200 rounded-lg"
-                    onChange={(e) => setTemporaryFolder(e.target.value)}
+                    onBlur={(e) => setTemporaryFolder(e.target.value)}
                 />
             )}
             {/* Save button */}
