@@ -14,13 +14,21 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
         return 'hour';
     };
 
+    const isValidDate = (dateString: string): boolean => {
+        return !isNaN(Date.parse(dateString));
+    };
+
     const handleStartDateChange = (newStartDate: string) => {
+        if (!isValidDate(newStartDate)) {
+            console.error('Invalid start date:', newStartDate);
+            return;
+        }
+
         const from = new Date(newStartDate);
         const to = new Date(endDate);
 
-        // Adjust `to` if `from` is after it
         if (from >= to) {
-            to.setDate(from.getDate() + 1); // Set `to` to one day after `from`
+            to.setDate(from.getDate() + 1);
             setEndDate(to.toISOString().split('T')[0]);
         }
 
@@ -30,12 +38,16 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
     };
 
     const handleEndDateChange = (newEndDate: string) => {
+        if (!isValidDate(newEndDate)) {
+            console.error('Invalid end date:', newEndDate);
+            return;
+        }
+
         const from = new Date(startDate);
         const to = new Date(newEndDate);
 
-        // Adjust `from` if `to` is before it
         if (to <= from) {
-            from.setDate(to.getDate() - 1); // Set `from` to one day before `to`
+            from.setDate(to.getDate() - 1);
             setStartDate(from.toISOString().split('T')[0]);
         }
 
@@ -43,6 +55,7 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
         setTimeFrame({from, to, aggregation});
         setEndDate(newEndDate);
     };
+
 
     return (
         <div className="max-h-fit max-w-fit">
@@ -57,10 +70,18 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
                     <label className="text-sm font-medium text-gray-700">Start Date:</label>
                     <input
                         type="date"
-                        min="2024-03-31"
-                        max={endDate}
+                        min={startDate || "2024-03-31"}
+                        max={endDate || "2024-10-19"}
                         value={startDate}
                         onChange={(e) => handleStartDateChange(e.target.value)}
+                        onInput={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            if (!isValidDate(target.value)) {
+                                target.setCustomValidity("Invalid date format");
+                            } else {
+                                target.setCustomValidity("");
+                            }
+                        }}
                         className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
                     />
                 </div>
@@ -69,10 +90,18 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
                     <label className="text-sm font-medium text-gray-700">End Date:</label>
                     <input
                         type="date"
-                        min={startDate}
-                        max="2024-10-19" // Max date in the database
+                        min={startDate || "2024-03-31"}
+                        max={endDate || "2024-10-19"} // Max date in the database
                         value={endDate}
                         onChange={(e) => handleEndDateChange(e.target.value)}
+                        onInput={(e) => {
+                            const target = e.target as HTMLInputElement;
+                            if (!isValidDate(target.value)) {
+                                target.setCustomValidity("Invalid date format");
+                            } else {
+                                target.setCustomValidity("");
+                            }
+                        }}
                         className="block w-full px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 sm:text-sm"
                     />
                 </div>

@@ -1,7 +1,6 @@
 import pandas as pd
 
 class kpi_dataframe_filter:
-
     
     def filter_dataframe_by_machine(df, machine_id):
         """
@@ -19,7 +18,7 @@ class kpi_dataframe_filter:
                 the original dataframe is returned without any changes.
         """
         if machine_id != 'all_machines':
-            return df[df['asset_id'] == machine_id]
+            return df[df['name'] == machine_id]
         return df
 
 
@@ -82,7 +81,8 @@ class kpi_dataframe_filter:
         string comparison or datetime operations.
         """
         if start_period > end_period:
-            raise ValueError("Error: start_time cannot come after end_time.")
+            return ValueError("Error: start_time cannot come after end_time.")
+
         return df[(df['time'] >= start_period) & (df['time'] <= end_period)]
 
 

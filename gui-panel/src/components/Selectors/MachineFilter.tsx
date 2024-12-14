@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 
 interface MachineFilterModalProps {
     isOpen: boolean;

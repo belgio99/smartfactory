@@ -4,22 +4,43 @@ from minio.error import S3Error
 from dotenv import load_dotenv
 from pathlib import Path
 
+## \file
+#  \brief A script to initialize a Minio client and manage bucket operations.
+
+# Load environment variables from the .env file
 env_path = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(dotenv_path=env_path) # Load environment variables from the .env file
+load_dotenv(dotenv_path=env_path)
 
 def initialize_minio_client():
     """
     Initializes and returns a Minio client using environment variables.
-    """
 
+    Globals:
+        MINIO_HOST (str): The Minio server host.
+        MINIO_ADDRESS (str): The Minio server address.
+        MINIO_ROOT_USER (str): The root user for Minio.
+        MINIO_ROOT_PASSWORD (str): The root password for Minio.
+
+    Returns:
+        Minio: An instance of the Minio client.
+    """
     return Minio(
-        os.getenv('MINIO_HOST') + os.getenv('MINIO_ADDRESS'),  # Replace with your Minio server address
-        access_key=os.getenv('MINIO_ROOT_USER'),  # Replace with your access key
-        secret_key=os.getenv('MINIO_ROOT_PASSWORD'),  # Replace with your secret key
-        secure=False  # Set to False if not using HTTPS
+        os.getenv('MINIO_HOST') + os.getenv('MINIO_ADDRESS'),
+        access_key=os.getenv('MINIO_ROOT_USER'),
+        secret_key=os.getenv('MINIO_ROOT_PASSWORD'),
+        secure=False
     )
 
 def main():
+    """
+    Main function to initialize the Minio client, and create buckets if they do not exist.
+
+    Globals:
+        MINIO_HOST (str): The Minio server host.
+        MINIO_ADDRESS (str): The Minio server address.
+        MINIO_ROOT_USER (str): The root user for Minio.
+        MINIO_ROOT_PASSWORD (str): The root password for Minio.
+    """
     # Initialize the Minio client
     client = initialize_minio_client()
 
@@ -57,14 +78,6 @@ def main():
     except S3Error as exc:
         print("Error occurred while checking/creating buckets.", exc)
 
-    # Uncomment and specify bucket name and file path to upload a file
-    # bucket_name = "example-bucket"
-    # file_path = "path/to/your/file.txt"
-    # try:
-    #     client.fput_object(bucket_name, file_path, file_path)
-    #     print(f"'{file_path}' is successfully uploaded as object '{file_path}' to bucket '{bucket_name}'.")
-    # except S3Error as exc:
-    #     print("Error occurred while uploading file.", exc)
 
 # Entry point
 if __name__ == "__main__":

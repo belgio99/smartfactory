@@ -7,5 +7,4 @@ smart_app_data.csv
 .vscode/
 .DS_Store
 *.pyc
-*.py
 .idea

@@ -1,12 +1,11 @@
 import React, {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom"; // React Router
-import {getReports} from "../../api/ApiService";
-import {downloadReport} from "../../api/ApiService";
+import {downloadReport, getReports, instantReport} from "../../api/ApiService";
+import ReportModal from "./InstantModal";
 
 type Report = {
     id: string;
     title: string;
-    description: string;
 };
 
 interface ReportArchiveProps {
@@ -24,7 +23,7 @@ interface ReportArchiveProps {
  */
 const handleView = async (reportId: string) => {
     try {
-        const blob = await downloadReport(reportId); // Usa la tua API già implementata
+        const blob = await downloadReport(reportId);
         const fileURL = URL.createObjectURL(blob);
 
         // Apri il file in una nuova scheda
@@ -62,31 +61,75 @@ const handleDownload = async (reportId: string, title: string) => {
 };
 
 
-
 const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, role, site}) => {
     const navigate = useNavigate(); // React Router hook for navigation
     var getReportList; // Variable to get the list of reports
 
     // Take from API the list of reports
     // While waiting for the API response, show loading spinner
-    const [loading, setLoading] = useState(true);
     const [reports, setReports] = useState<Report[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleInstant = async (partialReportData: Partial<{
+        machines: string[];
+        name: string;
+        email: string;
+        period: string;
+        kpis: string[]
+    }>) => {
+        setIsLoading(true); // Show loading screen
+        setIsModalOpen(false);
+
+        try {
+            // TODO: Implement API request to generate instant report
+            console.log("Requesting report with data:", partialReportData);
+            // Simulate a delay for loading screen demo purposes
+
+            const reportData = {
+                id: new Date().getTime(),
+                name: partialReportData.name || "Unnamed Report",
+                email: partialReportData.email || "",
+                recurrence: partialReportData.period || "Daily",
+                kpis: partialReportData.kpis || [],
+                machines: partialReportData.machines || [],
+                status: true,
+                startDate: new Date().toISOString().split("T")[0],
+            };
+            const reportId = await instantReport(userId, reportData);
+
+            console.log("Report generated successfully with ID:", reportId);
+            // TODO: Handle the generated report ID appropriately (e.g., show success message)
+            await handleView(reportId); // Open the generated report in a new tab
+
+            // Close modal after successful save
+        } catch (error) {
+            console.error("Failed to request report:", error);
+            // Handle error appropriately (e.g., show error message)
+        } finally {
+            setIsLoading(false); // Hide loading screen
+        }
+    };
+
+    const handleClose = () => {
+        setIsModalOpen(false); // Close modal without saving
+    };
 
     useEffect(() => {
         getReports(userId).then((reports) => {
             setReports(reports);
-            setLoading(false);
+            setIsLoading(false);
         });
     }, [userId]);
 
     // If no reports are available, show mock data
-    if(reports.length === 0) {
+    if (reports.length === 0) {
         const getReportList = (): Report[] => [
-            { id: "1", title: "Quarterly Report Q1", description: "Summary and details of Q1 performance." },
-            { id: "2", title: "Quarterly Report Q2", description: "Summary and details of Q2 performance." },
-            { id: "3", title: "Annual Report 2023", description: "Comprehensive analysis of the year 2023." },
-            { id: "4", title: "Quarterly Report Q3", description: "Summary and details of Q3 performance." },
-            { id: "5", title: "Annual Report 2022", description: "Comprehensive analysis of the year 2022." },
+            {id: "1", title: "Monthly Report Q1"},
+            {id: "2", title: "Quarterly Report Q2"},
+            {id: "3", title: "Annual Report 2023"},
+            {id: "4", title: "Monthly Report Q3"},
+            {id: "5", title: "Annual Report 2022"},
         ];
         setReports(getReportList());
     }
@@ -119,7 +162,12 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
 
     return (
         <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-25 rounded-lg shadow-lg">
-            <h1 className="text-2xl font-bold mb-4 text-gray-800">Report Archive</h1>
+            <h1 className="text-2xl font-bold mb-4 text-gray-800">Report Manager</h1>
+
+            <div className="flex items-center space-x-4 mb-6 text-gray-700">
+                In this section you can view, download, and generate reports. To see, create and edit the recurrent
+                report schedules click on "Manage Schedules".
+            </div>
 
             {/* Filter and Sort Controls */}
             <div className="mb-6 flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4">
@@ -146,47 +194,78 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                     </button>
                 </div>
                 {/* Schedule Buttons */}
-                <div className="mb-6 flex space-x-4 justify-center">
-                    <button
-                        className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow text-sm"
-                        onClick={handleManageSchedules}
-                    >
-                        Manage Recurring Schedules
-                    </button>
-                </div>
-            </div>
-
-            {/* Report List */}
-            <div className="space-y-4">
-                {filteredReports.map((report) => (
-                    <div
-                        key={report.id}
-                        className="bg-white border border-gray-200 rounded-lg shadow-sm"
-                    >
-                        <div
-                            className="flex items-center justify-between p-4 cursor-pointer"
-                            onClick={() => toggleAccordion(Number(report.id))}
+                <div className="flex items-center mx-auto space-x-4 justify-end">
+                    <div className="flex space-x-4 items-center">
+                        <button
+                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow text-sm"
+                            onClick={handleManageSchedules}
                         >
-                            <span className="font-medium text-gray-700">{report.title}</span>
-                            <span className="text-gray-500">{expanded === Number(report.id) ? "▲" : "▼"}</span>
-                        </div>
-                        {expanded === Number(report.id) && (
-                            <div className="p-4 border-t border-gray-200">
-                                <p className="text-gray-600 mb-4 font-normal text-start ">{report.description}</p>
-                                <div className="flex space-x-4">
-                                    <button className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm" onClick={() => handleView(report.id)}>
-                                        View
-                                    </button>
-                                    <button className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm" onClick={() => handleDownload(report.id, report.title)}>
-                                        Download
-                                    </button>
+                            Manage Schedules
+                        </button>
+                    </div>
+                    <div>
+                        {/* Button to Open Modal */}
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        >
+                            Generate Report Now
+                        </button>
+
+                        {/* Modal */}
+                        <ReportModal
+                            isOpen={isModalOpen}
+                            reportData={{}} // Provide initial report data (if any)
+                            onSave={handleInstant}
+                            onClose={handleClose}
+                        />
+
+                        {/* Loading Screen */}
+                        {isLoading && (
+                            <div
+                                className="fixed inset-0 bg-gray-500 bg-opacity-50 flex items-center justify-center z-50">
+                                <div className="bg-white p-6 rounded-lg shadow-lg">
+                                    <p className="text-lg font-semibold">Requesting Report...</p>
+                                    <div className="mt-4">
+                                        <div
+                                            className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full border-blue-500 border-t-transparent"></div>
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </div>
+
+                </div>
+            </div>
+
+            {/* Report List */}
+            <div className="space-y-4 flex-col">
+                {filteredReports.map((report) => (
+                    <div
+                        key={report.id}
+                        className="bg-white border flex border-gray-200 rounded-lg shadow-sm"
+                    >
+
+                        <div className="p-4 border-t border-gray-200">
+                            <p className="text-gray-600 mb-4 font-normal text-start ">{report.title}</p>
+                            <div className="flex space-x-4">
+                                <button
+                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                                    onClick={() => handleView(report.id)}>
+                                    View
+                                </button>
+                                <button
+                                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+                                    onClick={() => handleDownload(report.id, report.title)}>
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
                 ))}
             </div>
-            
+
         </div>
     );
 };

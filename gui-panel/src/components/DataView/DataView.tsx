@@ -1,13 +1,14 @@
 import React, {useEffect, useState} from 'react';
 import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
-import {simulateChartData} from "../../api/QuerySimulator";
+import {fetchData} from "../../api/DataFetcher";
 import FilterOptions, {Filter} from "../Selectors/FilterOptions";
 import {TimeFrame} from "../Selectors/TimeSelect"
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 import KpiSelect from "../Selectors/KpiSelect";
 import GraphTypeSelector from "../Selectors/GraphTypeSelector";
 import AdvancedTimeSelect from "../Selectors/AdvancedTimeSelect";
+import DataManager from "../../api/DataManager";
 
 
 const KpiSelector: React.FC<{
@@ -21,7 +22,18 @@ const KpiSelector: React.FC<{
     setFilters: (filters: Filter) => void;
     onGenerate: () => void;
     dataManager: PersistentDataManager;
-}> = ({kpi, setKpi, timeFrame, setTimeFrame, graphType, setGraphType, filters, setFilters, onGenerate, dataManager}) => {
+}> = ({
+          kpi,
+          setKpi,
+          timeFrame,
+          setTimeFrame,
+          graphType,
+          setGraphType,
+          filters,
+          setFilters,
+          onGenerate,
+          dataManager
+      }) => {
     useEffect(() => {
         onGenerate();
     }, [kpi, timeFrame, graphType, filters]); // Dependencies to listen for changes
@@ -68,8 +80,8 @@ const DataView: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
     const [kpi, setKpi] = useState<KPI>(dataManager.getKpiList()[0]);
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({
-        from: new Date(2024, 3, 1),
-        to: new Date(2024, 10, 19),
+        from: new Date(2024, 2, 2),
+        to: new Date(2024, 9, 19),
         aggregation: "month"
     });
     const [graphType, setGraphType] = useState('pie');
@@ -81,8 +93,12 @@ const DataView: React.FC = () => {
     const fetchChartData = async () => {
         try {
             setLoading(true);
-            const data = await simulateChartData(kpi, timeFrame, graphType, filters);
-            setChartData(data);
+
+            // if one of the parameters is not set, return
+            if (kpi && timeFrame && graphType && DataManager.getInstance().getMachineList()) {
+                const data = await fetchData(kpi, timeFrame, graphType, filters);
+                setChartData(data);
+            }
         } catch (e) {
         } finally {
             setLoading(false);
