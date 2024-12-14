@@ -15,7 +15,8 @@ from queryGen.QueryGen import QueryGenerator
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
-from langchain.prompts import FewShotPromptTemplate, PromptTemplate
+from langchain.prompts import PromptTemplate,FewShotPromptTemplate
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
@@ -122,7 +123,7 @@ def prompt_classifier(input: Question, userId: str):
         {"text": "Predict for the next month the cost_working_avg for Large Capacity Cutting Machine 2 based on last three months data", "label": "predictions"},
         {"text": "Generate a new kpi named machine_total_consumption which use some consumption kpis to be calculated", "label": "new_kpi"},
         {"text": "Compute the Maintenance Cost for the Riveting Machine 1 for yesterday", "label": "kpi_calc"},
-        {"text": "Can describe cost_working_avg?", "label": "kb_q"},
+        {"text": "Can you describe cost_working_avg?", "label": "kb_q"},
         {"text": "Make a report about bad_cycles_min for Laser Welding Machine 1 with respect to last week", "label": "report"},
         {"text": "Create a dashboard to compare performances for different type of machines", "label": "dashboard"},
     ]
@@ -158,16 +159,17 @@ async def ask_kpi_engine(json_body):
     and returns the data about machine power consumption.
 
     Args:
-        json_body (str): the json used to communicate with the KPI engine API.
+        json_body (str): the json used to communicate the request to the KPI engine API.
 
     Returns:
         dict: A dictionary containing the success status and the KPI data.
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
-    # kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
-    kpi_engine_url = "https://kpi.engine.com/api"  
+    kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
 
+    """
+    kpi_engine_url = "https://kpi.engine.com/api"  
     mock_response = httpx.Response(
       status_code=200,
 
@@ -204,16 +206,16 @@ async def ask_kpi_engine(json_body):
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
             response = await client.get("url")
-
-    #async with httpx.AsyncClient() as client:
-    #    response = await client.post(kpi_engine_url,json=json_body)
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.post(kpi_engine_url,json=json_body)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
     else:
         return {"success": False, "error": response.text}  
 
-async def ask_predictor_engine(url):
+async def ask_predictor_engine(json_body):
     """
     Function to query the predictor engine for machine prediction data.
 
@@ -221,30 +223,18 @@ async def ask_predictor_engine(url):
     and returns predicted values related to machine operation.
 
     Args:
-        url (str): The URL endpoint for the predictor engine API.
+        json_body (str): the json used to communicate the request to the predictor engine API.
 
     Returns:
         dict: A dictionary containing the success status and the prediction data.
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
+    predictor_engine_url = "http://data-processing:8000/data-processing/predict" 
+    """
     predictor_engine_url = "https://predictor.engine.com/api"  
-
     mock_response = httpx.Response(
       status_code=200,
-      # json = [{
-      #   'Machine name': 'Riveting Machine',
-      #   'KPI name': 'idle_time',
-      #   'Value': '1,12',
-      #   'Forecast': True
-      # },
-      # {
-      #   'Machine name': 'Laser Cutter',
-      #   'KPI name': 'idle_time',
-      #   'Value': '0,123',
-      #   'Date': '12/10/2024',
-      #   'Forecast': True
-      # }]
       json = [{
         "Machine_name": "Riveting Machine",
         "Predicted": True,
@@ -265,16 +255,16 @@ async def ask_predictor_engine(url):
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
-
-    # async with httpx.AsyncClient() as client: TO-DO
-    #     response = await client.get(url)
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url=predictor_engine_url,json=json_body)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
     else:
         return {"success": False, "error": response.text}  
 
-async def handle_predictions(url):
+async def handle_predictions(json_body):
     """
     Handles the response from the predictor engine.
 
@@ -282,12 +272,12 @@ async def handle_predictions(url):
     into a string representation of the prediction data.
 
     Args:
-        url (str): The URL endpoint for the predictor engine API.
+        json_body (str): the json used to communicate the request to the predictor engine API.
 
     Returns:
         str: A string representing the prediction data formatted for the response.
     """
-    response = await ask_predictor_engine(url)
+    response = await ask_predictor_engine(json_body)
     response = ",".join(json.dumps(obj) for obj in response['data'])
     return response
 
@@ -323,8 +313,7 @@ async def handle_report(json_obj):
     Returns:
         str: A formatted report string containing both KPI and prediction data.
     """
-    url =""
-    predictor_response = await ask_predictor_engine(url)
+    predictor_response = await ask_predictor_engine(json_obj)
     kpi_response = await ask_kpi_engine(json_obj)
     predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
     kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
@@ -362,7 +351,7 @@ async def handle_kpi_calc(json_body):
     the response data, and returns it as a formatted string.
 
     Args:
-        url (str): The URL endpoint for the KPI engine API.
+        json_body (str): the json used to communicate the request to the KPI engine API.
 
     Returns:
         str: A string containing the KPI calculation data in a formatted form.
@@ -440,7 +429,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         url=""
         # Mapping of handlers
         handlers = {
-            'predictions': lambda: handle_predictions(url),
+            'predictions': lambda: handle_predictions(json_body),
             'new_kpi': lambda: handle_new_kpi(question, llm, graph, history[userId]),
             'report': lambda: handle_report(json_body),
             'dashboard': lambda: handle_dashboard(question, llm, graph, history[userId]),

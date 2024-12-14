@@ -22,7 +22,7 @@ class QueryGenerator:
         PREFIX ontology: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
         SELECT ?id WHERE {
         ?kpi rdf:type ?type.
-        FILTER (?type IN (ontology:ProductionKPI_Production, ontology:AtomicIdleTime, ontology:AtomicGoodCycles, ontology:EnergyKPI_Cost, ontology:AtomicCycles, ontology:MachineUsageKPI, ontology:AtomicOfflineTime, ontology:ProductionKPI_Quality, ontology:EnergyKPI_Consumption, ontology:AtomicWorkingTime, ontology:AtomicPower, ontology:AtomicCostWorking, ontology:AtomicCostIdle, ontology:AtomicCost, ontology:AtomicConsumptionWorking, ontology:AtomicAvgCycleTime, ontology:AtomicConsumption, ontology:AtomicBadCycles, ontology:AtomicConsumptionIdle, ontology:CustomKPItmp)).
+        FILTER (?type IN (ontology:ProductionKPI_Production, ontology:EnergyKPI_Consumption, ontology:EnergyKPI_Cost, ontology:MachineUsageKPI, ontology:ProductionKPI_Quality, ontology:CustomKPItmp)).
         ?kpi ontology:id ?id .
         }
         """
@@ -149,19 +149,19 @@ class QueryGenerator:
         
         self._kb_update()
         YESTERDAY = f"{(self.TODAY-relativedelta(days=1)).strftime('%Y-%m-%d')} -> {(self.TODAY-relativedelta(days=1)).strftime('%Y-%m-%d')}"
-        
-        if label == "kpi_calc" or label == "predictions":
-            query= f"""
-            Completely ignore all information provided in previous requests. Treat this request as if it were the first and only one.
-
+        query= f"""
             USER QUERY: {input}
 
             INSTRUCTIONS: Extract information from the USER QUERY based on the following rules and output it in the EXAMPLE OUTPUT specified format.
+
+            LIST_1 (list of machines): '{self.machine_res}'
+            LIST_2 (list of kpis): '{self.kpi_res}'
 
             RULES:
             1. Match IDs:
                 -Look for any terms in the query that match IDs from LIST_1 or LIST_2.
                 -If a match contains a machine type without a specific number, return all machines of that type. Example: 'Testing Machine' -> ['Testing Machine 1', 'Testing Machine 2', 'Testing Machine 3'].
+                -Every matched id MUST be enclosed in ' ' before being provided to the output.
             2. Determine Time Window:
                 -if there is time window described by exact dates, use them, otherwise return the expression which individuates the time window: 'last/next X days/weeks/months' using the format <last/next, X, days/weeks/months>
                 -If no time window is specified, use NULL.
@@ -171,17 +171,51 @@ class QueryGenerator:
                 -Allow for minor spelling or formatting mistakes in the matched expression and correct them as done in the examples below.
             3. Handle Errors:
                 -Allow for minor spelling or formatting mistakes in the input.
-                -If there is ambiguity matching a kpi, if exist, you can match USER QUERY with the one which ends with '_avg'
+                -If there is ambiguity matching a kpi, if exist, you can match USER QUERY with the one which ends with '_avg'"""
+        
+        # There is a different output format between report and (kpi_calc and predictions) use cases so there will be a different prompt
+        # kpi_cal and predictions prompt
+        if label == "kpi_calc" or label == "predictions":
+            query+=f"""
             4. Output Format:
                 -For each unique combination of machine IDs and KPIs, return a tuple in this format: ([matched LIST_1 IDs], [matched LIST_2 IDs], time window).
+                
+            NOTES:
+            -If no IDs from LIST_1 are associated with the matched KPIs, return [NULL] as [matched LIST_1 IDs].
+            -If a match refers to all machines, return [NULL] as [matched LIST_1 IDs].
+            -Ensure output matches the one of the EXAMPLES below exactly, I need only the OUTPUT section.
+
+            EXAMPLES:
+            '
+            LIST_1: [cost_idle_avg, cost_idle_std, offline_time_med, offline_time_max, working_time_min, working_time_sum, working_time_avg]
+            LIST_2: [Assembly Machine 1, Low Capacity Cutting Machine 1, Assembly Machine 2]
+
+            INPUT: Calculate the kpi cost_idle arg and cost idle std for the assembly machine 1 and Low capacity cutting machine for the past 5 day, calculate offlinetime med for Assembly machine 2 for the last two months and cost_idle_avg for Assembly machine. How much do the Assembly machine 2 has worked the last three days?
+            OUTPUT: (['Assembly Machine 1', 'Low Capacity Cutting Machine 1'], ['cost_idle_avg', 'cost_idle_std'], <last, 5, days>), (['Assembly Machine 2'], ['offline_time_med'], <last, 2, months>), (['Assembly Machine 1', 'Assembly Machine 2'], ['cost_idle_avg'], NULL), (['Assembly Machine 2'], ['working_time_sum'], <last, 3, days>)
+
+            INPUT: Calculate using data from the last 2 weeks the standard deviation for cost_idle of Low capacity cutting machine 1 and Assemby Machine 2. Calculate for the same machines also the offline time median using data from the past month. Calculate also the highest offline time for low capacity cutting machine 1?
+            OUTPUT: (['Low Capacity Cutting Machine 1', 'Assembly Machine 2'], ['cost_idle_std'], <last, 2, weeks>), (['Low Capacity Cutting Machine 1', 'Assembly Machine 2'], ['offline_time_med'], <last, 1, months>), (['Low Capacity Cutting Machine 1'], ['offline_time_max'], NULL)
+
+            INPUT: Can you calculate the working time for Assembly machine 1 based on yesterday data, the same kpi dor Assembly machine 2 for last week. What is the day low capacity cutting machine 1 had the lowest working time last 2 months.
+            OUTPUT: (['Assembly Machine 1'], ['working_time_avg'], {YESTERDAY}), (['Assembly Machine 2'], ['working_time_avg'], <last, 1, weeks>), (['Low Capacity Cutting Machine 1'], ['working_time_min'], <last, 2, months>)
+
+            INPUT: Predict working time min and the average for Assembly machine for {(self.TODAY + relativedelta(days=5)).strftime('%Y/%m/%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y/%m/%d')} and the same kpis for all machines. What will be the the total amount of working time for low capacity cutting machine 1 and assembly machine 1 for next 5 weeks.
+            OUTPUT: (['Assembly Machine 1', 'Assembly Machine 2'], ['working_time_min','working_time_avg'], {(self.TODAY + relativedelta(days=5)).strftime('%Y-%m-%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y-%m-%d')}), ([NULL], ['working_time_min','working_time_avg'], NULL), (['Low Capacity Cutting Machine 1', 'Assembly Machine 1'], ['working_time_sum'], <next, 5, weeks>)
+
+            INPUT: Predict for all the assembly machine the cost idle average and the sum of working time for the next 3 weeks and for low capacity cutting machne the cost_idle_std for March 2025. predict also for Assembly machine 1 the cost_idle  for the next two days.
+            OUTPUT: (['Assembly Machine 1', 'Assembly Machine 2'], ['cost_idle_avg', 'working_time_sum'], <next, 3, weeks>), (['Low Capacity Cutting Machine 1'], ['cost_idle_std'], 2025-03-01 -> 2025-03-31), (['Assembly Machine 1'], ['cost_idle_avg'], <next, 2, days>)
+            '
+            """
+        else:
+            query+=f"""
+            4. Output Format:
+                -For each unique combination of machine IDs and KPIs, return a tuple in this format: ([matched LIST_1 IDs], [matched LIST_2 IDs], time window_predict, time window_calculate), where:
+                    +
                 
             NOTES:
             -If no IDs from LIST_1 are associated with the matched KPIs, use NULL for machines.
             -If a match refers to all machines, use NULL for machines.
             -Ensure output matches the one of the EXAMPLES below exactly, I need only the OUTPUT section.
-
-            LIST_1 (list of machines): '{self.machine_res}'
-            LIST_2 (list of kpis): '{self.kpi_res}'
 
             EXAMPLES:
             '
@@ -204,22 +238,20 @@ class QueryGenerator:
             OUTPUT: ([Assembly Machine 1, Assembly Machine 2], [cost_idle_avg, offline_time_med], <next, 3, weeks>), ([Low Capacity Cutting Machine 1], [cost_idle_std], 2025-03-01 -> 2025-03-31), ([Assembly Machine 1], [cost_idle_avg], <next, 2, days>)
             '
             """
-        else:
-            # PLACE_HOLDER REPORT
-            query=""
 
         data = self.llm.invoke(query)
         data = data.content.strip("\n")
-        print()
         print(data)
         json_obj = self._json_parser(data)
         
         print("\n")
         print(json_obj)
+        
 
         return json_obj
     
 #TODO:
 # se l putput di date_parser è invalid date, si termina la catena e si stampa in out dalla catena il mesaggio di errore?
 # supporto ai diversi significati di NULL per le date in base al label.
+#   INVALID DATE nel parser?
 # strippare degli spazi le date che si buttano in date parser
