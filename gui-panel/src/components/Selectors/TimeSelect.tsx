@@ -21,6 +21,13 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
         return {from, to, aggregation: 'hour', key: 'today'};
     };
 
+    const getRecentDays = (): TimeFrame => {
+        const today = new Date();
+        const from = new Date(today.setDate(today.getDate() - 4)); // 4 days ago
+        const to = new Date(); // Current time
+        return {from, to, aggregation: 'day', key: 'last3Days'};
+    }
+
     const getThisWeekTimeFrame = (): TimeFrame => {
         const today = new Date();
         const from = new Date(today.setDate(today.getDate() - 6)); // First day of the week
@@ -66,9 +73,13 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
 
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
-
+        console.log("Selected Timeframe:", value);
+        console.log("Old Timeframe:", timeFrame);
         if (value === "today") {
             setTimeFrame(getTodayTimeFrame());
+        } else
+        if (value === "last3Days") {
+            setTimeFrame(getRecentDays());
         } else if (value === "thisWeek") {
             setTimeFrame(getThisWeekTimeFrame());
         } else if (value === "thisMonth") {
@@ -92,7 +103,7 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
                         onChange={handleChange}
                         value={timeFrame ? timeFrame.key : ''}
                     >
-                        <option value="today">Today</option>
+                        <option value="last3Days">Last 3 days</option>
                         <option value="thisWeek">This Week</option>
                         <option value="thisMonth">This Month</option>
                         <option value="thisYear">This Year</option>

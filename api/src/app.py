@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.kpi import Kpi
 from model.kpi_calculate_request import KpiRequest
+from model.prediction import Json_in, Json_out
 from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
@@ -28,23 +29,30 @@ from pathlib import Path
 
 from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
-from model.historical import HistoricalQueryParams, HistoricalData
+from model.historical import HistoricalQueryParams
 # TODO: how to import modules from rag directory ??
-from model.agent import Answer
+from model.agent import Answer, Question
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
+import sys, hashlib
+from io import BytesIO
 
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
-import sys
-from io import BytesIO
 
 logging.basicConfig(level=logging.INFO)
 
 tasks: dict[str, Task] = dict()
 tasks_lock = asyncio.Lock()
 last_task_id = 0
+
+def hash_data(data: tuple) -> tuple:
+    hashed_data = [] 
+    for item in data: 
+        hashed_value = hashlib.sha256(str(item).encode('utf-8')).hexdigest()  
+        hashed_data.append(hashed_value)  
+    return tuple(hashed_data)  
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
@@ -205,7 +213,7 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()
         query = "SELECT * FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
-        response = query_db_with_params(cursor, connection, query, (body.user,))
+        response = query_db_with_params(cursor, connection, query, hash_data((body.user,)))
 
         if not response or (body.password != response[0][4]):
             logging.error("Invalid credentials")
@@ -280,7 +288,7 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
         connection, cursor = get_db_connection()
         # Check if user already exists
         query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
-        response = query_db_with_params(cursor, connection, query, (body.username, body.email))
+        response = query_db_with_params(cursor, connection, query, hash_data((body.username, body.email)))
         user_exists = response
         logging.info(user_exists)
 
@@ -288,10 +296,12 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             logging.error("User already registered")
             raise HTTPException(status_code=400, detail="User already registered")
         else:
+            hashed_username, hashed_email, hashed_role = hash_data((body.username, body.email, body.role))
+            hashed_site = hash_data((body.site,))[0]
 
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
-            cursor.execute(query_insert, (body.username, body.email, body.role, body.password, body.site))
+            cursor.execute(query_insert, (hashed_username, hashed_username, hashed_role, body.password, hashed_site))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
@@ -314,7 +324,7 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
     Args:
         body (ChangePassword): the user details of the user, including both the new and old password.
     Returns:
-        UserInfo object with the details of the user created.
+        JSONResponse: A response object with status code 200 if the password is changed successfully.
     Raises:
         HTTPException: If the user is not present in the database, the old password is incorrect, or an unexpected error occurs
     """
@@ -389,7 +399,6 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
         Response: A response object with status code 200 if the dashboard disposition is saved successfully.
     Raises:
         HTTPException: If an unexpected error occurs.
-        
     '''
     try:
         if persist_dashboard_settings(userId, dashboard_settings) == False:
@@ -402,6 +411,16 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
     
 @app.get("/smartfactory/reports")
 def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve a user's reports.
+    This endpoint receives the user id and retrieves all the user's reports.
+    Args:
+        userId: the id of the user.
+    Returns:
+        A Json with a list of ReportResponse objects.
+    Raises:
+        HTTPException: If a server exception occurs.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT ReportID, Name, Type, FilePath FROM Reports WHERE OwnerID = %s"
@@ -421,6 +440,16 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
     
 @app.get("/smartfactory/reports/download/{report_id}")
 def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to download a report.
+    This endpoint receives the report id and sends back the report data in pdf format.
+    Args:
+        report_id: the id of the report.
+    Returns:
+        A PDF file.
+    Raises:
+        HTTPException: If a server exception occurs or the report is not found.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT ReportID, Name, OwnerID, FilePath FROM Reports WHERE ReportID = %s"
@@ -447,13 +476,21 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-def call_ai_agent(input: str):
+def call_ai_agent(input: Question):
+    """
+    This function performs a call to the RAG AI agent.
+    Args:
+        input: the user text input.
+    Returns:
+        The response of the API call.
+    """
     headers = {
         'Content-Type': 'application/json',
         'x-api-key': os.getenv('API_KEY')
     }
     body = {
-        'userInput': input
+        'userInput': input.userInput,
+        'userId': input.userId
     }
     print(f"sending request to RAG API: {body}")
     response = requests.post(os.getenv('RAG_API_ENDPOINT'), headers=headers, json=body)
@@ -461,6 +498,16 @@ def call_ai_agent(input: str):
     return response
 
 def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str, type: str = None):
+    """
+    This function inserts the report PDF in the DB.
+    Args:
+        answer: the Answer object from the AI agent.
+        userId: the id of the user.
+        tmp_path: the path where to save the .
+        type: the type of the report.
+    Returns:
+        The id of the report.
+    """
     connection, cursor = get_db_connection()
     obj_path = "/reports/"+userId+"/"+obj_name+".pdf"
     create_pdf(answer.data, answer.textExplanation, tmp_path)
@@ -475,6 +522,13 @@ def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str,
     return response[0]
 
 def create_pdf(text: str, appendix: str, path: str):
+    """
+    This function creates a PDF file.
+    Args:
+        text: the text of the PDF.
+        appendix: the appendix of the PDF.
+        path: the path where to save the PDF.
+    """
     pdf = FPDF()
     try:
         pdf.set_font('Arial', '', 12)
@@ -491,14 +545,13 @@ def create_pdf(text: str, appendix: str, path: str):
         pdf.ln()
         pdf.ln()
         pdf.set_font('Arial', '', 12)
-        appendix = appendix.replace("\n", "ACAPO")
         appendix = json.loads(appendix)
         for obj in appendix:
-            if obj["context"] is not None and obj["reference_number"] is not None and obj["source_name"] is not None:
+            if obj.get("context", None) is not None and obj.get("reference_number", None) is not None and obj.get("source_name", None) is not None:
                 pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
                 pdf.ln()
                 pdf.cell(190, 5, "Context:")
-                lines = obj["context"].split("ACAPO")
+                lines = obj["context"].split("\n")
                 for line in lines:
                     if len(line) > 0:
                         pdf.multi_cell(190, 5, line)
@@ -518,6 +571,18 @@ def create_pdf(text: str, appendix: str, path: str):
 
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
 def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Report, ScheduledReport], Body()], is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to download a report.
+    This endpoint receives the report id and sends back the report data in pdf format.
+    Args:
+        userId: the id of the user.
+        params: the settings of the report to generate, as Report or ScheduledReport.
+        is_scheduled: check if the generate comes from a scheduled process.
+    Returns:
+        A PDF file.
+    Raises:
+        HTTPException: If a server exception occurs or the user is not found.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID FROM Users WHERE UserID = %s"
@@ -546,7 +611,8 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
             kpi=",".join(params.kpis),
             machines=",".join(params.machines)
         )
-        ai_response = call_ai_agent(filled_prompt).json()
+        question = Question(userInput=filled_prompt, userId=userId)
+        ai_response = call_ai_agent(question).json()
         logging.info(ai_response)
         answer = Answer.model_validate(ai_response)
         tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
@@ -572,12 +638,27 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
         raise HTTPException(status_code=500, detail=str(e))
     
 def generate_and_send_report(userId: str, email: str, params: ScheduledReport, api_key: str):
+    """
+    This function generates a schedules report and sends it via email.
+    Args:
+        userId: the id of the user.
+        email: the email where to send the report.
+        params: the settings of the report.
+    """
     logging.info("Started scheduled report generation")
     report_name, to_email, tmp_path = generate_report(userId, params, True, api_key)
     send_report(to_email, report_name, tmp_path)
 
 @app.get("/smartfactory/reports/schedule")
 def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to retrieve the schedules.
+    This endpoint receives the user id and sends back the schedules set by that user.
+    Args:
+        userId: the id of the user.
+    Returns:
+        A Json file with the list of ScheduledReport objects.
+    """
     schedules = []
     minio = get_minio_connection()
     objects = minio.list_objects(bucket_name="settings", recursive=True)
@@ -597,6 +678,15 @@ def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["
 
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
 async def schedule_report(userId: Annotated[str, Body()], params: Annotated[ScheduledReport, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to schedule a report.
+    This endpoint receives the user id and schedules a report.
+    Args:
+        userId: the id of the user.
+        params: the settings of the report to schedule.
+    Raises:
+        HTTPException: If a server exception occurs or the user is not found.
+    """
     try:
         connection, cursor = get_db_connection()   
         query = "SELECT UserID, Email FROM Users WHERE UserID = %s"
@@ -772,9 +862,10 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         raise HTTPException(status_code=500, detail="Empty user input")
     try:
         # Send the user input to the RAG API and get the response
-        response = call_ai_agent(userInput)
+        # build the Question object
+        question = Question(userInput=userInput, userId=userId)
+        response = call_ai_agent(question)
         answer = response.json()
-        logging.info("Answer:", answer)
         if answer.label == 'new_kpi':
             # add new kpi
             try:
@@ -794,6 +885,8 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
                 report_id = create_report_pdf(answer, userId, tmp_path, report_name)
                 # replace the data with the report id
                 answer.data = str(report_id)
+                answer.textResponse = report_name
+                logging.info("Agent answer: %s", answer)
             except Exception as e:
                 logging.error("Exception: %s", str(e))
                 raise HTTPException(status_code=500, detail=str(e))
@@ -812,21 +905,41 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     Args:
         historical_params (HistoricalQueryParams): The parameters for the historical data query.
     Returns:
-        HistoricalData: The historical data retrieved from the database.
+        response: The historical data retrieved from the database.
     Raises:
         HTTPException: If the query parameters are malformed or an unexpected error occurs.
     """
-    
+
     # check if group_time has valid values
     if historical_params.group_time and historical_params.group_time not in ['P1D', 'P1W', 'P1M']:
         raise HTTPException(status_code=400, detail="Invalid group_time value")
-    
+
     # check if necessary fields are not empty
     if not historical_params.kpi or not historical_params.timeframe or not historical_params.machines:
         raise HTTPException(status_code=400, detail="Missing required fields")
 
+    # The database only supports the following fields for a KPI ID
+    # the others will need to be requested using the calculate KPI endpoint
+    valid_fields = {"sum", "min", "max", "avg"}
+    kpi_id = historical_params.kpi
+    kpi_name, field = None, None
+
+    # Check the last 3 characters of the KPI ID
+    # Extract the suffix to get the field
+    if kpi_id[-3:] in valid_fields:
+        # Find the last underscore
+        split_index = kpi_id.rfind("_")
+
+        # Dividi il nome del KPI
+        kpi_name = kpi_id[:split_index]
+        field = kpi_id[split_index + 1:]
+
+    # check if the kpi is valid and was split correctly
+    if not kpi_name or not field:
+        raise HTTPException(status_code=400, detail="Invalid KPI ID")
+
     # substitute square brackets with parentheses in machine list
-    historical_params.machines = tuple(historical_params.machines) 
+    historical_params.machines = tuple(historical_params.machines)
 
     # remove commas from machines string in case it's a single one
     if len(historical_params.machines) == 1:
@@ -837,26 +950,53 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     try:
         # Build the query body
 
-        # group_time is optional and has values: 
+        # group_time is optional and has values:
         # 'P1D'for daily intervals
         # 'P1W' for weekly intervals
         # 'P1M' for monthly intervals.
-        
-        query =  """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
-                    AND asset_id IN {} GROUP BY 
+
+        ''' previous code
+        query = """SELECT name, TIME_FORMAT(__time, 'yyyy-MM-dd') AS timeframe FROM \"timeseries\" WHERE kpi = '{}' AND '__time' >= '{}' AND __time < '{}' 
+                    AND name IN {} GROUP BY 
         """.format(
             historical_params.kpi, historical_params.timeframe["start_date"],
             historical_params.timeframe["end_date"], machines
-            )
-        
+        )
+
         # append optional group by time clause
-        if historical_params.group_time :
+        if historical_params.group_time:
             query += f"""TIME_FLOOR(__time, '{historical_params.group_time}'),"""
-        
+
         query += "name, __time"
-        
+        '''
+
+        # Base SELECT and FROM
+        query = f"""
+                    SELECT name,
+                """
+
+        # Include time formatting only for time series (group_time is present)
+        if historical_params.group_time:
+            query += f"TIME_FORMAT(TIME_FLOOR(__time, '{historical_params.group_time}'), 'yyyy-MM-dd') AS \"timestamp\", "
+
+        # Add KPI field aggregation, since max,avg etc. are keywords, they need to be enclosed in double quotes
+        query += f"SUM(\"{field}\") AS {kpi_id} FROM \"timeseries\" WHERE kpi = '{kpi_name}'"
+
+        # Add WHERE clause for timeframe and machines
+        query += f"""
+                      AND __time >= TIMESTAMP '{historical_params.timeframe["start_date"]}'
+                      AND __time < TIMESTAMP '{historical_params.timeframe["end_date"]}'
+                      AND name IN {machines}
+                """
+
+        # Add GROUP BY clause
+        query += " GROUP BY name"
+        # Group by time if present
+        if historical_params.group_time:
+            query += f", TIME_FLOOR(__time, '{historical_params.group_time}')"
+
         # Execute the query
-        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query" : query})
+        response = execute_druid_query(os.getenv('DRUID_QUERY_ENDPOINT'), {"query": query})
         if response:
             print("Query response:", response)
         else:
@@ -865,8 +1005,36 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
     return response
+
+@app.post('/smartfactory/predict', response_model=Json_out)
+def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to get a prediction from the ML model.
+    This endpoint receives a set of parameters and retrieves a prediction from the ML model based on those parameters.
+    Args:
+        pred_request (Json_in): The parameters for the prediction request.
+        api_key (str): The API key for authentication.
+    Returns:
+        response: The prediction data retrieved from the ML model.
+    Raises:
+        HTTPException: If the prediction request is malformed or an unexpected error occurs.
+    """
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': os.getenv('API_KEY')
+    }  
+    logging.info("sending request to data processing: %s", pred_request)
+    try:
+        # Send the prediction request to the data processing module and get the response
+        response = requests.post(os.getenv('DATA_PROCESSING_ENDPOINT'), json=jsonable_encoder(pred_request), headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    return response.json()
+
 
 @app.get("/smartfactory/dummy")
 async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -879,21 +1047,4 @@ async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
 
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
-    '''
-    time.sleep(20)
-    register(Register(username="test", email="test@test.it", role="admin", password="test", site="Test"))
-    answer = Answer(data="pdf Test Report", label="report")
-    try:
-        # generate report
-        # name is based on the current datetime
-        report_name = "report_" + str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-        tmp_path = "/tmp/" + report_name + ".pdf"
-        try:
-            logging.info("Generating report: %s", answer.data)
-            create_report_pdf(answer, '1', tmp_path, report_name)
-        except Exception as e:
-            logging.error("Exception: %s", str(e))
-            raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        print(e)
-    '''
+ 

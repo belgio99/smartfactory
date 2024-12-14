@@ -1,5 +1,10 @@
 name: Build Docker Compose Services
 
+concurrency: 
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+
 on:
   push:
     branches:
@@ -31,7 +36,6 @@ jobs:
       - name: Parse changed services
         id: parse-changes
         run: |
-          # Lista delle cartelle dei servizi
           services="database kb data-processing api rag gui-panel kpi-engine"
           changed_services=""
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
@@ -39,7 +43,8 @@ jobs:
             changed_services="$services"
           else
             for service in $services; do
-              if [[ "${{ steps.detect.outputs.all_changed_files }}" == *"$service/"* ]]; then
+              # Utilizzo di '^' per matchare l'inizio del path e '/' per assicurarsi che sia una directory
+              if [[ "${{ steps.detect.outputs.all_changed_files }}" =~ (^|[[:space:]])${service}/.*($|[[:space:]]) ]]; then
                 changed_services="$changed_services $service"
               fi
             done
@@ -92,6 +97,7 @@ jobs:
 
   build-containers:
     needs: detect-changes
+    if: needs.detect-changes.outputs.changed-services != ''
     runs-on: ubuntu-latest
     strategy:
       matrix:
