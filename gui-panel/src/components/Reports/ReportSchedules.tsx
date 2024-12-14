@@ -100,7 +100,7 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                 const requestData = {
                     userId: userId,
                     params: {
-                        id: newId.toString(),
+                        id: newId,
                         status: newSchedule.status === "Active",
                         name: newSchedule.name,
                         recurrence: newSchedule.recurrence,

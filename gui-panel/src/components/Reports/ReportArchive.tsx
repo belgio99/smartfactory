@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom"; // React Router
-import {downloadReport, getReports} from "../../api/ApiService";
+import {downloadReport, getReports, instantReport} from "../../api/ApiService";
 import ReportModal from "./InstantModal";
 
 type Report = {
@@ -23,7 +23,7 @@ interface ReportArchiveProps {
  */
 const handleView = async (reportId: string) => {
     try {
-        const blob = await downloadReport(reportId); // Usa la tua API già implementata
+        const blob = await downloadReport(reportId);
         const fileURL = URL.createObjectURL(blob);
 
         // Apri il file in una nuova scheda
@@ -71,7 +71,8 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleInstant = async (reportData: Partial<{
+    const handleInstant = async (partialReportData: Partial<{
+        machines: string[];
         name: string;
         email: string;
         period: string;
@@ -82,8 +83,24 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
 
         try {
             // TODO: Implement API request to generate instant report
+            console.log("Requesting report with data:", partialReportData);
             // Simulate a delay for loading screen demo purposes
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+
+            const reportData = {
+                id: new Date().getTime(),
+                name: partialReportData.name || "Unnamed Report",
+                email: partialReportData.email || "",
+                recurrence: partialReportData.period || "Daily",
+                kpis: partialReportData.kpis || [],
+                machines: partialReportData.machines || [],
+                status: true,
+                startDate: new Date().toISOString().split("T")[0],
+            };
+            const reportId = await instantReport(userId, reportData);
+
+            console.log("Report generated successfully with ID:", reportId);
+            // TODO: Handle the generated report ID appropriately (e.g., show success message)
+            await handleView(reportId); // Open the generated report in a new tab
 
             // Close modal after successful save
         } catch (error) {
@@ -229,21 +246,21 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                         className="bg-white border flex border-gray-200 rounded-lg shadow-sm"
                     >
 
-                            <div className="p-4 border-t border-gray-200">
-                                <p className="text-gray-600 mb-4 font-normal text-start ">{report.title}</p>
-                                <div className="flex space-x-4">
-                                    <button
-                                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                                        onClick={() => handleView(report.id)}>
-                                        View
-                                    </button>
-                                    <button
-                                        className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
-                                        onClick={() => handleDownload(report.id, report.title)}>
-                                        Download
-                                    </button>
-                                </div>
+                        <div className="p-4 border-t border-gray-200">
+                            <p className="text-gray-600 mb-4 font-normal text-start ">{report.title}</p>
+                            <div className="flex space-x-4">
+                                <button
+                                    className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                                    onClick={() => handleView(report.id)}>
+                                    View
+                                </button>
+                                <button
+                                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+                                    onClick={() => handleDownload(report.id, report.title)}>
+                                    Download
+                                </button>
                             </div>
+                        </div>
 
                     </div>
                 ))}

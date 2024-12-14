@@ -111,20 +111,6 @@ interface AIResponse {
 }
 
 /**
- * Interface KPIObject
- * @param id string (optional) - The ID of the KPI
- * @param name string - The name of the KPI
- * @param description string - The description of the KPI
- * @param formula string - The formula of the KPI
- */
-interface KPIObject {
-    id?: string;
-    name: string;
-    description: string;
-    formula: string;
-}
-
-/**
  * Interface KPIRequest, used by the calculateKPIValue API
  *
  * @param KPI_Name string - The KPI ID
@@ -163,7 +149,7 @@ export interface KPICalculation{
  * @param machines string[] - The machines of the report
  */
 interface ScheduleParams {
-    id: string;
+    id: number;
     status: boolean;
     name: string;
     recurrence: string;  // es: "Daily", "Weekly", ecc.
@@ -531,30 +517,6 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
 };
 
 /**
- * API POST used to insert the KPI
- * @param kpi KPI - The KPI to insert
- * @returns string - Promise will return the KPI ID
- */
-export const insertKPI = async (kpi: Omit<KPIObject, 'id'>): Promise<string> => {
-    try {
-        const response = await axios.post<{ kpiId: string }>(
-            `${BASE_URL}/smartfactory/kpi`,
-            {kpi},
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": API_KEY,
-                },
-            }
-        );
-        return response.data.kpiId;
-    } catch (error: any) {
-        console.error('Insert KPI API error:', error);
-        throw new Error(error.response?.data?.message || 'Failed to insert KPI');
-    }
-};
-
-/**
  * API POST used to update the Dashboard settings
  * @param userId string - The user ID
  * @param settings DashboardData - The dashboard settings
@@ -600,6 +562,30 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
         throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
     }
 };
+
+export const instantReport = async (userId: string, params: ScheduleParams): Promise<string> => {
+    try {
+        const response = await axios.post(
+            `${BASE_URL}/smartfactory/reports/generate`,
+            {
+                user_id: userId,
+                params: params
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+        return response.data;
+    } catch (error: any) {
+        console.error('Instant Report API error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to create instant report');
+    }
+}
+
+
 
 /**
  * API POST used to schedule a report generation.
