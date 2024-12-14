@@ -18,7 +18,7 @@ class kpi_dataframe_filter:
                 the original dataframe is returned without any changes.
         """
         if machine_id != 'all_machines':
-            return df[df['asset_id'] == machine_id]
+            return df[df['name'] == machine_id]
         return df
 
 

@@ -207,7 +207,7 @@ services:
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
     volumes:
-      - kb:/app/storage
+      - kb:/KB/storage
     platform: linux/amd64
     ports: 
       - "10010:8000"
@@ -272,7 +272,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - rag/.env
-      - rag/paths.env
     volumes:
       - kb:/docs/kb
     ports: 
@@ -344,7 +343,7 @@ services:
       VAULT_ADDR: "http://0.0.0.0:8200"
       VAULT_STORAGE_BACKEND: "file"  
     ports:
-      - "8200:8200"
+      - "18200:8200"
     profiles:
       - database
     logging:

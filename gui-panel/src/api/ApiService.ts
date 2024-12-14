@@ -1,9 +1,10 @@
 import axios from 'axios';
+import {KPI, Machine} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
-const API_KEY = '111c50cc-6b03-4c01-9d2f-aac6b661b716'; // API KEY
-
+// get the API key from the environment variables
+const API_KEY = process.env.REACT_APP_API_KEY || '';
 
 /**
  * Interface UserInfo
@@ -37,6 +38,17 @@ export interface Report {
     createdAt: string;
 }
 
+export interface HistoricalDataRequest {
+    kpi: string, // Use the KPI ID
+    timeframe: {
+        start_date: string,
+        end_date: string,
+    },
+    machines: string[], // List of machine IDs
+    group_time?: string, // Grouping logic
+}
+
+
 /**
  * Interface HistoricalDataResponse
  * @param any [key: string] any - The key of the historical data
@@ -50,6 +62,7 @@ export interface HistoricalDataResponse {
  * @param any [key: string] any - The key of the dashboard data
  */
 export interface DashboardData {
+    // json object
     [key: string]: any;
 }
 
@@ -58,7 +71,7 @@ export interface DashboardData {
  * @param any [key: string] string | number | boolean - The key of the user settings
  */
 export interface UserSettings {
-    [key: string]: string | number | boolean;
+    [key: string]: string;
 }
 
 /**
@@ -98,26 +111,32 @@ interface AIResponse {
 }
 
 /**
- * Interface KPIObject
- * @param id string (optional) - The ID of the KPI
- * @param name string - The name of the KPI
- * @param description string - The description of the KPI
- * @param formula string - The formula of the KPI
+ * Interface KPIRequest, used by the calculateKPIValue API
+ *
+ * @param KPI_Name string - The KPI ID
+ * @param Machine_Name string (optional) - The machine ID
+ * @param Date_Start string (optional) - The start time
+ * @param Date_Finish string (optional) - The end time
  */
-interface KPIObject {
-    id?: string;
-    name: string;
-    description: string;
-    formula: string;
+export interface KPIRequest {
+    KPI_Name: string,
+    Machine_Name?: string,
+    Date_Start?: string,
+    Date_End?: string
 }
 
-/**
- * Interface KPIValue
- * @param value string - The value of the KPI
- */
-interface KPIValue {
-    value: string;
+export interface KPICalculation {
+    Machine_Name: string,
+    Machine_Type: string,
+    KPI_Name: string,
+    Value: number,
+    Measure_Unit: string,
+    Date_Start: string,
+    Date_End: string,
+    Aggregator: string,
+    Forecast: boolean
 }
+
 
 /**
  * Interface ScheduleRequest
@@ -130,7 +149,7 @@ interface KPIValue {
  * @param machines string[] - The machines of the report
  */
 interface ScheduleParams {
-    id: string;
+    id: number;
     status: boolean;
     name: string;
     recurrence: string;  // es: "Daily", "Weekly", ecc.
@@ -299,46 +318,24 @@ export const getReports = async (userId: string): Promise<Report[]> => {
  * @param query string - Json to be converted into a query on the api layer
  * @returns Promise will return the requested historical data from the database
  */
-export const getHistoricalData = async (query: string): Promise<HistoricalDataResponse> => {
+export const getHistoricalData = async (query: HistoricalDataRequest): Promise<HistoricalDataResponse> => {
     try {
-        const response = await axios.get<{ data: HistoricalDataResponse }>(
+        console.log('Sending ', query);
+        const response = await axios.post<{ data: HistoricalDataResponse }>(
             `${BASE_URL}/smartfactory/historical`,
+            query,
             {
-                params: {query},
                 headers: {
                     "Content-Type": "application/json",
                     "x-api-key": API_KEY,
                 },
             }
         );
-        return response.data.data;
+        console.log('Historical Data Response:', response.data);
+        return response.data;
     } catch (error: any) {
         console.error('Get Historical Data API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to retrieve historical data');
-    }
-};
-
-/**
- * API GET used to get dashboards
- * @param userId string - The user ID
- * @returns Promise will return the dashboards
- */
-export const getDashboards = async (userId: string): Promise<DashboardData> => {
-    try {
-        const response = await axios.get<{ data: DashboardData }>(
-            `${BASE_URL}/smartfactory/dashboards`,
-            {
-                params: {userId},
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": API_KEY,
-                },
-            }
-        );
-        return response.data.data;
-    } catch (error: any) {
-        console.error('Get Dashboards API error:', error);
-        throw new Error(error.response?.data?.message || 'Failed to retrieve dashboards');
     }
 };
 
@@ -446,12 +443,13 @@ export const interactWithAgent = async (userId: string, userInput: string): Prom
 };
 
 /**
- * API POST used to get the KPIs
- * @returns KPIObject - Promise will return the KPIs
+ * API GET used to get the KPI list
+ * @returns Promise will return the KPIs decoded by the decodeGroups function
  */
-export const retrieveKPIs = async (): Promise<KPIObject[]> => {
+export const retrieveKPIs = async (): Promise<KPI[]> => {
     try {
-        const response = await axios.get<{ kpis: KPIObject[] }>(
+        // Fetch KPIs from the API
+        const response = await axios.get<{ kpis: Record<string, Record<string, any>> }>(
             `${BASE_URL}/smartfactory/kpi`,
             {
                 headers: {
@@ -460,7 +458,8 @@ export const retrieveKPIs = async (): Promise<KPIObject[]> => {
                 },
             }
         );
-        return response.data.kpis;
+        // Decode the response using the existing decodeGroups function
+        return KPI.decodeGroups(response.data);
     } catch (error: any) {
         console.error('Retrieve KPIs API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to retrieve KPIs');
@@ -468,58 +467,52 @@ export const retrieveKPIs = async (): Promise<KPIObject[]> => {
 };
 
 /**
- * API GET used to calculate the KPI value
- * @param kpiId string - The KPI ID
- * @param machineId string (optional) - The machine ID
- * @param startTime string (optional) - The start time
- * @param endTime string (optional) - The end time
- * @returns KPIValue - The KPI value
+ * API GET used to get the Machine list
+ * @returns Promise will return the Machines
  */
-export const calculateKPIValue = async (
-    kpiId: string,
-    machineId?: string,
-    startTime?: string,
-    endTime?: string
-): Promise<KPIValue> => {
+export const retrieveMachines = async (): Promise<Machine[]> => {
     try {
-        const response = await axios.get<KPIValue>(
-            `${BASE_URL}/smartfactory/${kpiId}/calculate`,
+        const response = await axios.get<{ machines: Record<string, Record<string, any>> }>(
+            `${BASE_URL}/smartfactory/retrieveMachines`,
             {
-                params: {machineId, startTime, endTime},
                 headers: {
                     "Content-Type": "application/json",
                     "x-api-key": API_KEY,
                 },
             }
         );
+        return Machine.decodeGroups(response.data);
+    } catch (error: any) {
+        console.error('Retrieve Machines API error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to retrieve machines');
+    }
+}
+
+
+/**
+ * API POST used to calculate the KPI value
+ * @param requests KPIRequest[] - The KPI request list
+ * @returns KPIValue - The KPI value
+ */
+export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalculation[]> => {
+    try {
+        console.log('Sending calculate KPI value request to:', `${BASE_URL}/smartfactory/calculate`);
+        console.log('Payload:', {requests});
+        const response = await axios.post<KPICalculation[]>(
+            `${BASE_URL}/smartfactory/calculate`,
+            requests,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            },
+        );
+        console.log('Calculate KPI Value response:', response.data);
         return response.data;
     } catch (error: any) {
         console.error('Calculate KPI Value API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to calculate KPI value');
-    }
-};
-
-/**
- * API POST used to insert the KPI
- * @param kpi KPI - The KPI to insert
- * @returns string - Promise will return the KPI ID
- */
-export const insertKPI = async (kpi: Omit<KPIObject, 'id'>): Promise<string> => {
-    try {
-        const response = await axios.post<{ kpiId: string }>(
-            `${BASE_URL}/smartfactory/kpi`,
-            {kpi},
-            {
-                headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": API_KEY,
-                },
-            }
-        );
-        return response.data.kpiId;
-    } catch (error: any) {
-        console.error('Insert KPI API error:', error);
-        throw new Error(error.response?.data?.message || 'Failed to insert KPI');
     }
 };
 
@@ -569,6 +562,29 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
         throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
     }
 };
+
+export const instantReport = async (userId: string, params: ScheduleParams): Promise<string> => {
+    try {
+        const response = await axios.post(
+            `${BASE_URL}/smartfactory/reports/generate`,
+            {
+                user_id: userId,
+                params: params
+            },
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+        return response.data;
+    } catch (error: any) {
+        console.error('Instant Report API error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to create instant report');
+    }
+}
+
 
 /**
  * API POST used to schedule a report generation.
@@ -641,3 +657,20 @@ export const logout = async (userId: string): Promise<void> => {
         throw new Error(error.response?.data?.message || 'Failed to logout');
     }
 };
+
+export const dummyCheck = async (): Promise<void> => {
+    try {
+        await axios.get(
+            `${BASE_URL}/smartfactory/dummy`,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+    } catch (error: any) {
+        console.error('Dummy Check API error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to check dummy');
+    }
+}

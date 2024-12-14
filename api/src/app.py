@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from model.alert import Alert
 from model.kpi import Kpi
 from model.kpi_calculate_request import KpiRequest
+from model.prediction import Json_in, Json_out
 from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
 from database.connection import get_db_connection, query_db_with_params, close_connection
@@ -30,7 +31,7 @@ from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
 from model.historical import HistoricalQueryParams
 # TODO: how to import modules from rag directory ??
-from model.agent import Answer
+from model.agent import Answer, Question
 from datetime import datetime, timedelta, timezone
 from jose import jwt
 from fpdf import FPDF
@@ -49,7 +50,7 @@ last_task_id = 0
 def hash_data(data: tuple) -> tuple:
     hashed_data = [] 
     for item in data: 
-        hashed_value = hashlib.sha256(item.encode()).hexdigest()  
+        hashed_value = hashlib.sha256(str(item).encode('utf-8')).hexdigest()  
         hashed_data.append(hashed_value)  
     return tuple(hashed_data)  
 
@@ -295,10 +296,12 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             logging.error("User already registered")
             raise HTTPException(status_code=400, detail="User already registered")
         else:
+            hashed_username, hashed_email, hashed_role = hash_data((body.username, body.email, body.role))
+            hashed_site = hash_data((body.site,))[0]
 
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
-            cursor.execute(query_insert, hash_data((body.username, body.email, body.role)) + body.password + hash_data((body.site,)))
+            cursor.execute(query_insert, (hashed_username, hashed_username, hashed_role, body.password, hashed_site))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
@@ -473,7 +476,7 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
     
-def call_ai_agent(input: str):
+def call_ai_agent(input: Question):
     """
     This function performs a call to the RAG AI agent.
     Args:
@@ -486,7 +489,8 @@ def call_ai_agent(input: str):
         'x-api-key': os.getenv('API_KEY')
     }
     body = {
-        'userInput': input
+        'userInput': input.userInput,
+        'userId': input.userId
     }
     print(f"sending request to RAG API: {body}")
     response = requests.post(os.getenv('RAG_API_ENDPOINT'), headers=headers, json=body)
@@ -607,7 +611,8 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
             kpi=",".join(params.kpis),
             machines=",".join(params.machines)
         )
-        ai_response = call_ai_agent(filled_prompt).json()
+        question = Question(userInput=filled_prompt, userId=userId)
+        ai_response = call_ai_agent(question).json()
         logging.info(ai_response)
         answer = Answer.model_validate(ai_response)
         tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
@@ -857,7 +862,9 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         raise HTTPException(status_code=500, detail="Empty user input")
     try:
         # Send the user input to the RAG API and get the response
-        response = call_ai_agent(userInput)
+        # build the Question object
+        question = Question(userInput=userInput, userId=userId)
+        response = call_ai_agent(question)
         answer = response.json()
         if answer.label == 'new_kpi':
             # add new kpi
@@ -1000,6 +1007,34 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
         raise HTTPException(status_code=500, detail=str(e))
 
     return response
+
+@app.post('/smartfactory/predict', response_model=Json_out)
+def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to get a prediction from the ML model.
+    This endpoint receives a set of parameters and retrieves a prediction from the ML model based on those parameters.
+    Args:
+        pred_request (Json_in): The parameters for the prediction request.
+        api_key (str): The API key for authentication.
+    Returns:
+        response: The prediction data retrieved from the ML model.
+    Raises:
+        HTTPException: If the prediction request is malformed or an unexpected error occurs.
+    """
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': os.getenv('API_KEY')
+    }  
+    logging.info("sending request to data processing: %s", pred_request)
+    try:
+        # Send the prediction request to the data processing module and get the response
+        response = requests.post(os.getenv('DATA_PROCESSING_ENDPOINT'), json=jsonable_encoder(pred_request), headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    return response.json()
+
 
 @app.get("/smartfactory/dummy")
 async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):

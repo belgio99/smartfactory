@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import MachineFilterModal from './MachineFilter';
-import PersistentDataManager from "../../api/PersistentDataManager";
+import PersistentDataManager from "../../api/DataManager";
 
 interface FilterOptionsProps {
     filter: Filter;

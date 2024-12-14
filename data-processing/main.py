@@ -9,7 +9,7 @@ import asyncio
 
 from api_auth.api_auth import get_verify_api_key
 
-from model import Json_out, Json_in
+from model import Json_out, Json_in, Json_out_el, LimeExplainationItem
 
 async def task_scheduler():
     """Central scheduler running periodic tasks"""
@@ -56,14 +56,14 @@ def hello_world():
     return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
-def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent"]))):
+def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
     return 'Hello private World :)'
 
 # ACTUAL PREDICTIONS
 #http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
 # @app.post("/data-processing/predict", response_model = Json_out)
-@app.post("/data-processing/predict")
-def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+@app.post("/data-processing/predict", response_model = Json_out)
+def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
         given a series of couple MACHINE-KPI and an integer value N, this function predicts
         the next N data points given a certain trained model. If the model does not exist yet
@@ -98,22 +98,21 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
         # }
         machine = json_in.Machine_name#['Machine_name'] #direttamente valore DB
         KPI_name = json_in.KPI_name#['KPI_name']
+        json_out_el = Json_out_el(
+            Machine_name= machine,
+            KPI_name= KPI_name,
+            Predicted_value=[],
+            Lower_bound=[],
+            Upper_bound=[],
+            Confidence_score=[],
+            Lime_explaination=[],
+            Measure_unit="",
+            Date_prediction=[],
+            Error_message="",
+            Forecast=True
+        )
 
-        out_dict = {
-            'Machine_name': machine,
-            'KPI_name': KPI_name,
-            'Predicted_value': '',
-            'Lower_bound':[], #from XAI
-            'Upper_bound':[], #from XAI
-            'Confidence_score':[], #from XAI
-            'Lime_explaination': [], #from XAI
-            'Measure_unit': '',
-            'Date_prediction': '',
-            'Forecast': True
-        }
-        host_port = '8000'
-
-        KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name,host_port, API_key)
+        KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name, API_key)
  
         if KPI_data['Status'] == 0:
             if KPI_data['forecastable'] == True:
@@ -125,20 +124,28 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
                     if not f_dataprocessing.check_model_exists(machine,KPI_name):
                        f_dataprocessing.characterize_KPI(machine,KPI_name)
                     result = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
-                   
-                    out_dict['Predicted_value'] = result['Predicted_value']
-                    out_dict['Lower_bound'] = result['Lower_bound']
-                    out_dict['Upper_bound'] = result['Upper_bound']
-                    out_dict['Measure_unit'] = KPI_data["unit_measure"]
-                    out_dict['Confidence_score'] = result['Confidence_score']
-                    out_dict['Lime_explaination'] = result['Lime_explaination']
-                    out_dict['Date_prediction'] = result['Date_prediction']                  
+
+                    json_out_el.Predicted_value = result['Predicted_value']
+                    json_out_el.Lower_bound = result['Lower_bound']
+                    json_out_el.Upper_bound = result['Upper_bound']
+                    json_out_el.Measure_unit = KPI_data["unit_measure"]
+                    json_out_el.Confidence_score = result['Confidence_score']
+
+                    Lime_exp = []
+                    for exp in result['Lime_explaination']:
+                        Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
+                    json_out_el.Lime_explaination = Lime_exp
+                    json_out_el.Date_prediction = result['Date_prediction']                  
                 else:
-                    out_dict['Predicted_value'] = 'Errore, la data inserita è precedente alla data odierna'
+                    json_out_el.Error_message = 'Errore, la data inserita è precedente alla data odierna'
             else:
-                out_dict['Predicted_value'] = 'Errore, il KPI inserito non esiste'
-            out_dicts.append(out_dict)
-    return {"result": out_dicts}  # Convert numpy array to list for JSON serialization
+                json_out_el.Error_message = 'Errore, il KPI inserito non esiste'
+            out_dicts.append(json_out_el)
+
+    json_out = Json_out(
+    value=out_dicts
+    )
+    return json_out.dict()
 
 def new_data_polling():
     """
@@ -150,14 +157,14 @@ def new_data_polling():
 
         Returns:
     """
-    query_body = {
-        "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
-    }
-    response = f_dataprocessing.execute_druid_query(query_body)
-    #TODO: link response to available models
-    availableModels = []
-    for m in availableModels:
-        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    # query_body = {
+    #     "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
+    # }
+    # response = f_dataprocessing.execute_druid_query(query_body)
+    # #TODO: link response to available models
+    # availableModels = []
+    # for m in availableModels:
+    #     f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
     print(datetime.datetime.today())
  
 if __name__ == "__main__":
