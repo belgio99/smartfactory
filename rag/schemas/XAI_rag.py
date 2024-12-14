@@ -7,6 +7,7 @@ import json
 from rapidfuzz import process, fuzz
 import nltk
 from nltk.tokenize import sent_tokenize
+import os
 
 # Ensure the NLTK 'punkt' tokenizer is available. This is required for sentence tokenization.
 nltk.download('punkt', quiet=True)
@@ -22,14 +23,15 @@ class RagExplainer:
     A class for attributing segments of LLM responses to their respective contexts using similarity metrics.
     
     Attributes:
-        threshold (float): The minimum similarity score to consider a match valid.
+        threshold (float): The minimum similarity score to consider a match valid (0-100).
         verbose (bool): If True, detailed output is printed for debugging purposes.
         tokenize_context (bool): If True, context strings are tokenized into sentences.
         use_embeddings (bool): If True, embeddings are used for similarity matching; otherwise, fuzzy matching is used.
         context_sentences (List[str]): A list of all unique sentences extracted from the provided context.
         sentence_info (Dict[str, Dict]): A dictionary mapping each sentence to its source and original context.
         context_embeddings (np.ndarray or None): Precomputed embeddings of context sentences for faster similarity computation.
-        embedding_model_future (concurrent.futures.Future or None): Future object for loading the embedding model in the background.
+        executor (ThreadPoolExecutor or None): Thread executor for background model loading and operations.
+        model_future (concurrent.futures.Future or None): Future object containing the loading/loaded model.
     """
 
     def __init__(
@@ -63,32 +65,56 @@ class RagExplainer:
         
         # Load the embedding model only if embedding-based matching is enabled
         if self.use_embeddings:
-            # Submit the model loading task to a background thread
+            model_path = './models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
+            # Initialize model loading in background
             self.executor = ThreadPoolExecutor()
-            self.embedding_model_future = self.executor.submit(
-                lambda: SentenceTransformer('./models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
-            )
+            self.model_future = self.executor.submit(self._initialize_model, model_path)
         else:
-            self.embedding_model_future = None
+            self.executor = None
+            self.model_future = None
         
         # Add the initial context to the class instance, if provided
         self.add_to_context(context)
 
-    def _get_embedding_model(self):
+    def _initialize_model(self, model_path: str) -> SentenceTransformer:
         """
-        Retrieves the embedding model from the future object.
+        Initialize and/or load the SentenceTransformer model from the specified path.
+        Downloads and saves the model if it doesn't exist at the specified location.
+
+        Args:
+            model_path (str): The path where the model should be loaded from or saved to.
 
         Returns:
-            SentenceTransformer: The loaded embedding model.
+            SentenceTransformer: The loaded model instance.
 
         Raises:
-            RuntimeError: If the embedding model fails to load.
+            OSError: If there are issues creating directories or saving the model.
         """
+        if not os.path.exists(model_path):
+            os.makedirs(os.path.dirname(model_path), exist_ok=True)
+            model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+            model.save(model_path)
+        else:
+            model = SentenceTransformer(model_path)
+        return model
+
+    def _get_embedding_model(self):
+        """Retrieves the embedding model from the future object."""
         try:
-            return self.embedding_model_future.result()
+            return self.model_future.result()
         except Exception as e:
             raise RuntimeError(f"Failed to load embedding model: {e}")
 
+    def __del__(self):
+        """
+        Cleanup method called when the object is being destroyed.
+        Ensures proper shutdown of the thread executor if it exists.
+
+        Note:
+            This is automatically called by Python's garbage collector.
+        """
+        if self.executor:
+            self.executor.shutdown(wait=False)
 
     def _print_verbose(self, result, textResponse, textExplanation):
         """
@@ -139,7 +165,7 @@ class RagExplainer:
                 raise ValueError(f"The source name at index {i} must be a string. Received type {type(source_name).__name__}.")
             if not isinstance(ctx, str):
                 raise ValueError(f"The context string at index {i} must be a string. Received type {type(ctx).__name__}.")
-
+    
     def _validate_parameters(self):
         """
         Validates class parameters to ensure they meet constraints.
@@ -170,7 +196,7 @@ class RagExplainer:
             return response_segment[:-1] + f'[{ref_num}]' + response_segment[-1]
         else:
             return response_segment + f'[{ref_num}]'
-
+    
     def _parse_json_context(self, ctx: str) -> List[str]:
         """
         Parses a JSON-formatted context string into a list of key-value formatted sentences.
@@ -219,7 +245,7 @@ class RagExplainer:
         # If the JSON data is neither a list nor a dictionary, return an empty list
         else:
             return []
-
+    
     def _process_context(self, context: List[Tuple[str, str]]):
         """
         Processes and tokenizes the context for internal storage.
@@ -263,7 +289,7 @@ class RagExplainer:
                 if self.context_embeddings is not None
                 else new_embeddings.cpu()
             )
-
+    
     def add_to_context(self, extra_context: List[Tuple[str, str]]):
         """
         Adds new context to the existing stored context.
@@ -278,7 +304,7 @@ class RagExplainer:
         self._validate_context(extra_context)
         # Process and store the new context
         self._process_context(extra_context)
-
+    
     def _update_references(self, references, seen_references, source_name, context_match, original_context, similarity_score):
         """
         Adds a new reference entry if it doesn't already exist.
@@ -312,7 +338,7 @@ class RagExplainer:
         for ref in references:
             if ref["source_name"] == source_name and ref["context"] == context_match:
                 return ref["reference_number"]
-
+    
     def _match_with_fuzzy(self, response_segments: List[str]) -> Tuple[str, str, List[Dict[str, Any]]]:
         """
         Matches response segments with context using fuzzy string matching.
@@ -374,7 +400,7 @@ class RagExplainer:
         # Convert the references list to a JSON string
         textExplanation = json.dumps(references, indent=2)
         return textResponse.strip(), textExplanation, attribution
-
+    
     def _generate_attribution(self, response_segments, similarity_matrix):
         """
         Generates attribution results using a similarity matrix.
@@ -441,7 +467,7 @@ class RagExplainer:
         # Convert references to JSON
         textExplanation = json.dumps(references, indent=2)
         return textResponse.strip(), textExplanation, attribution
-
+    
     def _match_with_embeddings(self, response_segments: List[str]) -> Tuple[str, str, List[Dict[str, Any]]]:
         """
         Matches response segments with context using embeddings.
