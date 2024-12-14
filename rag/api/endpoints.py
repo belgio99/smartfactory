@@ -2,6 +2,7 @@ import httpx
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
@@ -408,6 +409,7 @@ async def translate_answer(question: Question, question_language: str, context):
 #async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
 async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
     try:
+        explainer = RagExplainer(threshold = 15.0,)
         # Extract the user ID
         userId = question.userId
 
@@ -480,7 +482,33 @@ async def ask_question(question: Question): # to add or modify the services allo
                 _CONTEXT_=context
             )
             
-            llm_result = llm.invoke(prompt)
+            executor = ThreadPoolExecutor()
+            future = executor.submit(llm.invoke, prompt)
+            
+            if label == 'predictions':
+                explainer.add_to_context([("Predictor", "["+context+"]")])
+
+            if label == 'kpi_calc':
+                explainer.add_to_context([("KPI Engine", "["+context+"]")])
+
+            if label == 'new_kpi':
+                context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                explainer.add_to_context([("Knowledge Base", context_cleaned)])
+
+            if label == 'report':
+                pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
+                pred_context = "["+pred_context+"]"
+                eng_context = "["+eng_context+"]"
+                explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
+
+            if label == 'dashboard':
+                kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
+                kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                gui_context = "["+gui_context+"]"
+                explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
+            
+            llm_result = future.result()
+            executor.shutdown(wait=False)
             
             if label in ['predictions', 'report', 'kpi_calc']:
                 # Update the history
@@ -490,25 +518,15 @@ async def ask_question(question: Question): # to add or modify the services allo
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, llm_result.content)
 
-            explainer = RagExplainer(threshold = 15.0,)
-
             if label == 'predictions':
-                # Response: Chat response, Explanation: TODO, Data: No data to send            
-                explainer.add_to_context([("Predictor", "["+context+"]")])
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
 
             if label == 'kpi_calc':
-                # Response: Chat response, Explanation: TODO, Data: No data to send            
-                explainer.add_to_context([("KPI Engine", "["+context+"]")])
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
 
-            if label == 'new_kpi':
-                # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
-                context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                explainer.add_to_context([("Knowledge Base", context_cleaned)])
-                
+            if label == 'new_kpi':                
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 
                 if question_language.lower() != "english":
@@ -520,26 +538,13 @@ async def ask_question(question: Question): # to add or modify the services allo
                     history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
                                 
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label) 
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data="response_cleaned", label=label) 
 
             if label == 'report':
-                # Response: No chat response, Explanation: TODO, Data: Report in str format
-                pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
-                pred_context = "["+pred_context+"]"
-                eng_context = "["+eng_context+"]"
-                explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
-                
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
                 return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
 
             if label == 'dashboard':
-                # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
-                # TODO: separare il chat response dal binding nel prompt
-                kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
-                kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                gui_context = "["+gui_context+"]"
-                explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
-                
                 # Converting the JSON string to a dictionary
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 response_json = json.loads(response_cleaned)
