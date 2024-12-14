@@ -1,5 +1,5 @@
-import time
-start_time_1 = time.time()
+#import time
+#start_time_1 = time.time()
 
 from typing import List, Dict, Any, Tuple
 import numpy as np
@@ -526,10 +526,10 @@ class RagExplainer:
 
 if __name__ == "__main__":
 
-    end_time_1 = time.time()
-    print(f"Time to import: {end_time_1 - start_time_1:.2f} seconds.")
+    #end_time_1 = time.time()
+    #print(f"Time to import: {end_time_1 - start_time_1:.2f} seconds.")
 
-    start_time_2 = time.time()
+    #start_time_2 = time.time()
     # Example usage
     explainer = RagExplainer(
         threshold=15.0,
@@ -538,10 +538,10 @@ if __name__ == "__main__":
         use_embeddings=True
     )
 
-    end_time_2 = time.time()
-    print(f"Time to instantiate RagExplainer: {end_time_2 - start_time_2:.2f} seconds.")
+    #end_time_2 = time.time()
+    #print(f"Time to instantiate RagExplainer: {end_time_2 - start_time_2:.2f} seconds.")
     
-    start_time_3 = time.time()
+    #start_time_3 = time.time()
 
     # Example context
     context_cleaned = '''
@@ -601,15 +601,17 @@ if __name__ == "__main__":
     # Wait for the background task to complete
     future.result()
 
-    end_time_3 = time.time()
-    print(f"Time to add_to_context: {end_time_3 - start_time_3:.2f} seconds.")
+    #end_time_3 = time.time()
+    #print(f"Time to add_to_context: {end_time_3 - start_time_3:.2f} seconds.")
 
-    start_time_4 = time.time()
+    #start_time_4 = time.time()
     # Multilingual response
     response = (
         "{\n  \"ID\": \"maintenance_time_ratio\",\n  \"Atomic\": false,\n  \"Description\": \"This KPI represents the ratio of maintenance time to total operational time. \",\n  \"Formula (base)\": \"maintenance_time_sum / operative_time\",\n  \"Unit of Measure\": \"%\",\n  \"Domain\": {\n    \"min\": 0,\n    \"max\": 100,\n    \"type\": \"numeric\"\n  }\n}"
     )
     textResponse, textExplanation, attribution_results = explainer.attribute_response_to_context(response)
 
-    end_time_4 = time.time()
-    print(f"Time to attribute_response_to_context: {end_time_4 - start_time_4:.2f} seconds.")
+    print(textResponse)
+
+    #end_time_4 = time.time()
+    #print(f"Time to attribute_response_to_context: {end_time_4 - start_time_4:.2f} seconds.")
