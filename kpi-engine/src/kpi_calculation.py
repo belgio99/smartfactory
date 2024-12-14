@@ -2,7 +2,7 @@ from kpi_dataframe_filter import kpi_dataframe_filter
 from kpi_data_extraction import kpi_dataframe_data_extraction
 import pandas as pd
 import requests, os
-from sympy import symbols, parse_expr
+from sympy import symbols, parse_expr, SympifyError
 
 class kpi_engine:
     def energy_cost_savings(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -35,7 +35,13 @@ class kpi_engine:
         cost_previous = kpi_dataframe_data_extraction.sum_kpi(df=fd_previous, machine_type=machine_type, kpi='cost', machine_id=machine_id, start_period=start_previous_period, end_period=end_previous_period)
         cost_current = kpi_dataframe_data_extraction.sum_kpi(df=fd_current, machine_type=machine_type, kpi='cost', machine_id=machine_id, start_period=start_period, end_period=end_period)
 
-        return cost_previous - cost_current
+        if isinstance(cost_current, ValueError):
+            return cost_current, "-"
+        if isinstance(cost_previous, ValueError):
+            return cost_previous, "-"
+
+        return cost_previous - cost_current, "€/kWh"
+
 
     def energy_cost_working_time(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
             """
@@ -66,7 +72,13 @@ class kpi_engine:
             fd = df
             total_energy_cost = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='cost_working', machine_id='all_machines', start_period=start_period, end_period=end_period)
             total_working_time = kpi_dataframe_filter.filter_dataframe_by_time(df=fd, machine_type=machine_type, start_period=start_period, end_period=end_period)['time'].nunique() * 24
-            return  total_energy_cost / total_working_time
+            
+            if isinstance(total_energy_cost, ValueError):
+                return total_energy_cost, "-"
+            if isinstance(total_working_time, ValueError):
+                return total_working_time, "-"
+
+            return  total_energy_cost / total_working_time, "€/kWh"
 
     def energy_cost_idle_time(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -97,7 +109,13 @@ class kpi_engine:
         fd = df
         total_energy_cost = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='cost_idle', machine_id='all_machines', start_period=start_period, end_period=end_period)
         total_working_time = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='working_time', machine_id='all_machines', start_period=start_period, end_period=end_period)
-        return  total_energy_cost / total_working_time
+        
+        if isinstance(total_energy_cost, ValueError):
+            return total_energy_cost, "-"
+        if isinstance(total_working_time, ValueError):
+            return total_working_time, "-"
+        
+        return  total_energy_cost / total_working_time, "€/kWh"
 
     def energy_cost_per_unit(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -126,7 +144,13 @@ class kpi_engine:
         fd = df
         total_working_cost = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='cost_working', machine_id=machine_id, start_period=start_period, end_period=end_period)
         total_idle_cost = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='cost_idle', machine_id=machine_id, start_period=start_period, end_period=end_period)
-        return total_working_cost + total_idle_cost
+        
+        if isinstance(total_idle_cost, ValueError):
+            return total_idle_cost, "-"
+        if isinstance(total_working_cost, ValueError):
+            return total_working_cost, "-"
+
+        return total_working_cost + total_idle_cost, "€/kWh"
 
     def power_consumption_efficiency(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -158,7 +182,13 @@ class kpi_engine:
         fd = df
         total_working_time = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', df=fd, machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
         total_power_consumption = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='consumption', machine_id=machine_id, start_period=start_period, end_period=end_period)
-        return total_working_time / total_power_consumption
+        
+        if isinstance(total_working_time, ValueError):
+            return total_working_time, "-"
+        if isinstance(total_power_consumption, ValueError):
+            return total_power_consumption, "-"
+
+        return total_working_time / total_power_consumption, "%"
         
     def power_consumption_trend(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -190,7 +220,13 @@ class kpi_engine:
         fd = df
         current_total_power_consumption = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='consumption', machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
         previous_total_power_consumption = kpi_dataframe_data_extraction.sum_kpi(df=fd, kpi='consumption', machine_type=machine_type, machine_id=machine_id, start_period=start_previous_period, end_period=end_previous_period)
-        return (current_total_power_consumption - previous_total_power_consumption) / previous_total_power_consumption
+        
+        if isinstance(current_total_power_consumption, ValueError):
+            return current_total_power_consumption, "-"
+        if isinstance(previous_total_power_consumption, ValueError):
+            return previous_total_power_consumption, "-"
+        
+        return (current_total_power_consumption - previous_total_power_consumption) / previous_total_power_consumption, "%"
 
     def machine_utilization_rate(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -222,17 +258,31 @@ class kpi_engine:
         total_working_time = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', machine_type=machine_type, df=fd, machine_id=machine_id, start_period=start_period, end_period=end_period)
         total_idle_time = kpi_dataframe_data_extraction.sum_kpi(kpi='idle_time', df=fd, machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
         total_offline_time = kpi_dataframe_data_extraction.sum_kpi(kpi='offline_time', machine_type=machine_type, df=fd, machine_id=machine_id, start_period=start_period, end_period=end_period)
-        return total_working_time / (total_working_time + total_idle_time + total_offline_time)
+        
+        if isinstance(total_idle_time, ValueError):
+            return total_idle_time, "-"
+        if isinstance(total_working_time, ValueError):
+            return total_working_time, "-"
+        if isinstance(total_offline_time, ValueError):
+            return total_offline_time, "-"
 
-    '''
+        return total_working_time / (total_working_time + total_idle_time + total_offline_time), "%"
+
+
     def machine_usage_trend(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         fd = df
         if(not(start_previous_period <= end_previous_period < start_period <= end_period)):
             print("bad chronological order")
         current_average_working_time = kpi_dataframe_data_extraction.avg_kpi(df=fd, machine_type=machine_type, kpi='working_time', machine_id=machine_id, start_period=start_period, end_period=end_period)
         previous_average_working_time = kpi_dataframe_data_extraction.avg_kpi(df=fd, machine_type=machine_type, kpi='working_time', machine_id=machine_id, start_period=start_previous_period, end_period=end_previous_period)
+        
+        if isinstance(current_average_working_time, ValueError):
+            return current_average_working_time, "-"
+        if isinstance(previous_average_working_time, ValueError):
+            return previous_average_working_time, "-"
+        
         return (current_average_working_time - previous_average_working_time) / previous_average_working_time
-    '''
+
 
     '''
     def cost_per_unit():
@@ -273,7 +323,13 @@ class kpi_engine:
         fd = df
         uptime = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', df=fd, machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
         downtime = kpi_dataframe_data_extraction.sum_kpi(kpi='idle_time', df=fd, machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
-        return uptime / (uptime + downtime)
+        
+        if isinstance(uptime, ValueError):
+            return uptime, "-"
+        if isinstance(downtime, ValueError):
+            return downtime, "-"
+        
+        return uptime / (uptime + downtime), "%"
 
     def performance(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -303,7 +359,13 @@ class kpi_engine:
         fd = df
         total_output = kpi_dataframe_data_extraction.sum_kpi(kpi='good_cycles', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
         total_productive_time = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
-        return total_output / total_productive_time
+        
+        if isinstance(total_output, ValueError):
+            return total_output, "-"
+        if isinstance(total_productive_time, ValueError):
+            return total_productive_time, "-"
+        
+        return total_output / total_productive_time, "%"
 
     def throughput(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -334,7 +396,13 @@ class kpi_engine:
         fd = df
         items_produced = kpi_dataframe_data_extraction.sum_kpi(kpi='good_cycles', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
         time_employed = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period) + kpi_dataframe_data_extraction.sum_kpi(kpi='idle_time', df=fd, machine_id=machine_id, start_period=start_period, end_period=end_period)
-        return items_produced / time_employed
+        
+        if isinstance(items_produced, ValueError):
+            return items_produced, "-"
+        if isinstance(time_employed, ValueError):
+            return time_employed, "-"
+
+        return items_produced / time_employed, "items/s"
 
     def quality(df, machine_id, machine_type, start_period, end_period, start_previous_period, end_previous_period):
         """
@@ -364,14 +432,44 @@ class kpi_engine:
         fd = df
         good_work = kpi_dataframe_data_extraction.sum_kpi(kpi='good_cycles', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
         bad_work = kpi_dataframe_data_extraction.sum_kpi(kpi='bad_cycles', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
+        
+        if isinstance(good_work, ValueError):
+            return good_work, "-"
+        if isinstance(bad_work, ValueError):
+            return bad_work, "-"
+        
         total_work = good_work + bad_work
-        return good_work / total_work
+        return good_work / total_work, "%"
 
     def yield_fft(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
+        """
+        Measures the First Time Through (FTT) or Yield indicator, which quantifies the proportion of output correctly produced 
+        without defects on the first pass relative to the total output in a specified time period.
+
+        Parameters:
+        - df: DataFrame containing the relevant KPI data.
+        - machine_id: Identifier for the specific machine to analyze.
+        - machine_type: Type of the machine to filter the data.
+        - start_previous_period: Start date of the previous period for comparison (not used in the formula but included for consistency).
+        - end_previous_period: End date of the previous period for comparison (not used in the formula but included for consistency).
+        - start_period: Start date of the period for which the Yield indicator is calculated.
+        - end_period: End date of the period for which the Yield indicator is calculated.
+
+        Returns:
+        - A tuple containing:
+        - The yield as a decimal (fraction of correctly produced output relative to total output).
+        - A string indicating the unit ("%").
+        """
         fd = df
         defective_output = kpi_dataframe_data_extraction.sum_kpi(kpi='bad_cycles', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
         total_output = kpi_dataframe_data_extraction.sum_kpi(kpi='good_cycles', df=fd, machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period) + defective_output
-        return (total_output - defective_output) / total_output
+        
+        if isinstance(defective_output, ValueError):
+            return defective_output, "-"
+        if isinstance(total_output, ValueError):
+            return total_output, "-"
+        
+        return (total_output - defective_output) / total_output, "%"
 
     '''
     def maintenance_cost():
@@ -389,22 +487,35 @@ class kpi_engine:
 
     def dynamic_kpi(df, machine_id, machine_type, start_period, end_period, kpi_id):
         fd = df
-
         # kpi_formula = extract formula through API and kpi_id
-        # response = requests.get(f"{os.getenv('BASE_URL')}/kb/retrieve/{kpi_id}")
-        # formula = response.get("atomic_formula")
-        # unit_of_measure = response.get("unit_measure")
-        formula = '((cycles_sum - bad_cycles_sum) / cycles_sum) * (working_time_sum / (working_time_sum + idle_time_sum))'
-        unit_of_measure = '%'
-        expr = parse_expr(formula)
+        headers = {
+            "x-api-key": "b3ebe1bb-a4e7-41a3-bbcc-6c281136e234",
+            "Content-Type": "application/json"
+        }
+        response = requests.get(f"http://kb:8000/kb/{kpi_id}/get_kpi", headers=headers)
+        response = response.json()
+        print(response)
+        if response.get("atomic") == True:
+            formula = response.get("id")
+        else:
+            formula = response.get("atomic_formula")
+        unit_of_measure = response.get("unit_measure")
+
+        try:
+            expr = parse_expr(formula)
+        except Exception as e:
+            return "Error: the specified KPI was not found in the Knowledge Base", "-"
 
         # data extraction and symbol substitution
         substitutions = {}
         for symbol in expr.free_symbols:
             data_extraction_method = getattr(kpi_dataframe_data_extraction, str(symbol)[-3:]+"_kpi")
-            substitutions[symbol] = data_extraction_method(df=df, kpi=str(symbol)[:-4], machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
+            try:
+                substitutions[symbol] = data_extraction_method(df=df, kpi=str(symbol)[:-4], machine_id=machine_id, machine_type=machine_type, start_period=start_period, end_period=end_period)
+            except ValueError as e:
+                return str(e), "-"
 
-        result = expr.subs(substitutions)
+            result = expr.subs(substitutions)
 
         # formula evaluation
         eval_result = result.evalf()

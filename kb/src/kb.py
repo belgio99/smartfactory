@@ -1,12 +1,18 @@
+"""
+@file kb.py
+@brief This file contains the implementation of the KB.
+@author Nicola Emmolo, Jacopo Raffi
+"""
+
 from owlready2 import *
 import sympy
-
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends
 import json
 from api_auth.api_auth import get_verify_api_key
 from pydantic import BaseModel
+import shutil
 
 
 app = FastAPI()
@@ -19,10 +25,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-ONTOLOGY_PATH = "./Ontology/sa_ontology.rdf"
-TMP_ONTOLOGY_PATH = "./Ontology/tmp_ontology.rdf"
-onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
+ONTOLOGY_PATH = "./storage/sa_ontology.rdf"
+onto = None
 
 
 def get_kpi(kpi_id):
@@ -38,13 +42,13 @@ def get_kpi(kpi_id):
     Globals:
         onto (Ontology): The global ontology object is used to extract KPIs.
 
-    Returns:
-        dict: A dictionary containing the KPI data. The structure includes:
+    Returns: 
+        dict A dictionary containing the KPI data. The structure includes:
             - "Status" (int): 0 if successful, -1 if no machine data is found.
             - Additional keys corresponding to the KPI's data properties.
     """
 
-    query = f'*{kpi_id}'
+    query = f'*#{kpi_id}'
     results = onto.search(iri = query)
     json_d = {'Status': -1} # default status
 
@@ -213,7 +217,7 @@ def get_kpi_hierarchy():
 
     def remove_empty_classes(hierarchy):
         """
-        Recursively removes empty classes from the hierarchy.
+        Recursively removes empty classes from the hierarchy, while preserving boolean values.
 
         Args:
             hierarchy (dict): The hierarchy to clean.
@@ -228,7 +232,8 @@ def get_kpi_hierarchy():
                 nested = remove_empty_classes(value)
                 if nested:  # Only include non-empty classes
                     cleaned_hierarchy[key] = nested
-            elif value:  # Include non-dict non-empty values
+            else:
+                # Include all non-dict values, including booleans and falsy values
                 cleaned_hierarchy[key] = value
         return cleaned_hierarchy
 
@@ -383,7 +388,7 @@ def is_pair_machine_kpi_exist(machine_id, kpi_id):
         dict: The status of the pair. {Status: 0} and the info of the pair if the pair exists, {Status: -1} otherwise.
     """
 
-    query = f'*{machine_id}'
+    query = f'*{machine_id.lower().replace(" ", "_")}'
     result = onto.search_one(iri = query)
     json_d = {'Status': -1} # default status
 
@@ -513,7 +518,7 @@ def add_kpi(kpi_info):
                 machine.producesKPI.append(new_kpi)
 
             sync_reasoner()
-            onto.save(file = TMP_ONTOLOGY_PATH, format = "rdfxml")
+            onto.save(file = ONTOLOGY_PATH, format = "rdfxml")
         except Exception as error:
             print(error)
             return False
@@ -556,7 +561,7 @@ async def get_all_kpis_endpoint(api_key: str = Depends(get_verify_api_key(["api-
 
 
 @app.get("/kb/retrieveMachines")
-async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get all machines, grouped under the main classes of the ontology
 
@@ -590,11 +595,11 @@ class KPI_Info(BaseModel):
     description: str
     formula: str
     unit_measure: str
-    forecastable: bool
+    #forecastable: bool
     atomic: bool
 
 @app.post("/kb/insert")
-async def add_kpi_endpoint(kpi_info: KPI_Info):
+async def add_kpi_endpoint(kpi_info: KPI_Info, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function
     """
     Add a KPI to the ontology
 
@@ -605,7 +610,16 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
         dict: The status of the operation.
     """
 
-    result = add_kpi(kpi_info)
+    kpi_info_dict = {
+        "id": [kpi_info.id],
+        "description": [kpi_info.description],
+        "formula": [kpi_info.formula],
+        "unit_measure": [kpi_info.unit_measure],
+        "forecastable": [False],
+        "atomic": [kpi_info.atomic],
+    }
+
+    result = add_kpi(kpi_info_dict)
     if not result:
         return {"Status": -1, "message": "KPI not added"}
     return {"Status": 0, "message": "KPI added"}
@@ -616,22 +630,17 @@ async def add_kpi_endpoint(kpi_info: KPI_Info):
 
 # -------------------------------------------- Main --------------------------------------------
 
+
 if __name__ == "__main__":
-    """try:
-        tmp = is_pair_machine_kpi_exist("assembly_machine_1", "oee")
-        print(tmp)
-    except Exception as error:
-        print(error)"""
-    
-    """info = {
-        "id": ["kpi_prova"],
-        "description": ["KPI description"],
-        "formula": ["operative_time + power_sum"],
-        "unit_measure": ["unit"],
-        "forecastable": [True],
-        "atomic": [False],
-    }
-    kpi_info = KPI_Info(**info)
-    print(add_kpi(kpi_info))"""
-    
+    # check if the "storage" folder exists
+    if not os.path.exists("./storage"):
+        # create the "storage" folder
+        os.makedirs("./storage")
+    # check if the "storage" folder is empty ("./storage")
+    if not os.path.isfile(ONTOLOGY_PATH):
+        # insert ontology file ("./Ontology/sa_ontology.rdf") in the "storage" folder
+        shutil.copyfile("./Ontology/sa_ontology.rdf", ONTOLOGY_PATH)
+
+    onto = get_ontology(ONTOLOGY_PATH).load() # Load the ontology
+
     uvicorn.run(app, port=8000, host="0.0.0.0")

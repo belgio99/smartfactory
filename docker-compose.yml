@@ -15,6 +15,8 @@ volumes:
   backrest_config: {}
   backrest_cache: {}
   target_volume: {}
+  vault_data: {}
+  data_processing_models: {}
 
 services:
   postgres:
@@ -205,7 +207,7 @@ services:
       dockerfile: Dockerfile
     image: ghcr.io/belgio99/smartfactory/kb:latest
     volumes:
-      - kb:/kb
+      - kb:/KB/storage
     platform: linux/amd64
     ports: 
       - "10010:8000"
@@ -219,6 +221,8 @@ services:
     build:
       context: ./data-processing
       dockerfile: Dockerfile
+    volumes:
+      - data_processing_models:/models
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
     ports: 
       - "10030:8000"
@@ -227,6 +231,9 @@ services:
       - not-db-init
     env_file:
       - database/.env
+    depends_on:
+      router:
+        condition: service_healthy
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
@@ -265,7 +272,6 @@ services:
       dockerfile: Dockerfile
     env_file:
       - rag/.env
-      - rag/paths.env
     volumes:
       - kb:/docs/kb
     ports: 
@@ -297,7 +303,9 @@ services:
       - not-db-init
     env_file:
       - kpi-engine/.env
-
+    depends_on:
+      router:
+        condition: service_healthy
   backrest:
     image: garethgeorge/backrest:latest
     container_name: backrest
@@ -325,4 +333,21 @@ services:
       - not-db-init
     env_file:
       - database/backrest/.env
+     
+  vault: #it is in dev mode!
+    image: hashicorp/vault
+    container_name: vault
+    volumes:
+      - vault_data:/vault/file
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_STORAGE_BACKEND: "file"  
+    ports:
+      - "18200:8200"
+    profiles:
+      - database
+    logging:
+      driver: "json-file"
+      options:
+        max-file: "1"
 

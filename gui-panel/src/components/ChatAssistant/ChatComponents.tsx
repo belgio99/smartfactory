@@ -64,6 +64,7 @@ interface ExtraDataProps {
     extraData: {
         explanation?: XAISources[];
         dashboardData?: { target: string; metadata: any };
+        report?: { userId: string; reportId: string };
     };
     onNavigate: (target: string, metadata: any) => void;
 }
@@ -92,6 +93,26 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                     Go to Dashboard
                 </button>
             )}
+
+            {/* Report Button */}
+            {extraData.report && (
+                <div className="flex-col">
+                    <button
+                        onClick={() => onNavigate("reports/view", extraData.report)}
+                        className="inline-block px-4 py-2 text-white bg-green-500 hover:bg-green-600 rounded-lg text-sm shadow-md focus:outline-none"
+                    >
+                        View Report
+                    </button>
+                    <button
+                        onClick={() => onNavigate("reports/download", extraData.report)}
+                        className="inline-block px-4 py-2 text-white bg-blue-500 hover:bg-blue-600 rounded-lg text-sm shadow-md focus:outline-none mt-2"
+                    >
+                        Download Report
+                    </button>
+                </div>
+            )
+            }
+
             {/* Explanation Button */}
             {extraData.explanation && (
                 <div>
