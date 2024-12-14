@@ -576,14 +576,14 @@ def make_prediction(machine, kpi, length):
     
     return results
 
-def kpi_exists(machine, KPI, host_port, api_key):
+def kpi_exists(machine, KPI, api_key):
   machine = machine.replace(" ", "_")
   headers = {
       "x-api-key": api_key
   }
   
   # Send GET request with headers
-  
+  host_port = 8000
   url_KB = f"http://kb:{host_port}/kb/{machine}/{KPI}/check"
   # Kpi_info  = requests.post(url_KB)
   Kpi_info = requests.get(url_KB, headers=headers)

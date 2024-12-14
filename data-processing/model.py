@@ -17,6 +17,10 @@ class Json_in_el(BaseModel):
 class Json_in(BaseModel):
     value: List[Json_in_el]
 
+class LimeExplainationItem(BaseModel):
+    date_info: str
+    value: float
+
 class Json_out_el(BaseModel):
     """
     The output of a prediction
@@ -28,6 +32,7 @@ class Json_out_el(BaseModel):
     Lime_explaination (List[float]): explaination of which components influenced more the answer
     Measure_unit (str) the KPI's unit of measure
     Date_prediction (list[str]) date of the corresponding prediction
+    Error_message (str): in case of error its description will be here
     Forecast (bool): forecast identifier
     """
     Machine_name: str
@@ -36,9 +41,10 @@ class Json_out_el(BaseModel):
     Lower_bound: List[float]
     Upper_bound: List[float]
     Confidence_score: List[float]
-    Lime_explaination: List[float]
+    Lime_explaination: List[List[LimeExplainationItem]]
     Measure_unit: str
     Date_prediction: List[str]
+    Error_message: str
     Forecast: bool
 
 class Json_out(BaseModel):
