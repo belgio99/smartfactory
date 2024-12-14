@@ -1,7 +1,6 @@
 import time
 start_time_1 = time.time()
 
-
 from typing import List, Dict, Any, Tuple
 import numpy as np
 import json
@@ -10,13 +9,12 @@ import nltk
 from nltk.tokenize import sent_tokenize
 
 # Ensure the NLTK 'punkt' tokenizer is available. This is required for sentence tokenization.
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+nltk.download('punkt', quiet=True)
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from concurrent.futures import ThreadPoolExecutor
+
 
 # Define the main class RagExplainer to handle attribution of responses to provided context.
 class RagExplainer:
@@ -31,7 +29,7 @@ class RagExplainer:
         context_sentences (List[str]): A list of all unique sentences extracted from the provided context.
         sentence_info (Dict[str, Dict]): A dictionary mapping each sentence to its source and original context.
         context_embeddings (np.ndarray or None): Precomputed embeddings of context sentences for faster similarity computation.
-        embedding_model (SentenceTransformer or None): The model used to generate embeddings.
+        embedding_model_future (concurrent.futures.Future or None): Future object for loading the embedding model in the background.
     """
 
     def __init__(
@@ -65,12 +63,32 @@ class RagExplainer:
         
         # Load the embedding model only if embedding-based matching is enabled
         if self.use_embeddings:
-            self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+            # Submit the model loading task to a background thread
+            self.executor = ThreadPoolExecutor()
+            self.embedding_model_future = self.executor.submit(
+                lambda: SentenceTransformer('./models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+            )
         else:
-            self.embedding_model = None
+            self.embedding_model_future = None
         
         # Add the initial context to the class instance, if provided
         self.add_to_context(context)
+
+    def _get_embedding_model(self):
+        """
+        Retrieves the embedding model from the future object.
+
+        Returns:
+            SentenceTransformer: The loaded embedding model.
+
+        Raises:
+            RuntimeError: If the embedding model fails to load.
+        """
+        try:
+            return self.embedding_model_future.result()
+        except Exception as e:
+            raise RuntimeError(f"Failed to load embedding model: {e}")
+
 
     def _print_verbose(self, result, textResponse, textExplanation):
         """
@@ -237,7 +255,8 @@ class RagExplainer:
 
         # Generate embeddings for new sentences if embeddings are enabled
         if self.use_embeddings and new_context_sentences:
-            new_embeddings = self.embedding_model.encode(new_context_sentences, convert_to_tensor=True)
+            model = self._get_embedding_model()
+            new_embeddings = model.encode(new_context_sentences, convert_to_tensor=True)
             # Concatenate new embeddings with existing ones
             self.context_embeddings = (
                 np.concatenate((self.context_embeddings, new_embeddings.cpu()), axis=0)
@@ -440,7 +459,8 @@ class RagExplainer:
         seen_references = set()  # Tracks unique references
 
         # Generate embeddings for the response segments
-        response_embeddings = self.embedding_model.encode(response_segments, convert_to_tensor=True).cpu()
+        model = self._get_embedding_model()
+        response_embeddings = model.encode(response_segments, convert_to_tensor=True).cpu()
 
         # Compute similarity scores between response embeddings and context embeddings
         similarity_matrix = cosine_similarity(response_embeddings, self.context_embeddings)
@@ -495,14 +515,65 @@ if __name__ == "__main__":
     end_time_2 = time.time()
     print(f"Time to instantiate RagExplainer: {end_time_2 - start_time_2:.2f} seconds.")
     
-    # Load context from a text file
-    with open('context_cleaned.txt', 'r', encoding='utf-8') as file:
-        context_cleaned = file.read()
-
     start_time_3 = time.time()
+
+    # Example context
+    context_cleaned = '''
+[
+  {
+    "id": "availability",
+    "description": "Percentage of time worked compared to time available.",
+    "formula": "working_time_sum/(working_time_sum+idle_time_sum)",
+    "unit_measure": "%"
+  },
+  {
+    "id": "avg_cycle_time_avg",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the average.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_max",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the maximum.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_med",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the median.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_min",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the minimum.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_std",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the standard deviation.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_sum",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the sum.",
+    "formula": "-",
+    "unit_measure": "s"
+  }
+]'''
+
     # Convert the cleaned context into a list of tuples
     json_formatted = [("Cleaned Context", context_cleaned)]
-    explainer.add_to_context(json_formatted)
+
+    # Create a ThreadPoolExecutor
+    executor = ThreadPoolExecutor()
+    # Submit the background task to the executor
+    future = executor.submit(explainer.add_to_context, json_formatted)
+
+    # Wait for the background task to complete
+    future.result()
 
     end_time_3 = time.time()
     print(f"Time to add_to_context: {end_time_3 - start_time_3:.2f} seconds.")
