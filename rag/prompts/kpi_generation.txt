@@ -17,7 +17,10 @@ OUTPUT FORMAT:
 REQUIREMENTS:  
 1. Generate only the best possible KPI that fully satisfies the user’s query.  
 2. Ensure descriptions and formulas are concise, accurate, and tailored to the user's needs.  
-3. Avoid unnecessary commentary or alternative KPI suggestions.  
+3. Avoid unnecessary commentary or alternative KPI suggestions. 
+4. Create only NON-atomic KPIs based on existing KPIs provided as context.
+5. Do not invent KPIs to create the new one, just rely on the ones passed as context
+6. do not rename KPI from context, just use their original name
 
 CONTEXT: 
 {_CONTEXT_}
