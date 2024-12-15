@@ -70,7 +70,7 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
                     <label className="text-sm font-medium text-gray-700">Start Date:</label>
                     <input
                         type="date"
-                        min={startDate || "2024-03-31"}
+                        min={"2024-03-31"}
                         max={endDate || "2024-10-19"}
                         value={startDate}
                         onChange={(e) => handleStartDateChange(e.target.value)}
@@ -91,7 +91,7 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
                     <input
                         type="date"
                         min={startDate || "2024-03-31"}
-                        max={endDate || "2024-10-19"} // Max date in the database
+                        max={"2024-10-19"} // Max date in the database
                         value={endDate}
                         onChange={(e) => handleEndDateChange(e.target.value)}
                         onInput={(e) => {
