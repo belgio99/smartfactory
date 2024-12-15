@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import PersistentDataManager from "../../api/DataManager";
-import {fetchData, simulateChartData} from "../../api/DataFetcher";
+import {fetchData} from "../../api/DataFetcher";
 import FutureTimeFrameSelector from "./FutureTimeSelector";
 import {TimeFrame} from "../Selectors/TimeSelect";
 import KpiSelect from "../Selectors/KpiSelect";
@@ -9,12 +9,6 @@ import MachineSelect from "../Selectors/MachineSelect";
 import ForeChart from "../Chart/ForecastingChart";
 import {Filter} from "../Selectors/FilterOptions";
 import {getForecastData} from "../../api/ApiService";
-
-type ForecastData = {
-    date: string;
-    value: number;
-    confidence: number;
-};
 
 const ForecastingPage: React.FC = () => {
     const dataManager = PersistentDataManager.getInstance();
@@ -33,13 +27,31 @@ const ForecastingPage: React.FC = () => {
             setLoading(true);
             const machineFilter = new Filter(selectedMachine.type, [selectedMachine.machineId]);
             try {
-                const pastData = await fetchData(selectedKpi, timeFrame.past, "line", machineFilter);
+                const pastData = await fetchData(selectedKpi, timeFrame.past, "line", machineFilter).catch(
+                    (error) => {
+                        console.error('Failed to fetch past data:', error);
+                        return [];
+                    }
+                );
                 // Difference between the two dates in days
                 const numberOfDays = Math.floor((timeFrame.future.to.getTime() - timeFrame.future.from.getTime()) / (1000 * 60 * 60 * 24));
                 const futureData = await getForecastData({
-                    KPI_name: selectedKpi.id,
-                    Machine_name: selectedMachine.machineId,
+                    KPI_Name: selectedKpi.id,
+                    Machine_Name: selectedMachine.machineId,
                     Date_prediction: numberOfDays
+                }).catch((error) => {
+                    console.error('Failed to fetch future data:', error);
+                    return new ForecastDataEx(selectedMachine.machineId,
+                        selectedKpi.id,
+                        [],
+                        [],
+                        [],
+                        [],
+                        [],
+                        "",
+                        [],
+                        true
+                    );
                 });
                 console.log("Future data received for the next %s days: ", numberOfDays, futureData);
                 setForecastData({past: pastData, future: futureData});
@@ -115,20 +127,4 @@ const ForecastingPage: React.FC = () => {
         </div>
     );
 };
-
-const getDummyExplanationData = (data: any[]) => {
-    return data.map((point, index) => {
-        // data can be positive or negative
-        return [
-            {feature: "Feature 1", importance: (Math.random() * 2 - 1).toFixed(2)},
-            {feature: "Feature 2", importance: (Math.random() * 2 - 1).toFixed(2)},
-            {feature: "Feature 3", importance: (Math.random() * 2 - 1).toFixed(2)},
-            {feature: "Feature 4", importance: (Math.random() * 2 - 1).toFixed(2)},
-            {feature: "Feature 5", importance: (Math.random() * 2 - 1).toFixed(2)},
-            {feature: "Feature 6", importance: (Math.random() * 2 - 1).toFixed(2)},
-        ];
-    });
-
-}
-
 export default ForecastingPage;

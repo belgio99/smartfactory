@@ -58,8 +58,8 @@ export interface HistoricalDataResponse {
 }
 
 export interface ForecastRequest {
-    Machine_name: string
-    KPI_name: string
+    Machine_Name: string
+    KPI_Name: string
     Date_prediction: number
 }
 
@@ -365,7 +365,8 @@ export const getForecastData = async (request: ForecastRequest): Promise<Forecas
             }
         );
         if (!response.data || !Array.isArray(response.data.value) || response.data.value.length === 0) {
-            throw new Error("No forecast data available in the response.");
+            console.log("No forecast data available in the response.");
+            return new ForecastDataEx(request.Machine_Name, request.KPI_Name, [], [], [], [], [], "", [], true);
         }
         return ForecastDataEx.decode(response.data.value[0]);
     } catch (error: any) {
