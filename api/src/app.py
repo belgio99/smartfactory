@@ -147,18 +147,19 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
 
 
 @app.get("/smartfactory/alerts/{userId}")
-def get_alerts(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+def get_alerts(userId: str, all: bool = True, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Retrieve alerts for a given user and return them as a JSON response.
 
     Args:
         userId (str): The ID of the user for whom to retrieve alerts.
+        all (bool): Flag to indicate whether to retrieve all alerts or only active ones.
 
     Returns:
         JSONResponse: A JSON response containing the list of alerts for the user.
     """
     logging.info("Retrieving alerts for user: %s", userId)
-    list = retrieve_alerts(userId)
+    list = retrieve_alerts(userId, all)
     logging.info("Alerts retrieved successfully for user: %s", userId)
 
     return JSONResponse(content={"alerts": list}, status_code=200)

@@ -2817,7 +2817,7 @@
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_1 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_1">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_capacity_cutting_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
@@ -2920,7 +2920,7 @@
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_2 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_cutting_machine_2">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#large_capacity_cutting_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LargeCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
@@ -3332,7 +3332,7 @@
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_cutting_machine_1">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#low_capacity_cutting_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#LowCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
@@ -3466,7 +3466,7 @@
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_1">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_capacity_cutting_machine_1">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
@@ -3569,7 +3569,7 @@
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_2">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_capacity_cutting_machine_2">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>
@@ -3672,7 +3672,7 @@
 
     <!-- http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3 -->
 
-    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_cutting_machine_3">
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#medium_capacity_cutting_machine_3">
         <rdf:type rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#MediumCapacityCuttingMachine"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#availability"/>
         <sa-ontology:producesKPI rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#average_cycle_time_avg"/>

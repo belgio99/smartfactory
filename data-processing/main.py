@@ -11,6 +11,8 @@ import asyncio
 from api_auth.api_auth import get_verify_api_key
 
 from model import Json_out, Json_in, Json_out_el, LimeExplainationItem, Severity
+from dotenv import load_dotenv
+from pathlib import Path
 
 
 async def task_scheduler():
@@ -42,8 +44,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-API_key = '12d326d6-8895-49b9-8e1b-a760462ac13f'
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 # @app.get("/data-processing/load_model")
 # def test():
@@ -79,8 +81,8 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
 
         Returns:
         a list of dictionaries containing:
-        Machine_name: str -> the name of the machine used
-        KPI_name: str -> the KPI id
+        Machine_Name: str -> the name of the machine used
+        KPI_Name: str -> the KPI id
         Predicted_value: Optional[List[float]] -> list of predictions
         Lower_bound: List[float] -> list of upper certainty bounds
         Upper_bound: List[float] -> list of lower certainty bounds
@@ -91,59 +93,93 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
         Forecast: bool
     """
     out_dicts = []
-    for json_in in JSONS.value:
-        machine = json_in.Machine_name#['Machine_name'] #direttamente valore DB
-        KPI_name = json_in.KPI_name#['KPI_name']
-        json_out_el = Json_out_el(
-            Machine_name= machine,
-            KPI_name= KPI_name,
-            Predicted_value=[],
-            Lower_bound=[],
-            Upper_bound=[],
-            Confidence_score=[],
-            Lime_explaination=[],
-            Measure_unit="",
-            Date_prediction=[],
-            Error_message="",
-            Forecast=True
-        )
+    if len(JSONS.value) != 0:
+        print(f"received a list of {len(JSONS.value)} KPIs to predict")
+        for json_in in JSONS.value:
+            machine = json_in.Machine_Name#['Machine_Name'] #direttamente valore DB
+            KPI_Name = json_in.KPI_Name#['KPI_Name']
+            json_out_el = Json_out_el(
+                Machine_Name= machine,
+                KPI_Name= KPI_Name,
+                Predicted_value=[],
+                Lower_bound=[],
+                Upper_bound=[],
+                Confidence_score=[],
+                Lime_explaination=[],
+                Measure_unit="",
+                Date_prediction=[],
+                Error_message="",
+                Forecast=True
+            )
+            API_key = os.getenv('my_key')
+            KPI_data = f_dataprocessing.kpi_exists(machine,KPI_Name, API_key)
+            if KPI_data['Status'] == 0:
+                print('the KPI exists')
+                if KPI_data['forecastable'] == True:
+                    print('the KPI is forecastable')
+                    horizon = json_in.Date_prediction#['Date_prediction']
+                    # today = datetime.datetime.now().date()
+                    # delta = req_date - today
+                    # horizon = delta.days() 
+                    if horizon > 0:
+                        
+                        status = 0
+                        if not f_dataprocessing.check_model_exists(machine,KPI_Name):
+                            print(f"Creating model for {machine},{KPI_Name}")
+                            status = f_dataprocessing.characterize_KPI(machine,KPI_Name)
+                        if status == 0:
+                            result = f_dataprocessing.make_prediction(machine, KPI_Name, horizon)
+                            print(f"the output data is: {result['Predicted_value']}")
 
-        KPI_data = f_dataprocessing.kpi_exists(machine,KPI_name, API_key)
- 
-        if KPI_data['Status'] == 0:
-            if KPI_data['forecastable'] == True:
-                horizon = json_in.Date_prediction#['Date_prediction']
-                # today = datetime.datetime.now().date()
-                # delta = req_date - today
-                # horizon = delta.days() 
-                if horizon > 0:
+                            json_out_el.Predicted_value = result['Predicted_value']
+                            json_out_el.Lower_bound = result['Lower_bound']
+                            json_out_el.Upper_bound = result['Upper_bound']
+                            json_out_el.Measure_unit = KPI_data["unit_measure"]
+                            json_out_el.Confidence_score = result['Confidence_score']
 
-                    if not f_dataprocessing.check_model_exists(machine,KPI_name):
-                       f_dataprocessing.characterize_KPI(machine,KPI_name)
-                    result = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
+                            Lime_exp = []
+                            for exp in result['Lime_explaination']:
+                                Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
+                            json_out_el.Lime_explaination = Lime_exp
+                            json_out_el.Date_prediction = result['Date_prediction']  
+                        else:
+                            if status == -1:
+                                json_out_el.Error_message = 'Error: the time-series is constant, forecast is meaningless'
+                            else:
+                                json_out_el.Error_message = 'Error: could not preprocess the data'
 
-                    json_out_el.Predicted_value = result['Predicted_value']
-                    json_out_el.Lower_bound = result['Lower_bound']
-                    json_out_el.Upper_bound = result['Upper_bound']
-                    json_out_el.Measure_unit = KPI_data["unit_measure"]
-                    json_out_el.Confidence_score = result['Confidence_score']
-
-                    Lime_exp = []
-                    for exp in result['Lime_explaination']:
-                        Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
-                    json_out_el.Lime_explaination = Lime_exp
-                    json_out_el.Date_prediction = result['Date_prediction']                  
+                    else:
+                        json_out_el.Error_message = 'Error: invalid selected date for forecast'
                 else:
-                    json_out_el.Error_message = 'Errore, la data inserita è precedente alla data odierna'
+                   json_out_el.Error_message = f'Error:, the KPI {KPI_Name} of {machine} is not forecastable' 
             else:
-                json_out_el.Error_message = 'Errore, il KPI inserito non esiste'
+                json_out_el.Error_message = f'Error:, the KPI {KPI_Name} does not exist for {machine}'
             out_dicts.append(json_out_el)
+        json_out = Json_out(
+        value=out_dicts
+        )
+        return json_out.dict()
+    else:
+        json_out_el = Json_out_el(
+        Machine_Name = "",
+        KPI_Name= "",
+        Predicted_value=[],
+        Lower_bound=[],
+        Upper_bound=[],
+        Confidence_score=[],
+        Lime_explaination=[],
+        Measure_unit="",
+        Date_prediction=[],
+        Error_message="Received input is not valid",
+        Forecast=True)
 
-    json_out = Json_out(
-    value=out_dicts
-    )
-    return json_out.dict()
-
+        out_dicts.append(json_out_el)
+        
+        json_out = Json_out(
+        value=out_dicts
+        )
+        return json_out.dict()
+        
 def new_data_polling():
     """
         daily check of new data point to update the models. new data points are extracted 24 hours
@@ -162,7 +198,7 @@ def new_data_polling():
     # availableModels = []
     availableModels = []
     for m in availableModels:
-        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+        f_dataprocessing.elaborate_new_datapoint(m['Machine_Name'], m['KPI_Name'])
     print(datetime.datetime.today())
     alert_data = {
      'title': "A",
@@ -175,6 +211,7 @@ def new_data_polling():
      'severity': Severity.MEDIUM
     }
     url_alert = f"http://api:8000/smartfactory/postAlert"
+    API_key = os.getenv('my_key')
     f_dataprocessing.send_Alert(url_alert,alert_data,API_key)
  
 if __name__ == "__main__":

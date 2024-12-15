@@ -31,6 +31,8 @@ from dateutil.relativedelta import relativedelta
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# agent header for authenticatication with other modules communication
+HEADER = {"x-api-key":"06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7"}
 # History length parameter
 HISTORY_LEN = 3
 
@@ -147,10 +149,11 @@ def prompt_classifier(input: Question, userId: str):
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
+    all_kpis=0
     if label == "predictions" or label == "kpi_calc" or label == "report":
-        json_request = query_gen.query_generation(input, label)
+        json_request, all_kpis = query_gen.query_generation(input, label)
         
-    return label, json_request
+    return label, json_request, all_kpis
 
 async def ask_kpi_engine(json_body):
     """
@@ -167,7 +170,7 @@ async def ask_kpi_engine(json_body):
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
-    kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
+    kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
 
     """
     kpi_engine_url = "https://kpi.engine.com/api"  
@@ -209,7 +212,7 @@ async def ask_kpi_engine(json_body):
             response = await client.get("url")
     """
     async with httpx.AsyncClient() as client:
-        response = await client.post(kpi_engine_url,json=json_body)
+        response = await client.post(kpi_engine_url,json=json_body,headers=HEADER)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
@@ -258,7 +261,7 @@ async def ask_predictor_engine(json_body):
             response = await client.get(url)
     """
     async with httpx.AsyncClient() as client:
-        response = await client.post(url=predictor_engine_url,json=json_body)
+        response = await client.post(url=predictor_engine_url,json=json_body,headers=HEADER)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
@@ -426,9 +429,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
 
         # Classify the question
-        label, json_body = prompt_classifier(question, userId)
-        #mock url
-        url=""
+        label, json_body,all_kpis = prompt_classifier(question, userId)
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(json_body),
@@ -457,7 +458,11 @@ async def ask_question(question: Question): # to add or modify the services allo
 
         # Execute the handler
         context = await handlers[label]()
-
+        #eventually add the log error if user tried to ask for all kpis
+        if all_kpis == query_gen.ERROR_NO_KPIS:
+            context+="\nError: You can't calculate/predict for no kpis, try again with at least one kpi.\n"
+        elif all_kpis == query_gen.ERROR_ALL_KPIS:
+            context+="\nError: You can't calculate/predict for all kpis, try again with less kpis.\n"
         if label == 'kb_q':
             # Update the history
             history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
@@ -537,7 +542,7 @@ async def ask_question(question: Question): # to add or modify the services allo
                 else:
                     history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                                
+                textResponse = textResponse.replace('{', '').replace('}', '').replace('\n\n', '')                
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data="response_cleaned", label=label) 
 
             if label == 'report':
