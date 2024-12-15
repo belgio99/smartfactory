@@ -18,7 +18,7 @@ async def task_scheduler():
     while True:
         await asyncio.sleep(2)
         new_data_polling()
-        print('polling_complete :)')
+        #send here a bunch of alerts
         await asyncio.sleep(86400)
         # await asyncio.sleep(10)
             
@@ -117,7 +117,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
                 # delta = req_date - today
                 # horizon = delta.days() 
                 if horizon > 0:
-                    
+
                     if not f_dataprocessing.check_model_exists(machine,KPI_name):
                        f_dataprocessing.characterize_KPI(machine,KPI_name)
                     result = f_dataprocessing.make_prediction(machine, KPI_name, horizon)
