@@ -137,9 +137,9 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
                         json_out_el.Lime_explaination = Lime_exp
                         json_out_el.Date_prediction = result['Date_prediction']                  
                     else:
-                        json_out_el.Error_message = 'Errore, la data inserita è precedente alla data odierna'
+                        json_out_el.Error_message = 'Error: invalid selected date for forecast'
                 else:
-                    json_out_el.Error_message = 'Errore, il KPI inserito non esiste'
+                    json_out_el.Error_message = f'Error:, the KPI {KPI_Name} does not exist'
                 out_dicts.append(json_out_el)
         json_out = Json_out(
         value=out_dicts
@@ -156,7 +156,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
         Lime_explaination=[],
         Measure_unit="",
         Date_prediction=[],
-        Error_message="Input ricevuto non valido",
+        Error_message="Input received not valid",
         Forecast=True)
 
         out_dicts.append(json_out_el)
