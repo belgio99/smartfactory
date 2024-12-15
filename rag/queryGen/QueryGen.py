@@ -25,8 +25,10 @@ class QueryGenerator:
             start = datetime.strptime(dates[0], "%Y-%m-%d")
             end = datetime.strptime(dates[1], "%Y-%m-%d")
         except:
+            print("exc")
             return False
         if (end -start).days < 0:
+            print((end -start).days )
             return False
         # there are two delta due to a the following user case:
         # TODAY is somewhere in the middle of april and the input is "predict/calculate X for the month of April 2024"
@@ -36,6 +38,8 @@ class QueryGenerator:
         if (delta_p > 0 and label == "prediction") or (delta_k < 0 and label == "kpi_calc"):
             return True
         # time window not consistent with label or attempt to calculate/predict for Today
+        print(delta_k)
+        print(delta_p)
         return False
 
             
@@ -221,13 +225,12 @@ class QueryGenerator:
                 -If 'all' IDs from LIST_2 are associated with the matched KPIs, return ['ALL'] as [matched LIST_2 IDs]. Example: 'predict all kpis for ...' -> ['ALL']
                 -If 'all' IDs from LIST_1 are associated with the matched machines, return ['ALL'] as [matched LIST_1 IDs]. Example: 'calculate for all machines ...' -> ['ALL']
             2. Determine Time Window:
-                -in USER QUERY exact time windows format is 'DD/MM/YYYY -> DD/MM/YYYY'
+                -in USER QUERY exact time windows format is 'DD/MM/YYYY -> DD/MM/YYYY', the output MUST be provided in the format 'YYYY-MM-DD -> YYYY-MM-DD' as shown in the EXAMPLES
                 -if there is a time window described by exact dates, use them, otherwise return the expression which individuates the time window: 'last/next X days/weeks/months' using the format <last/next, X, days/weeks/months>
                 -If no time window is specified, use NULL.
                 -if there is a reference to an exact month and a year, return the time windows starting from the first of that month and ending to the last day of that month.
                 -Yesterday must be returned as {YESTERDAY}, today as {(self.TODAY).strftime('%Y-%m-%d')} -> {(self.TODAY).strftime('%Y-%m-%d')} and tomorrow as {(self.TODAY+relativedelta(days=1)).strftime('%Y-%m-%d')} -> {(self.TODAY+relativedelta(days=1)).strftime('%Y-%m-%d')}.
                 -Allow for minor spelling or formatting mistakes in the matched expressions and correct them as done in the examples below.
-                -If there is a time window logically incorrect, DO NOT fix it and return it as it is. ES: 15/07/2024 -> 10/07/2024 MUST NOT BE CORRECTED as 10/07/2024 -> 15/07/2024
             3. Handle Errors:
                 -Allow for minor spelling or formatting mistakes in the input.
                 -If there is ambiguity matching a kpi, you can match USER QUERY with the one in LIST_2 which ends with '_avg'"""
