@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, userId, role
                     <div>
                     <span className="text-sm text-gray-900 cursor-pointer">
                         {userName}
-                        {false && <span className="text-gray-500">({role})</span>}
+                        {<span className="text-gray-500">({role})</span>}
                     </span>
                         {menuVisible && (
                             <div
