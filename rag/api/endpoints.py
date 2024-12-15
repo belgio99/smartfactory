@@ -429,8 +429,6 @@ async def ask_question(question: Question): # to add or modify the services allo
 
         # Classify the question
         label, json_body = prompt_classifier(question, userId)
-        #mock url
-        url=""
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(json_body),
@@ -539,7 +537,7 @@ async def ask_question(question: Question): # to add or modify the services allo
                 else:
                     history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                                
+                textResponse = textResponse.replace('{', '').replace('}', '').replace('\n\n', '')                
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data="response_cleaned", label=label) 
 
             if label == 'report':
