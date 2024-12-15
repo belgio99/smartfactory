@@ -1,6 +1,7 @@
 import f_dataprocessing
 import uvicorn
 
+from storage.storage_operations import retrieve_all_models_from_storage
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Depends
 import os
