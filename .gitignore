@@ -8,3 +8,4 @@ smart_app_data.csv
 .DS_Store
 *.pyc
 .idea
+models/
