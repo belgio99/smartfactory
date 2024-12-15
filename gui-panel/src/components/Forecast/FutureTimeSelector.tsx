@@ -9,35 +9,23 @@ export interface FutureTimeFrameSelectorProps {
 const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFrame, setTimeFrame}) => {
 
     const getFutureTimeFrame = (days: number): TimeFrame => {
-        const today = new Date();
+        const today = new Date(2024,9,19);
         const from = new Date(today);
-        // avoid including today in the future period
-        from.setDate(from.getDate() + 1);
         const to = new Date(today.setDate(today.getDate() + days)); // After `days` days
         console.log("Future period:", from, to);
         return {from, to, aggregation: 'day'};
     }
 
-
-    const getPastWeekTimeFrame = (): TimeFrame => {
-        const today = new Date();
+    const getPastTimeFrame = (days: number): TimeFrame => {
+        const today = new Date(2024,9,19);
         const to = new Date(today);
-        const from = new Date(today.setDate(today.getDate() - 7)); // 7 days ago
-        console.log("Past week:", from, to);
+        const from = new Date(today.setDate(today.getDate() - days)); // `days` days ago
+        console.log("Past period:", from, to);
         return {from, to, aggregation: 'day'};
-    };
-
-    const getFutureWeekTimeFrame = (): TimeFrame => {
-        const today = new Date();
-        const from = new Date(today);
-        from.setDate(from.getDate() + 1); // Avoid including today in the future period
-        const to = new Date(today.setDate(today.getDate() + 6)); // End of the next week
-        console.log("Future week:", from, to);
-        return {from, to, aggregation: 'day'};
-    };
+    }
 
     const getPastMonthTimeFrame = (): TimeFrame => {
-        const today = new Date();
+        const today = new Date(2024,9,19);
         const from = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate()); // First day of last month
         const to = today;
         console.log("Past month:", from, to);
@@ -45,35 +33,28 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
     };
 
     const getFutureMonthTimeFrame = (): TimeFrame => {
-        const today = new Date();
+        const today = new Date(2024,9,19);
         const from = today;
         const to = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate()); // Same day of next month
         console.log("Future month:", from, to);
         return {from, to, aggregation: 'week'};
     };
 
-    const getFiveDaysBefore = (): TimeFrame => {
-        const today = new Date();
-        const to = today;
-        const from = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5);
-        return {from, to, aggregation: 'day'}
-    }
-
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const value = event.target.value;
 
         if (value === "tomorrow") {
-            setTimeFrame({past: getFiveDaysBefore(), future: getFutureTimeFrame(1), key: value});
+            setTimeFrame({past: getPastTimeFrame(5), future: getFutureTimeFrame(1), key: value});
         } else if (value === "3days") {
-            setTimeFrame({past: getFiveDaysBefore(), future: getFutureTimeFrame(3), key: value});
+            setTimeFrame({past: getPastTimeFrame(5), future: getFutureTimeFrame(3), key: value});
         } else if (value === "5days") {
-            setTimeFrame({past: getFiveDaysBefore(), future: getFutureTimeFrame(5), key: value});
+            setTimeFrame({past: getPastTimeFrame(5), future: getFutureTimeFrame(5), key: value});
         } else if (value === "nextWeek") {
-            setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureWeekTimeFrame(), key: value});
+            setTimeFrame({past: getPastTimeFrame(7), future: getFutureTimeFrame(7), key: value});
         } else if (value === "next2Week") {
-            setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureTimeFrame(14), key: value});
-        } else if (value === "next2Week") {
-            setTimeFrame({past: getPastWeekTimeFrame(), future: getFutureTimeFrame(21), key: value});
+            setTimeFrame({past: getPastTimeFrame(14), future: getFutureTimeFrame(14), key: value});
+        } else if (value === "next3Week") {
+            setTimeFrame({past: getPastTimeFrame(21), future: getFutureTimeFrame(21), key: value});
         } else if (value === "nextMonth") {
             setTimeFrame({past: getPastMonthTimeFrame(), future: getFutureMonthTimeFrame(), key: value});
         }
@@ -102,8 +83,8 @@ const FutureTimeFrameSelector: React.FC<FutureTimeFrameSelectorProps> = ({timeFr
                     <option value="3days">Next 3 Days</option>
                     <option value="5days">Next 5 Days</option>
                     <option value="nextWeek">Next Week</option>
-                    <option value="next2Week">Next Two Weeks</option>
-                    <option value="next3Week">Next Three Weeks</option>
+                    <option value="next2Week">Next 2 Weeks</option>
+                    <option value="next3Week">Next 3 Weeks</option>
                     <option value="nextMonth">Next Month</option>
                 </select>
             </div>
