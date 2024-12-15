@@ -285,6 +285,8 @@ services:
     build:
       context: ./gui-panel
       dockerfile: Dockerfile
+    env_file:
+      - gui-panel/.env
     ports: 
       - "10060:8080"
     profiles:

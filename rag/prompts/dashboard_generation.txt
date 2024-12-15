@@ -18,7 +18,7 @@ REQUIREMENTS:
 - each graphical element should bind at most one KPI, so select the best ones
 - you must create at least 4 associations in the bindings list 
 - you must create no more then 8 
-- you can repeat KPI in different bindings with different graphical elements
+- you can repeat KPI in different bindings with different graphical elements (do not abuse it, so do not use always or too much the same KPI)
 - you can repeat graphical elements in different bindings with different KPIs
 
 CONTEXT: 

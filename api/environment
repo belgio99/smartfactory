@@ -86,3 +86,5 @@ KB_PORT=8000
 
 # Data processing API endpoint
 DATA_PROCESSING_ENDPOINT = 'http://data-processing:8000/data-processing/predict'
+DATA_PROCESSING_HOST=data-processing
+DATA_PROCESSING_PORT=8000
