@@ -1,10 +1,5 @@
 name: Build Docker Compose Services
 
-concurrency: 
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
-
 on:
   push:
     branches:
@@ -63,6 +58,9 @@ jobs:
   build-db-init:
     needs: detect-changes
     if: contains(needs.detect-changes.outputs.changed-services, 'database')
+    concurrency: 
+      group: build-db-init
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -99,6 +97,9 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.changed-services != ''
     runs-on: ubuntu-latest
+    concurrency: 
+      group: build-containers-${{ matrix.service }}
+      cancel-in-progress: false
     strategy:
       matrix:
         service: [kb, data-processing, api, rag, gui-panel, kpi-engine]
