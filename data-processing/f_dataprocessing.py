@@ -26,7 +26,7 @@ import matplotlib.dates as mdates
 import requests
 from datetime import datetime, timedelta
 
-from XAI_forecasting import forecastExplainer
+from XAI_forecasting import ForecastExplainer
 from storage.storage_operations import insert_model_to_storage, retrieve_model_from_storage
 
 
@@ -491,7 +491,7 @@ def XAI_PRED(data, model, total_points, seq_length = 10, n_predictions = 30):
   input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
   # Initialize the explainer
-  explainer = forecastExplainer(model, X_train)
+  explainer = ForecastExplainer(model, X_train)
 
   # Perform autoregressive predictions
   results = explainer.predict_and_explain(
@@ -528,7 +528,7 @@ def make_prediction(machine, kpi, length):
 
     # model = any
     # training_data: Union[np.ndarray, torch.Tensor]
-    # explainer = forecastExplainer(model, training_data)
+    # explainer = ForecastExplainer(model, training_data)
     # input_data: Union[np.ndarray, torch.Tensor]
     # n_predictions: int
     # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD']
@@ -577,7 +577,7 @@ def make_prediction(machine, kpi, length):
 
     # Use the loaded model for predictions
 
-    # explainer = forecastExplainer(loaded_model, X_train)
+    # explainer = ForecastExplainer(loaded_model, X_train)
     # formatted_dates = [datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d") for date in kpi_data_Time[-11:-1]]
 
     results = XAI_PRED(avg_values1,loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)

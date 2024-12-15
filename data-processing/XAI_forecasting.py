@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import xgboost as xgb
 import time
 
-class forecastExplainer:
+class ForecastExplainer:
     def __init__(
         self,
         model: Any,
@@ -17,7 +17,7 @@ class forecastExplainer:
         device: torch.device = None
     ):
         """
-        Initialize the forecastExplainer.
+        Initialize the ForecastExplainer.
 
         This class handles both PyTorch (nn.Module) and sklearn/xgboost type models.
         It provides methods to:
@@ -310,13 +310,13 @@ class forecastExplainer:
 
 def main():
     """
-    Main entry point to demonstrate the forecastExplainer class.
+    Main entry point to demonstrate the ForecastExplainer class.
 
     This function:
     - Generates a synthetic sine wave dataset with noise.
     - Trains an XGBoost model for forecasting.
-    - Instantiates forecastExplainer (which internally creates a LimeTabularExplainer).
-    - Uses the forecastExplainer to predict and explain forecast steps.
+    - Instantiates ForecastExplainer (which internally creates a LimeTabularExplainer).
+    - Uses the ForecastExplainer to predict and explain forecast steps.
     - Plots the results.
 
     Args:
@@ -366,7 +366,7 @@ def main():
 
     start_time = time.time()
     # Initialize the explainer
-    explainer = forecastExplainer(model, X_train)
+    explainer = ForecastExplainer(model, X_train)
 
     # Perform autoregressive predictions
     results = explainer.predict_and_explain(
