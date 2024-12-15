@@ -338,8 +338,6 @@ def custom_tts(data, labels, window_size = 20):
 def characterize_KPI(machine, kpi):
   # DATA LOADING
   a_dict = load_model(machine, kpi)
-  print('AAAAAAAAAAAAAAAAAAAAAa')
-  print(a_dict)
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   # EXTRACT DATA TRENDS
