@@ -40,7 +40,6 @@ from storage.storage_operations import insert_model_to_storage, retrieve_model_f
 # analyzed in real-time. The same pipeline should be applied to any new batch
 # of data that we wish to add in the future and for which we have enough
 # historical data
-models_path = './models/'
 
 observation_window = 15
 
@@ -801,18 +800,14 @@ def elaborate_new_datapoint(machine, kpi):
   ##################################
 
   # LOADING NEW DATA and KPI metadata
-  final_path = f'{models_path}{machine}_{kpi}.json'
   # d = read_value(machine, kpi)
   kpi_data_Date, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   d_date = datetime.date(kpi_data_Date[-1])
   d = kpi_data_Avg[-1]
 
-  a_dict = {}
-  with open(final_path, "r") as file:
-    a_dict = json.load(file)
+  a_dict = load_model(machine,kpi)
   
-
   last_pred =  datetime.date(a_dict['predictions']['date_prediction'][0],
                              a_dict['predictions']['date_prediction'][1],
                              a_dict['predictions']['date_prediction'][2])
