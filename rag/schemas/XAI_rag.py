@@ -43,7 +43,7 @@ class RagExplainer:
         use_embeddings: bool = True
     ):
         """
-        Initializes a RagExplainer object with configurable parameters.
+        Initializes a RagExplainer object with configurable parameters and starts loading the embedding model if embeddings are used.
 
         Args:
             context (List[Tuple[str, str]]): A list of tuples containing (source name, context string).
@@ -68,35 +68,15 @@ class RagExplainer:
             model_path = './models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
             # Initialize model loading in background
             self.executor = ThreadPoolExecutor()
-            self.model_future = self.executor.submit(self._initialize_model, model_path)
+            self.model_future = self.executor.submit(
+                SentenceTransformer, 'paraphrase-multilingual-MiniLM-L12-v2', cache_folder=model_path
+            )
         else:
             self.executor = None
             self.model_future = None
         
         # Add the initial context to the class instance, if provided
         self.add_to_context(context)
-
-    def _initialize_model(self, model_path: str) -> SentenceTransformer:
-        """
-        Initialize and/or load the SentenceTransformer model from the specified path.
-        Downloads and saves the model if it doesn't exist at the specified location.
-
-        Args:
-            model_path (str): The path where the model should be loaded from or saved to.
-
-        Returns:
-            SentenceTransformer: The loaded model instance.
-
-        Raises:
-            OSError: If there are issues creating directories or saving the model.
-        """
-        if not os.path.exists(model_path):
-            os.makedirs(os.path.dirname(model_path), exist_ok=True)
-            model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-            model.save(model_path)
-        else:
-            model = SentenceTransformer(model_path)
-        return model
 
     def _get_embedding_model(self):
         """Retrieves the embedding model from the future object."""
