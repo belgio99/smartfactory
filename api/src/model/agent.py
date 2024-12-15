@@ -9,4 +9,4 @@ class Answer(BaseModel):
   textResponse: str = ''
   textExplanation: str = ''
   data: Optional[str] = ''
-  label: str = ''
+  label: Optional[str] = ''
