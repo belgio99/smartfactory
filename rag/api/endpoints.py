@@ -149,10 +149,11 @@ def prompt_classifier(input: Question, userId: str):
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
+    all_kpis=False
     if label == "predictions" or label == "kpi_calc" or label == "report":
-        json_request = query_gen.query_generation(input, label)
+        json_request, all_kpis = query_gen.query_generation(input, label)
         
-    return label, json_request
+    return label, json_request, all_kpis
 
 async def ask_kpi_engine(json_body):
     """
@@ -428,9 +429,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
 
         # Classify the question
-        label, json_body = prompt_classifier(question, userId)
-        #mock url
-        url=""
+        label, json_body,all_kpis = prompt_classifier(question, userId)
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(json_body),
@@ -459,7 +458,9 @@ async def ask_question(question: Question): # to add or modify the services allo
 
         # Execute the handler
         context = await handlers[label]()
-
+        #eventually add the log error if user tried to ask for all kpis
+        if all_kpis:
+            context+="\nError: You can't calculate/predict for all kpis, try again with less kpis.\n"
         if label == 'kb_q':
             # Update the history
             history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
@@ -539,7 +540,7 @@ async def ask_question(question: Question): # to add or modify the services allo
                 else:
                     history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                                
+                textResponse = textResponse.replace('{', '').replace('}', '').replace('\n\n', '')                
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data="response_cleaned", label=label) 
 
             if label == 'report':
