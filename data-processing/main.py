@@ -94,6 +94,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
     """
     out_dicts = []
     if len(JSONS.value) != 0:
+        print(f"received a list of {len(JSONS.value)} KPIs to predict")
         for json_in in JSONS.value:
             machine = json_in.Machine_Name#['Machine_Name'] #direttamente valore DB
             KPI_Name = json_in.KPI_Name#['KPI_Name']
@@ -112,35 +113,48 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
             )
             API_key = os.getenv('my_key')
             KPI_data = f_dataprocessing.kpi_exists(machine,KPI_Name, API_key)
-    
             if KPI_data['Status'] == 0:
+                print('the KPI exists')
                 if KPI_data['forecastable'] == True:
+                    print('the KPI is forecastable')
                     horizon = json_in.Date_prediction#['Date_prediction']
                     # today = datetime.datetime.now().date()
                     # delta = req_date - today
                     # horizon = delta.days() 
                     if horizon > 0:
-
+                        
+                        status = 0
                         if not f_dataprocessing.check_model_exists(machine,KPI_Name):
-                            f_dataprocessing.characterize_KPI(machine,KPI_Name)
-                        result = f_dataprocessing.make_prediction(machine, KPI_Name, horizon)
+                            print(f"Creating model for {machine},{KPI_Name}")
+                            status = f_dataprocessing.characterize_KPI(machine,KPI_Name)
+                        if status == 0:
+                            result = f_dataprocessing.make_prediction(machine, KPI_Name, horizon)
+                            print(f"the output data is: {result['Predicted_value']}")
 
-                        json_out_el.Predicted_value = result['Predicted_value']
-                        json_out_el.Lower_bound = result['Lower_bound']
-                        json_out_el.Upper_bound = result['Upper_bound']
-                        json_out_el.Measure_unit = KPI_data["unit_measure"]
-                        json_out_el.Confidence_score = result['Confidence_score']
+                            json_out_el.Predicted_value = result['Predicted_value']
+                            json_out_el.Lower_bound = result['Lower_bound']
+                            json_out_el.Upper_bound = result['Upper_bound']
+                            json_out_el.Measure_unit = KPI_data["unit_measure"]
+                            json_out_el.Confidence_score = result['Confidence_score']
 
-                        Lime_exp = []
-                        for exp in result['Lime_explaination']:
-                            Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
-                        json_out_el.Lime_explaination = Lime_exp
-                        json_out_el.Date_prediction = result['Date_prediction']                  
+                            Lime_exp = []
+                            for exp in result['Lime_explaination']:
+                                Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
+                            json_out_el.Lime_explaination = Lime_exp
+                            json_out_el.Date_prediction = result['Date_prediction']  
+                        else:
+                            if status == -1:
+                                json_out_el.Error_message = 'Error: the time-series is constant, forecast is meaningless'
+                            else:
+                                json_out_el.Error_message = 'Error: could not preprocess the data'
+
                     else:
                         json_out_el.Error_message = 'Error: invalid selected date for forecast'
                 else:
-                    json_out_el.Error_message = f'Error:, the KPI {KPI_Name} does not exist'
-                out_dicts.append(json_out_el)
+                   json_out_el.Error_message = f'Error:, the KPI {KPI_Name} of {machine} is not forecastable' 
+            else:
+                json_out_el.Error_message = f'Error:, the KPI {KPI_Name} does not exist for {machine}'
+            out_dicts.append(json_out_el)
         json_out = Json_out(
         value=out_dicts
         )
