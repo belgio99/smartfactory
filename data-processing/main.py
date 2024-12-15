@@ -156,7 +156,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
         Lime_explaination=[],
         Measure_unit="",
         Date_prediction=[],
-        Error_message="Input received not valid",
+        Error_message="Received input is not valid",
         Forecast=True)
 
         out_dicts.append(json_out_el)
