@@ -26,7 +26,7 @@ import matplotlib.dates as mdates
 import requests
 from datetime import datetime, timedelta
 
-from XAI_forecasting import forecastExplainer
+from XAI_forecasting import ForecastExplainer
 from storage.storage_operations import insert_model_to_storage, retrieve_model_from_storage
 
 
@@ -114,8 +114,15 @@ def perform_adfuller(series):
     """
     Perform ADF test and return test statistic and p-value
     """
-    result = adfuller(series, regression='ct')
-    return result[0], result[1]  # Returns test statistic and p-value
+    try:
+      result = adfuller(series, regression='ct')
+      return 0,result[0], result[1]  # Returns test statistic and p-value
+    except ValueError as e:
+      if "x is constant" in str(e):
+          print("Input series is constant. ADF test cannot be performed.")
+          return -1,None, None  # Or choose other default values
+      else:
+          return -2,None, None
 
 def data_clean_missing_values(data):
   # remove null values, furhter studies are needed to evaluate the zeros
@@ -338,8 +345,6 @@ def custom_tts(data, labels, window_size = 20):
 def characterize_KPI(machine, kpi):
   # DATA LOADING
   a_dict = load_model(machine, kpi)
-  print('AAAAAAAAAAAAAAAAAAAAAa')
-  print(a_dict)
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   # EXTRACT DATA TRENDS
@@ -360,86 +365,89 @@ def characterize_KPI(machine, kpi):
                                                           #   correlation of holes with other trends and report them
 
   # STATIONARITY CHECK
-  orig_statistic, orig_p_value = perform_adfuller(data['Value'])
-
-  stationarity_results = {
-      'Differencing': 0,
-      'Statistic': round(orig_statistic, 3),
-      'P-value': f'{orig_p_value:.2E}',
-      'Stationary': 1 if orig_p_value < 0.05 else 0
-  }
-  if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
-    diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
-    diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
-    # data['Value'] = data_normalize_params(diff1_series['Value'])
+  call_status, orig_statistic, orig_p_value = perform_adfuller(data['Value'])
+  if call_status == 0:
     stationarity_results = {
-      'Differencing': 1,
-      'Statistic': round(diff1_statistic, 3),
-      'P-value': f'{diff1_p_value:.2E}',
-      'Stationary': 1 if diff1_p_value < 0.05 else 0
+        'Differencing': 0,
+        'Statistic': round(orig_statistic, 3),
+        'P-value': f'{orig_p_value:.2E}',
+        'Stationary': 1 if orig_p_value < 0.05 else 0
     }
-    if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
-        diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
-        diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
-        # data['Value'] = data_normalize_params(diff2_series['Value'])
-        stationarity_results = {
-          'Differencing': 2,
-          'Statistic': round(diff2_statistic, 3),
-          'P-value': f'{diff2_p_value:.2E}',
-          'Stationary': 1 if diff2_p_value < 0.05 else 0
-        }
-  # else:
-  #   data['Value'] = data_normalize_params(data['Value'])
-  a_dict['stationarity'] = stationarity_results
-  ###########################
-  ### 3. Model definition ###
-  ###########################
-  model_selected = 'xgboost'
-  if model_selected == 'ARIMA':
-    # Set up the p and q ranges
-    # p = range(0, 10,1)  # You can adjust the range as needed
-    # q = range(0, 20,1)  # You can adjust the range as needed
-    p = range(2, 4,1)  # You can adjust the range as needed
-    q = range(2, 4,1)  # You can adjust the range as needed
-    order_list = list(itertools.product(p, q))
+    if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
+      diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
+      diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
+      # data['Value'] = data_normalize_params(diff1_series['Value'])
+      stationarity_results = {
+        'Differencing': 1,
+        'Statistic': round(diff1_statistic, 3),
+        'P-value': f'{diff1_p_value:.2E}',
+        'Stationary': 1 if diff1_p_value < 0.05 else 0
+      }
+      if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
+          diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
+          diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
+          # data['Value'] = data_normalize_params(diff2_series['Value'])
+          stationarity_results = {
+            'Differencing': 2,
+            'Statistic': round(diff2_statistic, 3),
+            'P-value': f'{diff2_p_value:.2E}',
+            'Stationary': 1 if diff2_p_value < 0.05 else 0
+          }
+    # else:
+    #   data['Value'] = data_normalize_params(data['Value'])
+    a_dict['stationarity'] = stationarity_results
+    ###########################
+    ### 3. Model definition ###
+    ###########################
+    model_selected = 'xgboost'
+    if model_selected == 'ARIMA':
+      # Set up the p and q ranges
+      # p = range(0, 10,1)  # You can adjust the range as needed
+      # q = range(0, 20,1)  # You can adjust the range as needed
+      p = range(2, 4,1)  # You can adjust the range as needed
+      q = range(2, 4,1)  # You can adjust the range as needed
+      order_list = list(itertools.product(p, q))
 
-    # Differencing parameter
-    d = 1  # Assumed based on standard practice. Adjust if necessary.
+      # Differencing parameter
+      d = 1  # Assumed based on standard practice. Adjust if necessary.
 
-    # Create an empty list to store optimization results
-    best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
-    pq_tuple = best_arima.iloc[0].iloc[0]
-    p = pq_tuple[0]
-    q = pq_tuple[1]
-    print(p,q)
-    a_dict['model'] = {
-        'name': 'ARIMA',
-        'p': p,
-        'q': q
-    }
-  elif model_selected == 'xgboost':
-    # parameter selection for xgboost
-    X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
+      # Create an empty list to store optimization results
+      best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
+      pq_tuple = best_arima.iloc[0].iloc[0]
+      p = pq_tuple[0]
+      q = pq_tuple[1]
+      print(p,q)
+      a_dict['model'] = {
+          'name': 'ARIMA',
+          'p': p,
+          'q': q
+      }
+    elif model_selected == 'xgboost':
+      # parameter selection for xgboost
+      X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
 
-    # model = xgboost_parameter_select(X_train,y_train)
-    # # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
-    # model.fit(X_train, y_train)
+      # model = xgboost_parameter_select(X_train,y_train)
+      # # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
+      # model.fit(X_train, y_train)
 
-    # booster = model.get_booster()
-    booster = xgboost_parameter_select(X_train,y_train)
-    model_bytes = booster.save_raw()
-    encoded_model = base64.b64encode(model_bytes).decode('utf-8')
-    a_dict['model'] = {
-       'name': 'xgboost',
-       'xgb_bytes': encoded_model,
-       'metadata': {
-          'trained_on': str(datetime.today().date())},
-          # 'hyperparameters': model.get_params()},
-    }
-  ############################
-  ### 4. Meta-Data storage ###
-  ############################
-  save_model_data(machine, kpi, a_dict)
+      # booster = model.get_booster()
+      booster = xgboost_parameter_select(X_train,y_train)
+      model_bytes = booster.save_raw()
+      encoded_model = base64.b64encode(model_bytes).decode('utf-8')
+      a_dict['model'] = {
+        'name': 'xgboost',
+        'xgb_bytes': encoded_model,
+        'metadata': {
+            'trained_on': str(datetime.today().date())},
+            # 'hyperparameters': model.get_params()},
+      }
+    ############################
+    ### 4. Meta-Data storage ###
+    ############################
+    save_model_data(machine, kpi, a_dict)
+    return 0
+  else:
+    return call_status
 
 
 ##############################
@@ -493,7 +501,7 @@ def XAI_PRED(data, model, total_points, seq_length = 10, n_predictions = 30):
   input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
   # Initialize the explainer
-  explainer = forecastExplainer(model, X_train)
+  explainer = ForecastExplainer(model, X_train)
 
   # Perform autoregressive predictions
   results = explainer.predict_and_explain(
@@ -530,7 +538,7 @@ def make_prediction(machine, kpi, length):
 
     # model = any
     # training_data: Union[np.ndarray, torch.Tensor]
-    # explainer = forecastExplainer(model, training_data)
+    # explainer = ForecastExplainer(model, training_data)
     # input_data: Union[np.ndarray, torch.Tensor]
     # n_predictions: int
     # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD']
@@ -579,7 +587,7 @@ def make_prediction(machine, kpi, length):
 
     # Use the loaded model for predictions
 
-    # explainer = forecastExplainer(loaded_model, X_train)
+    # explainer = ForecastExplainer(loaded_model, X_train)
     # formatted_dates = [datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d") for date in kpi_data_Time[-11:-1]]
 
     results = XAI_PRED(avg_values1,loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
@@ -597,6 +605,7 @@ def make_prediction(machine, kpi, length):
 
 def kpi_exists(machine, KPI, api_key):
   machine = machine.replace(" ", "_")
+  print(f"looking for {machine}, {KPI}")
   headers = {
       "x-api-key": api_key
   }
@@ -606,6 +615,7 @@ def kpi_exists(machine, KPI, api_key):
   url_KB = f"http://kb:{host_port}/kb/{machine}/{KPI}/check"
   # Kpi_info  = requests.post(url_KB)
   Kpi_info = requests.get(url_KB, headers=headers)
+  print(f"KB out: {Kpi_info.json()}")
 
   return Kpi_info.json()
 
@@ -622,7 +632,7 @@ def kpi_exists(machine, KPI, api_key):
 class DDM: # Drift Detection Modelworks by keeping track of the error rate in a stream of predictions.
            # It raises a warning or signals a drift if it detects significant deviations based on
            # statistical analysis of the error rate.
-  def __init__(self, warning_level=2.0, drift_level=3.0, state_file="ddm_state.json"):
+  def __init__(self,state_json, warning_level=2.0, drift_level=3.0):
     """
     - warning_level: float, threshold for raising a warning.
     - drift_level: float, threshold for detecting a drift.
@@ -630,7 +640,7 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
     """
     self.warning_level = warning_level
     self.drift_level = drift_level
-    self.state_file = state_file
+    self.state_json = state_json
 
     # Initialize state variables
     self.num_instances = 0
@@ -638,10 +648,6 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
     self.s_min = float('inf')
     self.p_mean = 0.0
     self.s_mean = 0.0
-
-    # Load state if the state file exists
-    if os.path.exists(self.state_file):
-      self.load_state()
 
   def update(self, error):
     """
@@ -678,8 +684,8 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
 
 
     # Save the state after each update
-    self.save_state()
-    return self.drift_detected
+    new_drift_model = self.save_state()
+    return new_drift_model, self.drift_detected
 
   def reset(self):
     """Reset the DDM statistics after drift detection."""
@@ -691,34 +697,24 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
 
   def save_state(self):
     """Save the current state of DDM to a JSON file."""
-    n_dict = {}
+    
+    self.state_json['drift'] = {
+      "num_instances": self.num_instances,
+      "p_min": self.p_min,
+      "s_min": self.s_min,
+      "p_mean": self.p_mean,
+      "s_mean": self.s_mean,
+    }
 
-    with open(self.state_file, "r") as file:
-      n_dict = json.load(file)
-
-      n_dict['drift'] = {
-        "num_instances": self.num_instances,
-        "p_min": self.p_min,
-        "s_min": self.s_min,
-        "p_mean": self.p_mean,
-        "s_mean": self.s_mean,
-      }
-
-    with open(self.state_file, "w") as file:
-      json.dump(n_dict, file)
-
+    return self.state_json
+  
   def load_state(self):
     """Load the state of DDM from a JSON file."""
-    with open(self.state_file, "r") as file:
-      state = json.load(file)
-      self.num_instances = state['drift']["num_instances"]
-      self.p_min = state['drift']["p_min"]
-      self.s_min = state['drift']["s_min"]
-      self.p_mean = state['drift']["p_mean"]
-      self.s_mean = state['drift']["s_mean"]
-
-def read_value(machine, kpi):
-  return 0 #read data from the DB
+    self.num_instances = self.state_json['drift']["num_instances"]
+    self.p_min = self.state_json['drift']["p_min"]
+    self.s_min = self.state_json['drift']["s_min"]
+    self.p_mean = self.state_json['drift']["p_mean"]
+    self.s_mean = self.state_json['drift']["s_mean"]
 
 def missingdata_check(current_value):
   if current_value == float('nan'):
@@ -743,17 +739,6 @@ def send_Alert(url, data, api_key):
   headers = {
       "x-api-key": api_key
   }
-  # new_al = Alert(
-  #   title = data["title"],
-  #   type = data["type"],
-  #   description = data["description"],
-  #   triggeredAt = str(datetime.now()),
-  #   machineName = data["machine"],
-  #   isPush = True,
-  #   isEmail = True,
-  #   recipients = data["recipients"],
-  #   severity = data["severity"])
-  # print("Sending_Alert")
 
   try:
       new_al = {
@@ -774,16 +759,6 @@ def send_Alert(url, data, api_key):
       print(f"Request failed: {e}")
   except Exception as e:
       print(f"Unexpected error: {e}")
-
-# outlier detection
-def detect_outlier(x, window):
-  r = x.rolling(window=window)
-  m = r.mean().shift(1)
-  s = r.std(ddof=0).shift(1)
-  z = (x[-1]-m)/s
-  return z > 3 # if the last object is outside the 97% of the range in the
-                # window, the data point is evaluated as an outlier
-
        
 def elaborate_new_datapoint(machine, kpi):
   """
@@ -870,8 +845,8 @@ def elaborate_new_datapoint(machine, kpi):
       if prediction_error > 2*a_dict['trends']['std']: # a_dict['predictions']['error_threshold']:
         error = 1
       # Initialize DDM with warning level and drift level thresholds
-      ddm = DDM(warning_level=2.0, drift_level=3.0, state_file=final_path)
-      is_drifting = ddm.update(error)
+      ddm = DDM(a_dict, warning_level=2.0, drift_level=3.0)
+      a_dict, is_drifting = ddm.update(error)
       if is_drifting == 2:
         characterize_KPI(machine, kpi)
       #if is_drifting == 1: warning
