@@ -2,6 +2,7 @@ import httpx
 import json
 import os
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from unittest.mock import AsyncMock, patch
 from dotenv import load_dotenv
@@ -15,7 +16,8 @@ from queryGen.QueryGen import QueryGenerator
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
-from langchain.prompts import FewShotPromptTemplate, PromptTemplate
+from langchain.prompts import PromptTemplate,FewShotPromptTemplate
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.globals import set_llm_cache
 from langchain_core.caches import InMemoryCache
@@ -78,7 +80,7 @@ class FileUpdateHandler(FileSystemEventHandler):
             graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
             graph.load_schema()
             global history
-            history = deque(maxlen=HISTORY_LEN)
+            history = {}
 
 # Initialize the RDF graph
 graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
@@ -95,7 +97,7 @@ llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
 #set_llm_cache(InMemoryCache())
 
 # Initialize the conversation history deque
-history = deque(maxlen=HISTORY_LEN)
+history = {}
 
 # FastAPI router initialization
 router = APIRouter()
@@ -106,21 +108,8 @@ prompt_manager = PromptManager('prompts/')
 # Initialize the query generator
 query_gen = QueryGenerator(llm)
 
-def format_docs(docs):
-    """
-    Helper function to format documents for the prompt.
-    
-    Args:
-        docs (list): A list of documents to be formatted.
-    
-    Returns:
-        str: A formatted string of the document contents.
-    """
-    return "\n\n".join(doc.page_content for doc in docs)
 
-
-
-def prompt_classifier(input: Question):
+def prompt_classifier(input: Question, userId: str):
     """
     Classifies an input prompt into a predefined category and generates the associated URL if needed.
     
@@ -130,16 +119,12 @@ def prompt_classifier(input: Question):
     Returns:
         tuple: A tuple containing the label and the extracted json_obj from the input (if applicable).
     """
-    # Format the conversation history
-    history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-        [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
-    )
 
     esempi = [
         {"text": "Predict for the next month the cost_working_avg for Large Capacity Cutting Machine 2 based on last three months data", "label": "predictions"},
         {"text": "Generate a new kpi named machine_total_consumption which use some consumption kpis to be calculated", "label": "new_kpi"},
         {"text": "Compute the Maintenance Cost for the Riveting Machine 1 for yesterday", "label": "kpi_calc"},
-        {"text": "Can describe cost_working_avg?", "label": "kb_q"},
+        {"text": "Can you describe cost_working_avg?", "label": "kb_q"},
         {"text": "Make a report about bad_cycles_min for Laser Welding Machine 1 with respect to last week", "label": "report"},
         {"text": "Create a dashboard to compare performances for different type of machines", "label": "dashboard"},
     ]
@@ -152,20 +137,20 @@ def prompt_classifier(input: Question):
     few_shot_prompt = FewShotPromptTemplate(
         examples=esempi,
         example_prompt=esempio_template,
-        prefix= "{history}\n\nFEW-SHOT EXAMPLES:",
+        prefix= "FEW-SHOT EXAMPLES:",
         suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
-        input_variables=["history", "text_input"]
+        input_variables=["text_input"]
     )
 
-    prompt = few_shot_prompt.format(history=history_context, text_input=input.userInput)
+    prompt = few_shot_prompt.format(text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
     if label == "predictions" or label == "kpi_calc" or label == "report":
-        json_request=query_gen.query_generation(input, label)
+        json_request = query_gen.query_generation(input, label)
         
-    return label,json_request
+    return label, json_request
 
 async def ask_kpi_engine(json_body):
     """
@@ -175,16 +160,17 @@ async def ask_kpi_engine(json_body):
     and returns the data about machine power consumption.
 
     Args:
-        json_body (str): the json used to communicate with the KPI engine API.
+        json_body (str): the json used to communicate the request to the KPI engine API.
 
     Returns:
         dict: A dictionary containing the success status and the KPI data.
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
-    # kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
-    kpi_engine_url = "https://kpi.engine.com/api"  
+    kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
 
+    """
+    kpi_engine_url = "https://kpi.engine.com/api"  
     mock_response = httpx.Response(
       status_code=200,
 
@@ -221,16 +207,16 @@ async def ask_kpi_engine(json_body):
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
             response = await client.get("url")
-
-    #async with httpx.AsyncClient() as client:
-    #    response = await client.post(kpi_engine_url,json=json_body)
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.post(kpi_engine_url,json=json_body)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
     else:
         return {"success": False, "error": response.text}  
 
-async def ask_predictor_engine(url):
+async def ask_predictor_engine(json_body):
     """
     Function to query the predictor engine for machine prediction data.
 
@@ -238,30 +224,18 @@ async def ask_predictor_engine(url):
     and returns predicted values related to machine operation.
 
     Args:
-        url (str): The URL endpoint for the predictor engine API.
+        json_body (str): the json used to communicate the request to the predictor engine API.
 
     Returns:
         dict: A dictionary containing the success status and the prediction data.
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
+    predictor_engine_url = "http://data-processing:8000/data-processing/predict" 
+    """
     predictor_engine_url = "https://predictor.engine.com/api"  
-
     mock_response = httpx.Response(
       status_code=200,
-      # json = [{
-      #   'Machine name': 'Riveting Machine',
-      #   'KPI name': 'idle_time',
-      #   'Value': '1,12',
-      #   'Forecast': True
-      # },
-      # {
-      #   'Machine name': 'Laser Cutter',
-      #   'KPI name': 'idle_time',
-      #   'Value': '0,123',
-      #   'Date': '12/10/2024',
-      #   'Forecast': True
-      # }]
       json = [{
         "Machine_name": "Riveting Machine",
         "Predicted": True,
@@ -282,16 +256,16 @@ async def ask_predictor_engine(url):
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
-
-    # async with httpx.AsyncClient() as client: TO-DO
-    #     response = await client.get(url)
+    """
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url=predictor_engine_url,json=json_body)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
     else:
         return {"success": False, "error": response.text}  
 
-async def handle_predictions(url):
+async def handle_predictions(json_body):
     """
     Handles the response from the predictor engine.
 
@@ -299,12 +273,12 @@ async def handle_predictions(url):
     into a string representation of the prediction data.
 
     Args:
-        url (str): The URL endpoint for the predictor engine API.
+        json_body (str): the json used to communicate the request to the predictor engine API.
 
     Returns:
         str: A string representing the prediction data formatted for the response.
     """
-    response = await ask_predictor_engine(url)
+    response = await ask_predictor_engine(json_body)
     response = ",".join(json.dumps(obj) for obj in response['data'])
     return response
 
@@ -340,8 +314,7 @@ async def handle_report(json_obj):
     Returns:
         str: A formatted report string containing both KPI and prediction data.
     """
-    url =""
-    predictor_response = await ask_predictor_engine(url)
+    predictor_response = await ask_predictor_engine(json_obj)
     kpi_response = await ask_kpi_engine(json_obj)
     predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
     kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
@@ -379,7 +352,7 @@ async def handle_kpi_calc(json_body):
     the response data, and returns it as a formatted string.
 
     Args:
-        url (str): The URL endpoint for the KPI engine API.
+        json_body (str): the json used to communicate the request to the KPI engine API.
 
     Returns:
         str: A string containing the KPI calculation data in a formatted form.
@@ -424,7 +397,6 @@ async def translate_answer(question: Question, question_language: str, context):
         str: The translated response.
     """
     prompt = prompt_manager.get_prompt('translate').format(
-        _HISTORY_='',
         _CONTEXT_=context,
         _USER_QUERY_=question.userInput,
         _LANGUAGE_=question_language
@@ -437,61 +409,71 @@ async def translate_answer(question: Question, question_language: str, context):
 #async def ask_question(question: Question, api_key: str = Depends(get_verify_api_key(["api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
 async def ask_question(question: Question): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])    
     try:
+        explainer = RagExplainer(threshold = 15.0,)
+        # Extract the user ID
+        userId = question.userId
+
+        if userId not in history:
+            history[userId] = deque(maxlen=HISTORY_LEN)
+
+        # Translate the question to English
         language_prompt = prompt_manager.get_prompt('get_language').format(
-            _HISTORY_='',
-            _CONTEXT_='',
             _USER_QUERY_=question.userInput
         )
         translated_question = llm.invoke(language_prompt).content
         question_language, question.userInput = translated_question.split("-", 1)
 
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
+
         # Classify the question
-        label, json_body = prompt_classifier(question)
+        label, json_body = prompt_classifier(question, userId)
         #mock url
         url=""
         # Mapping of handlers
         handlers = {
-            'predictions': lambda: handle_predictions(url),
-            'new_kpi': lambda: handle_new_kpi(question, llm, graph, history),
+            'predictions': lambda: handle_predictions(json_body),
+            'new_kpi': lambda: handle_new_kpi(question, llm, graph, history[userId]),
             'report': lambda: handle_report(json_body),
-            'dashboard': lambda: handle_dashboard(question, llm, graph, history),
+            'dashboard': lambda: handle_dashboard(question, llm, graph, history[userId]),
             'kpi_calc': lambda: handle_kpi_calc(json_body),
-            'kb_q': lambda: handle_kb_q(question, llm, graph, history),
+            'kb_q': lambda: handle_kb_q(question, llm, graph, history[userId]),
         }
 
-        # Check if the label is valid
+        # Check if the label is not in the handlers (i.e. extra-domain question)
         if label not in handlers:
             # Format the history
             history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
             )
             llm_result = llm.invoke(history_context + "\n\n" + question.userInput)
+            
+            # Update the history
+            history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
             
             if question_language.lower() != "english":
                 llm_result = await translate_answer(question, question_language, llm_result.content)
                 
-            # Update the history
-            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
             return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
 
         # Execute the handler
         context = await handlers[label]()
 
         if label == 'kb_q':
+            # Update the history
+            history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
+            
+            # Translate the response back to the user's language
             if question_language.lower() != "english":
                 context = await translate_answer(question, question_language, context)
                 context = context.content
 
-            # Update the history
-            history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': context.replace('{','{{').replace('}','}}')})
             return Answer(textResponse=context, textExplanation='', data='', label=label)
 
         # Generate the prompt and invoke the LLM for certain labels
         if label in ['predictions', 'new_kpi', 'report', 'kpi_calc', 'dashboard']:
             # Prepare the history context from previous chat
             history_context = "CONVERSATION HISTORY:\n" + "\n\n".join(
-                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history]
+                [f"Q: {entry['question']}\nA: {entry['answer']}" for entry in history[userId]]
             )
             # Prepare the prompt and invoke the LLM
             prompt = prompt_manager.get_prompt(label).format(
@@ -499,65 +481,81 @@ async def ask_question(question: Question): # to add or modify the services allo
                 _USER_QUERY_=question.userInput,
                 _CONTEXT_=context
             )
-            print(prompt)
-            llm_result = llm.invoke(prompt)
             
-            if label in ['predictions', 'new_kpi', 'report', 'kpi_calc']:
-                if question_language.lower() != "english":
-                    llm_result = await translate_answer(question, question_language, llm_result.content)
-
-                history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
-
-            explainer = RagExplainer(threshold = 15.0,)
-
+            executor = ThreadPoolExecutor()
+            future = executor.submit(llm.invoke, prompt)
+            
             if label == 'predictions':
-                # Response: Chat response, Explanation: TODO, Data: No data to send            
                 explainer.add_to_context([("Predictor", "["+context+"]")])
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
 
             if label == 'kpi_calc':
-                # Response: Chat response, Explanation: TODO, Data: No data to send            
                 explainer.add_to_context([("KPI Engine", "["+context+"]")])
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
 
             if label == 'new_kpi':
-                # Response: KPI json as list, Explanation: TODO, Data: KPI json to be sended to T1
                 context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 explainer.add_to_context([("Knowledge Base", context_cleaned)])
-                response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=llm_result.content, label=label) 
 
             if label == 'report':
-                # Response: No chat response, Explanation: TODO, Data: Report in str format
                 pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
                 pred_context = "["+pred_context+"]"
                 eng_context = "["+eng_context+"]"
                 explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
-                
-                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
-                return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
 
             if label == 'dashboard':
-                # Response: Chat response, Explanation: TODO, Data: Binding KPI-Graph elements
-                # TODO: separare il chat response dal binding nel prompt
                 kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
                 kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 gui_context = "["+gui_context+"]"
                 explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
+            
+            llm_result = future.result()
+            executor.shutdown(wait=False)
+            
+            if label in ['predictions', 'report', 'kpi_calc']:
+                # Update the history
+                history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+
+                # Translate the response back to thqser's language
+                if question_language.lower() != "english":
+                    llm_result = await translate_answer(question, question_language, llm_result.content)
+
+            if label == 'predictions':
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
+
+            if label == 'kpi_calc':
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
+
+            if label == 'new_kpi':                
+                response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 
+                if question_language.lower() != "english":
+                    llm_result = await translate_answer(question, question_language, response_cleaned)
+                    history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                    textResponse = textResponse.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                else:
+                    history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
+                                
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data="response_cleaned", label=label) 
+
+            if label == 'report':
+                textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
+
+            if label == 'dashboard':
                 # Converting the JSON string to a dictionary
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 response_json = json.loads(response_cleaned)
+
+                # Update the history
+                history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                             
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, response_json["textualResponse"])
-                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
                 else:
-                    history.append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_json["textualResponse"])
                 
                 data = json.dumps(response_json["bindings"], indent=2)

@@ -1,13 +1,12 @@
-{_HISTORY_}
-
 USER QUERY: "{_USER_QUERY_}"
- 
-INSTRUCTION: 
-"
-0. If USER QUERY language is English skip next points and return: English-<USER QUERY>
-1. Identify the language of USER QUERY and translate it into English. Return the result in the following format:
-<Language>-<Translated text>
-"
 
-CONTEXT: 
-{_CONTEXT_}
+INSTRUCTIONS:
+1. Language Check: If USER QUERY language is English skip next points and return "English-<USER QUERY>"  
+2. Language Identification: The LLM must identify the original language of the USER QUERY by focusing on the overall sentence structure and ignoring commonly used English terms that may appear regardless of the main language. Common English terms to ignore include words like "report" or "analysis," KPI names such as "EnergyKPI," "ProductionKPI," or "availability" (in any format, whether with or without spaces, uppercase, lowercase, or mixed-case), machine names like "Cutting Machine," "Assembly Machine," or "Laser Welding Machine," and statistical or temporal metrics such as "avg," "max," "min," "sum," or "med". For example, in the query "Genera un report su idle time max," the LLM should identify Italian as the primary language because the overall structure and most of the words are in Italian, even though some English terms are included. Focus on the surrounding non-English content to classify the language accurately.
+3. Translation: Translate the USER QUERY into English, ensuring all elements are translated strictly in accordance with these guidelines:  
+   - Machine Names: Preserve names like Cutting Machine, Assembly Machine, Laser Welding Machine, etc.  
+   - Key Performance Indicators (KPIs): Retain KPIs such as EnergyKPI, ProductionKPI, MachineUsageKPI, availability, consumption_max, consumption_working_avg, bad_cycles_min, cost_sum, and similar metrics. Important: KPI names must be preserved exactly as they appear in the context, regardless of formatting variations (e.g., with or without spaces, uppercase, lowercase, or mixed-case). Avoid translating or rephrasing KPI names, even if they resemble general language terms (e.g., do not translate "idle time max" into "maximum idle time").
+   - General Ontology Classes: Keep terms like Entity, Operation, Material, Machine, etc., unchanged.  
+   - Statistical or Temporal Metrics: Terms like avg, max, min, std, sum, med, and similar metrics must remain exactly as they appear in the input. These terms should not be translated, moved, or modified in any way. Additionally, phrases that combine these metrics with other terms (e.g., idle time max) must also remain unchanged. For example, idle time max should not be rephrased as maximum idle time.  
+   - Ontology Properties: Preserve terms like ObjectProperty, DatatypeProperty, producesKPI, isConsumedBy, etc.  
+4. Output: Return the result in the following format "<USER QUERY Language>-<Translated USER QUERY>"
