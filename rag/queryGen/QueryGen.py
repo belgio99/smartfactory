@@ -160,6 +160,7 @@ class QueryGenerator:
     # output: json formatted string which will be sended to other modules, if all data is not valid the outbut will be {"value": []}
     def _json_parser(self, data, label):
         json_out= []
+        all_kpis = False
         data = data.replace("OUTPUT: ","")
         data= data.strip("()").split("), (")
         # for each elem in data, a dictionary (json obj) is created
@@ -170,7 +171,11 @@ class QueryGenerator:
             kpis=elem[1]+"]"
             kpis = self._string_to_array(kpis,"kpis")
             # a request is invalid if it misses the kpi field or if the user query mentions 'all' kpis to be calculate/predicted
-            if kpis == ["NULL"] or kpis == ["ALL"]:
+            if kpis == ["NULL"] :
+                continue
+            if kpis == ["ALL"]:
+                # return also a log of the fact that the user cant' ask for all kpis
+                all_kpis= True
                 continue
             date = self._date_parser(elem[2],label)
             # if there is no valid time window, the related json obj is not built
@@ -203,8 +208,8 @@ class QueryGenerator:
 
         if label == "predictions" :
             json_out={"value":json_out}
-            
-        return json_out
+  
+        return json_out,all_kpis
 
     def query_generation(self,input= "predict idle time max, cost wrking sum and good cycles min for last week for all the medium capacity cutting machine, predict the same kpis for Laser welding machines 2 for today. calculate the cnsumption_min for next 4 month and for Laser cutter the offline time sum for last 23 day. "
 , label="kpi_calc"):
