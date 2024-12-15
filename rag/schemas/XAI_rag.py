@@ -1,18 +1,21 @@
+#import time
+#start_time_1 = time.time()
+
 from typing import List, Dict, Any, Tuple
 import numpy as np
 import json
 from rapidfuzz import process, fuzz
 import nltk
 from nltk.tokenize import sent_tokenize
+import os
 
 # Ensure the NLTK 'punkt' tokenizer is available. This is required for sentence tokenization.
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
+nltk.download('punkt', quiet=True)
 
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from concurrent.futures import ThreadPoolExecutor
+
 
 # Define the main class RagExplainer to handle attribution of responses to provided context.
 class RagExplainer:
@@ -20,14 +23,15 @@ class RagExplainer:
     A class for attributing segments of LLM responses to their respective contexts using similarity metrics.
     
     Attributes:
-        threshold (float): The minimum similarity score to consider a match valid.
+        threshold (float): The minimum similarity score to consider a match valid (0-100).
         verbose (bool): If True, detailed output is printed for debugging purposes.
         tokenize_context (bool): If True, context strings are tokenized into sentences.
         use_embeddings (bool): If True, embeddings are used for similarity matching; otherwise, fuzzy matching is used.
         context_sentences (List[str]): A list of all unique sentences extracted from the provided context.
         sentence_info (Dict[str, Dict]): A dictionary mapping each sentence to its source and original context.
         context_embeddings (np.ndarray or None): Precomputed embeddings of context sentences for faster similarity computation.
-        embedding_model (SentenceTransformer or None): The model used to generate embeddings.
+        executor (ThreadPoolExecutor or None): Thread executor for background model loading and operations.
+        model_future (concurrent.futures.Future or None): Future object containing the loading/loaded model.
     """
 
     def __init__(
@@ -61,12 +65,56 @@ class RagExplainer:
         
         # Load the embedding model only if embedding-based matching is enabled
         if self.use_embeddings:
-            self.embedding_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+            model_path = './models/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
+            # Initialize model loading in background
+            self.executor = ThreadPoolExecutor()
+            self.model_future = self.executor.submit(self._initialize_model, model_path)
         else:
-            self.embedding_model = None
+            self.executor = None
+            self.model_future = None
         
         # Add the initial context to the class instance, if provided
         self.add_to_context(context)
+
+    def _initialize_model(self, model_path: str) -> SentenceTransformer:
+        """
+        Initialize and/or load the SentenceTransformer model from the specified path.
+        Downloads and saves the model if it doesn't exist at the specified location.
+
+        Args:
+            model_path (str): The path where the model should be loaded from or saved to.
+
+        Returns:
+            SentenceTransformer: The loaded model instance.
+
+        Raises:
+            OSError: If there are issues creating directories or saving the model.
+        """
+        if not os.path.exists(model_path):
+            os.makedirs(os.path.dirname(model_path), exist_ok=True)
+            model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+            model.save(model_path)
+        else:
+            model = SentenceTransformer(model_path)
+        return model
+
+    def _get_embedding_model(self):
+        """Retrieves the embedding model from the future object."""
+        try:
+            return self.model_future.result()
+        except Exception as e:
+            raise RuntimeError(f"Failed to load embedding model: {e}")
+
+    def __del__(self):
+        """
+        Cleanup method called when the object is being destroyed.
+        Ensures proper shutdown of the thread executor if it exists.
+
+        Note:
+            This is automatically called by Python's garbage collector.
+        """
+        if self.executor:
+            self.executor.shutdown(wait=False)
 
     def _print_verbose(self, result, textResponse, textExplanation):
         """
@@ -117,7 +165,7 @@ class RagExplainer:
                 raise ValueError(f"The source name at index {i} must be a string. Received type {type(source_name).__name__}.")
             if not isinstance(ctx, str):
                 raise ValueError(f"The context string at index {i} must be a string. Received type {type(ctx).__name__}.")
-
+    
     def _validate_parameters(self):
         """
         Validates class parameters to ensure they meet constraints.
@@ -148,7 +196,7 @@ class RagExplainer:
             return response_segment[:-1] + f'[{ref_num}]' + response_segment[-1]
         else:
             return response_segment + f'[{ref_num}]'
-
+    
     def _parse_json_context(self, ctx: str) -> List[str]:
         """
         Parses a JSON-formatted context string into a list of key-value formatted sentences.
@@ -197,7 +245,7 @@ class RagExplainer:
         # If the JSON data is neither a list nor a dictionary, return an empty list
         else:
             return []
-
+    
     def _process_context(self, context: List[Tuple[str, str]]):
         """
         Processes and tokenizes the context for internal storage.
@@ -233,14 +281,15 @@ class RagExplainer:
 
         # Generate embeddings for new sentences if embeddings are enabled
         if self.use_embeddings and new_context_sentences:
-            new_embeddings = self.embedding_model.encode(new_context_sentences, convert_to_tensor=True)
+            model = self._get_embedding_model()
+            new_embeddings = model.encode(new_context_sentences, convert_to_tensor=True)
             # Concatenate new embeddings with existing ones
             self.context_embeddings = (
                 np.concatenate((self.context_embeddings, new_embeddings.cpu()), axis=0)
                 if self.context_embeddings is not None
                 else new_embeddings.cpu()
             )
-
+    
     def add_to_context(self, extra_context: List[Tuple[str, str]]):
         """
         Adds new context to the existing stored context.
@@ -255,7 +304,7 @@ class RagExplainer:
         self._validate_context(extra_context)
         # Process and store the new context
         self._process_context(extra_context)
-
+    
     def _update_references(self, references, seen_references, source_name, context_match, original_context, similarity_score):
         """
         Adds a new reference entry if it doesn't already exist.
@@ -289,7 +338,7 @@ class RagExplainer:
         for ref in references:
             if ref["source_name"] == source_name and ref["context"] == context_match:
                 return ref["reference_number"]
-
+    
     def _match_with_fuzzy(self, response_segments: List[str]) -> Tuple[str, str, List[Dict[str, Any]]]:
         """
         Matches response segments with context using fuzzy string matching.
@@ -351,7 +400,7 @@ class RagExplainer:
         # Convert the references list to a JSON string
         textExplanation = json.dumps(references, indent=2)
         return textResponse.strip(), textExplanation, attribution
-
+    
     def _generate_attribution(self, response_segments, similarity_matrix):
         """
         Generates attribution results using a similarity matrix.
@@ -418,7 +467,7 @@ class RagExplainer:
         # Convert references to JSON
         textExplanation = json.dumps(references, indent=2)
         return textResponse.strip(), textExplanation, attribution
-
+    
     def _match_with_embeddings(self, response_segments: List[str]) -> Tuple[str, str, List[Dict[str, Any]]]:
         """
         Matches response segments with context using embeddings.
@@ -436,7 +485,8 @@ class RagExplainer:
         seen_references = set()  # Tracks unique references
 
         # Generate embeddings for the response segments
-        response_embeddings = self.embedding_model.encode(response_segments, convert_to_tensor=True).cpu()
+        model = self._get_embedding_model()
+        response_embeddings = model.encode(response_segments, convert_to_tensor=True).cpu()
 
         # Compute similarity scores between response embeddings and context embeddings
         similarity_matrix = cosine_similarity(response_embeddings, self.context_embeddings)
@@ -475,85 +525,93 @@ class RagExplainer:
 
 
 if __name__ == "__main__":
+
+    #end_time_1 = time.time()
+    #print(f"Time to import: {end_time_1 - start_time_1:.2f} seconds.")
+
+    #start_time_2 = time.time()
     # Example usage
     explainer = RagExplainer(
-        threshold=40.0,
+        threshold=15.0,
         verbose=False,
         tokenize_context=True,
         use_embeddings=True
     )
 
-    # Add English context
-    text_context = [
-        ("English Book", "The solar system consists of the Sun and objects bound to it."),
-        ("English Book", "This includes eight planets, their moons, and smaller objects.")
-    ]
-    explainer.add_to_context(text_context)
+    #end_time_2 = time.time()
+    #print(f"Time to instantiate RagExplainer: {end_time_2 - start_time_2:.2f} seconds.")
+    
+    #start_time_3 = time.time()
 
-    # Add Spanish context
-    spanish_context = [
-        ("Spanish Article", "El Sol es la estrella en el centro del sistema solar.")
-    ]
-    explainer.add_to_context(spanish_context)
-
-    # Add French context
-    french_context = [
-        ("French Article", "L'atmosphère terrestre est cruciale pour la vie sur Terre.")
-    ]
-    explainer.add_to_context(french_context)
-
-    # Add formatted json context
-    json_formatted = [
-        ("Json formatted", '''
+    # Example context
+    context_cleaned = '''
 [
-{
-"Machine name": "Laser Cutter",
-"KPI name": "power",
-"Value": "0,055",
-"Unit of Measure": "kW",
-"Date": "12/10/2024",
-"Forecast": false
-},
-{
-"Machine name": "Riveting Machine",
-"KPI name": "power",
-"Value": "0,07",
-"Unit of Measure": "kW",
-"Date": "12/10/2024",
-"Forecast": false
-}
-]
-''')
-    ]
-    explainer.add_to_context(json_formatted)
+  {
+    "id": "availability",
+    "description": "Percentage of time worked compared to time available.",
+    "formula": "working_time_sum/(working_time_sum+idle_time_sum)",
+    "unit_measure": "%"
+  },
+  {
+    "id": "avg_cycle_time_avg",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the average.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_max",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the maximum.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_med",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the median.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_min",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the minimum.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_std",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the standard deviation.",
+    "formula": "-",
+    "unit_measure": "s"
+  },
+  {
+    "id": "avg_cycle_time_sum",
+    "description": "This KPI is atomic, it measures the average time taken to complete a production cycle, considering the sum.",
+    "formula": "-",
+    "unit_measure": "s"
+  }
+]'''
 
-    # Add JSON context
-    json_multilingual = [
-        ("Json Data", '[{"Machine_name": "Machine_A", "KPI_name": "Temperatura", "Predicted_value": "22", "Measure_unit": "Celsius", "Date_prediction": "12/12/2024", "Forecast": true}, {"Machine_name": "Machine_B", "KPI_name": "Pression", "Predicted_value": "1012", "Measure_unit": "hPa", "Date_prediction": "13/12/2024", "Forecast": true}]')
-    ]
-    explainer.add_to_context(json_multilingual)
+    # Convert the cleaned context into a list of tuples
+    json_formatted = [("Cleaned Context", context_cleaned)]
 
+    # Create a ThreadPoolExecutor
+    executor = ThreadPoolExecutor()
+    # Submit the background task to the executor
+    future = executor.submit(explainer.add_to_context, json_formatted)
+
+    # Wait for the background task to complete
+    future.result()
+
+    #end_time_3 = time.time()
+    #print(f"Time to add_to_context: {end_time_3 - start_time_3:.2f} seconds.")
+
+    #start_time_4 = time.time()
     # Multilingual response
     response = (
-        "The solar system is centered on the Sun. "
-        "El Sol es la estrella central del sistema solar. "
-        "L'atmosphère terrestre est essentielle. "
-        "Die industrielle Revolution hat die Gesellschaft verändert. "
-        "Machine_A ha un Temperatura di 22 Gradi Celsius. "
-        "El Sol es la estrella central del sistema solar. "
-        "Laser cutter"
+        "{\n  \"ID\": \"maintenance_time_ratio\",\n  \"Atomic\": false,\n  \"Description\": \"This KPI represents the ratio of maintenance time to total operational time. \",\n  \"Formula (base)\": \"maintenance_time_sum / operative_time\",\n  \"Unit of Measure\": \"%\",\n  \"Domain\": {\n    \"min\": 0,\n    \"max\": 100,\n    \"type\": \"numeric\"\n  }\n}"
     )
-
-
     textResponse, textExplanation, attribution_results = explainer.attribute_response_to_context(response)
 
-    # Output the results
-    print("\nFinal Outputs:")
-    print("Text Response:")
     print(textResponse)
-    print("\nText Explanation (JSON):")
 
-    print(textExplanation)
-    print("\nAttribution Results:")
-    for result in attribution_results:
-        print(result)
+    #end_time_4 = time.time()
+    #print(f"Time to attribute_response_to_context: {end_time_4 - start_time_4:.2f} seconds.")
