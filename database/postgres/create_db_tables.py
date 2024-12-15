@@ -106,6 +106,7 @@ if __name__ == "__main__":
             ID SERIAL PRIMARY KEY,
             AlertID INT NOT NULL,
             UserID INT NOT NULL,
+            Read BOOLEAN NOT NULL DEFAULT FALSE,
             UNIQUE(AlertID, UserID),
             FOREIGN KEY (AlertID) REFERENCES Alerts(AlertID) ON DELETE CASCADE,
             FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE
