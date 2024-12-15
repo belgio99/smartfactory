@@ -31,6 +31,8 @@ from dateutil.relativedelta import relativedelta
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+# agent header for authenticatication with other modules communication
+HEADER = {"x-api-key":"06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7"}
 # History length parameter
 HISTORY_LEN = 3
 
@@ -167,7 +169,7 @@ async def ask_kpi_engine(json_body):
             If the request is successful, the data will be in the 'data' field.
             Otherwise, the error message will be in the 'error' field.
     """
-    kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"  
+    kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
 
     """
     kpi_engine_url = "https://kpi.engine.com/api"  
@@ -209,7 +211,7 @@ async def ask_kpi_engine(json_body):
             response = await client.get("url")
     """
     async with httpx.AsyncClient() as client:
-        response = await client.post(kpi_engine_url,json=json_body)
+        response = await client.post(kpi_engine_url,json=json_body,headers=HEADER)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
@@ -258,7 +260,7 @@ async def ask_predictor_engine(json_body):
             response = await client.get(url)
     """
     async with httpx.AsyncClient() as client:
-        response = await client.post(url=predictor_engine_url,json=json_body)
+        response = await client.post(url=predictor_engine_url,json=json_body,headers=HEADER)
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
