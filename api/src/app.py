@@ -1,42 +1,43 @@
-from dotenv import load_dotenv
-from threading import Thread
-from typing import Annotated, Union, List
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
-from pydantic import Json
-import uvicorn
+import asyncio
+import hashlib
 import json
+import logging
+import sys
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
+from io import BytesIO
+from pathlib import Path
+from typing import Annotated, List
+
+import requests
+import uvicorn
+from dotenv import load_dotenv
 from fastapi import Body, Depends, FastAPI, HTTPException, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, FileResponse
+from fpdf import FPDF
+from jose import jwt
+from langchain_core.prompts import PromptTemplate
+
+from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM
+from constants import *
+from database.connection import get_db_connection, query_db_with_params, close_connection
+from database.druid_connection import execute_druid_query
+from database.minio_connection import *
+# TODO: how to import modules from rag directory ??
+from model.agent import Answer, Question
 from model.alert import Alert
+from model.historical import HistoricalQueryParams
 from model.kpi import Kpi
 from model.kpi_calculate_request import KpiRequest
 from model.prediction import Json_in, Json_out
-from notification_service import send_notification, retrieve_alerts, send_report
-from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, load_dashboard_settings
-from database.connection import get_db_connection, query_db_with_params, close_connection
-from database.minio_connection import *
-from database.druid_connection import execute_druid_query
-from constants import *
-from langchain_core.prompts import PromptTemplate
-import logging
-from model.task import *
-from contextlib import asynccontextmanager
-import asyncio
-import requests
-from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM, password_context
-from pathlib import Path
-
-from model.user import *
 from model.report import ReportResponse, Report, ScheduledReport
-from model.historical import HistoricalQueryParams
-# TODO: how to import modules from rag directory ??
-from model.agent import Answer, Question
-from datetime import datetime, timedelta, timezone
-from jose import jwt
-from fpdf import FPDF
-import sys, hashlib
-from io import BytesIO
+from model.task import *
+from model.user import *
+from notification_service import send_notification, retrieve_alerts, send_report
+from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, \
+    load_dashboard_settings
 
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -47,12 +48,13 @@ tasks: dict[str, Task] = dict()
 tasks_lock = asyncio.Lock()
 last_task_id = 0
 
+
 def hash_data(data: tuple) -> tuple:
     hashed_data = [] 
     for item in data: 
         #hashed_value = hashlib.sha256(str(item).encode('utf-8')).hexdigest()  # TODO: use a reversible hash function!!!
         hashed_data.append(item)  
-    return tuple(hashed_data)  
+    return tuple(hashed_data)
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
@@ -61,19 +63,21 @@ async def task_scheduler():
             for t in tasks.values():
                 logging.info(t.getDict().name)
                 if t.shouldRun():
-                    logging.info("Run task "+t.getDict().name)
+                    logging.info("Run task " + t.getDict().name)
                     await t.run()
         await asyncio.sleep(1)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager to start and stop the scheduler."""
     scheduler_task = asyncio.create_task(task_scheduler())
     try:
-        yield 
+        yield
     finally:
         scheduler_task.cancel()  # Cancel the scheduler on application shutdown
         await scheduler_task  # Ensure it exits cleanly
+
 
 app = FastAPI(lifespan=lifespan)
 
@@ -84,6 +88,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.post("/smartfactory/postAlert")
 async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["data"]))):
@@ -102,23 +107,23 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
 
     try:
         logging.info("Received alert with title: %s", alert.description)
-        
+
         if not alert.title:
             logging.error("Missing notification title")
             raise HTTPException(status_code=400, detail="Missing notification title")
-        
+
         if not alert.description:
             logging.error("Missing notification description")
             raise HTTPException(status_code=400, detail="Missing notification description")
-        
+
         if not alert.isPush and not alert.isEmail:
             logging.error("No notification method selected")
             raise HTTPException(status_code=400, detail="No notification method selected")
-        
+
         if not alert.recipients or len(alert.recipients) == 0:
             logging.error("No recipients specified")
             raise HTTPException(status_code=400, detail="No recipients specified")
-        
+
         logging.info("Sending notification")
         send_notification(alert)
         logging.info("Notification sent successfully")
@@ -139,7 +144,8 @@ async def post_alert(alert: Alert, api_key: str = Depends(get_verify_api_key(["d
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 @app.get("/smartfactory/alerts/{userId}")
 def get_alerts(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -157,6 +163,7 @@ def get_alerts(userId: str, api_key: str = Depends(get_verify_api_key(["gui"])))
 
     return JSONResponse(content={"alerts": list}, status_code=200)
 
+
 @app.post("/smartfactory/settings/{userId}")
 def save_user_settings(userId: str, settings: dict, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -173,12 +180,13 @@ def save_user_settings(userId: str, settings: dict, api_key: str = Depends(get_v
     try:
         if persist_user_settings(userId, settings) == False:
             raise HTTPException(status_code=404, detail="User not found")
-        
+
         return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 @app.get("/smartfactory/settings/{userId}")
 def get_user_settings(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -198,6 +206,7 @@ def get_user_settings(userId: str, api_key: str = Depends(get_verify_api_key(["g
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/smartfactory/login")
 def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -212,17 +221,17 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     try:
         connection, cursor = get_db_connection()
-        query = "SELECT * FROM Users WHERE "+("Email" if body.isEmail else "Username")+"=%s"
+        query = "SELECT * FROM Users WHERE " + ("Email" if body.isEmail else "Username") + "=%s"
         response = query_db_with_params(cursor, connection, query, hash_data((body.user,)))
 
         if not response or (body.password != response[0][4]):
             logging.error("Invalid credentials")
             raise HTTPException(status_code=401, detail="Invalid username or password")
-   
+
         result = response[0]
         close_connection(connection, cursor)
         logging.info("User logged in successfully")
-    
+
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = jwt.encode(
             {"sub": result[1], "role": result[3], "exp": datetime.now(timezone.utc) + access_token_expires},
@@ -230,9 +239,10 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
             algorithm=ALGORITHM
         )
         logging.info(result)
-        user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3], access_token=access_token, site=result[5])
+        user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3],
+                        access_token=access_token, site=result[5])
         return JSONResponse(content=user.to_dict(), status_code=200)
-    
+
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
@@ -241,6 +251,7 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/smartfactory/logout")
 def logout(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -271,6 +282,7 @@ def logout(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/smartfactory/register", status_code=status.HTTP_201_CREATED)
 def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -305,7 +317,8 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
-            return UserInfo(userId=str(userid), username=body.username, email=body.email, role=body.role, site=body.site, access_token='')
+            return UserInfo(userId=str(userid), username=body.username, email=body.email, role=body.role,
+                            site=body.site, access_token='')
 
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
@@ -315,6 +328,7 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.put("/smartfactory/user/{userId}", status_code=status.HTTP_201_CREATED)
 def change_password(userId: str, body: ChangePassword, api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -329,7 +343,7 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
         HTTPException: If the user is not present in the database, the old password is incorrect, or an unexpected error occurs
     """
     try:
-        connection, cursor = get_db_connection()   
+        connection, cursor = get_db_connection()
         # Check if old password is correct
         query = "SELECT Password FROM Users WHERE UserID = %s"
         response = query_db_with_params(cursor, connection, query, (userId,))
@@ -340,9 +354,9 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
                 logging.error("Invalid old password")
                 return JSONResponse(content={"message": "Invalid old password"}, status_code=401)
         except ValueError as e:
-            #logging.error("Password not hashed")
+            # logging.error("Password not hashed")
             raise HTTPException(status_code=500, detail=f"ERROR: {str(e)}")
-                
+
         # Update user password in the database
         query_update = "UPDATE Users SET password = %s WHERE UserID = %s;"
         cursor.execute(query_update, (body.new_password, userId))
@@ -351,10 +365,10 @@ def change_password(userId: str, body: ChangePassword, api_key: str = Depends(ge
         result = cursor.rowcount
         if result == 0:
             raise HTTPException(status_code=404, detail="User not found")
-        
+
         close_connection(connection, cursor)
         return JSONResponse(content={"message": "Password changed successfully"}, status_code=200)
-    
+
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
@@ -385,7 +399,7 @@ def retrieve_dashboard_settings(userId: str, api_key: str = Depends(get_verify_a
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-   
+
 
 @app.post("/smartfactory/dashboardSettings/{userId}")
 def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -403,12 +417,13 @@ def post_dashboard_settings(userId: str, dashboard_settings: dict, api_key: str 
     try:
         if persist_dashboard_settings(userId, dashboard_settings) == False:
             raise HTTPException(status_code=404, detail="User not found")
-        
+
         return JSONResponse(content={"message": "Settings saved successfully"}, status_code=200)
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 @app.get("/smartfactory/reports")
 def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -422,7 +437,7 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
         HTTPException: If a server exception occurs.
     """
     try:
-        connection, cursor = get_db_connection()   
+        connection, cursor = get_db_connection()
         query = "SELECT ReportID, Name, Type, FilePath FROM Reports WHERE OwnerID = %s"
         response = query_db_with_params(cursor, connection, query, (int(userId),))
         if not response or response[0] is None:
@@ -437,7 +452,8 @@ def retrieve_reports(userId: str, api_key: str = Depends(get_verify_api_key(["gu
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 @app.get("/smartfactory/reports/download/{report_id}")
 def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -451,16 +467,16 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         HTTPException: If a server exception occurs or the report is not found.
     """
     try:
-        connection, cursor = get_db_connection()   
+        connection, cursor = get_db_connection()
         query = "SELECT ReportID, Name, OwnerID, FilePath FROM Reports WHERE ReportID = %s"
         response = query_db_with_params(cursor, connection, query, (report_id,))
         if not response or response[0] is None:
             raise HTTPException(status_code=404, detail="Report not found")
         file_name = response[0][1]
         ownerID = str(response[0][2])
-        tmp_path = "/tmp/"+ownerID+"_"+file_name+".pdf"
+        tmp_path = "/tmp/" + ownerID + "_" + file_name + ".pdf"
         minio = get_minio_connection()
-        download_object(minio, "reports", ownerID+"/"+file_name, tmp_path)
+        download_object(minio, "reports", ownerID + "/" + file_name, tmp_path)
         close_connection(connection, cursor)
         return FileResponse(
             path=tmp_path,
@@ -475,7 +491,8 @@ def download_report(report_id: int, api_key: str = Depends(get_verify_api_key(["
         close_connection(connection, cursor)
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 def call_ai_agent(input: Question):
     """
     This function performs a call to the RAG AI agent.
@@ -497,6 +514,7 @@ def call_ai_agent(input: Question):
     response.raise_for_status()
     return response
 
+
 def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str, type: str = None):
     """
     This function inserts the report PDF in the DB.
@@ -509,17 +527,19 @@ def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str,
         The id of the report.
     """
     connection, cursor = get_db_connection()
-    obj_path = "/reports/"+userId+"/"+obj_name+".pdf"
+    obj_path = "/reports/" + userId + "/" + obj_name + ".pdf"
     create_pdf(answer.data, answer.textExplanation, tmp_path)
     minio = get_minio_connection()
-    upload_object(minio, "reports", userId+"/"+obj_name+".pdf", tmp_path, "application/pdf")
+    upload_object(minio, "reports", userId + "/" + obj_name + ".pdf", tmp_path, "application/pdf")
     query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
-    cursor.execute(query_insert, (obj_name+".pdf", type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
+    cursor.execute(query_insert,
+                   (obj_name + ".pdf", type or "Standard", int(userId), datetime.now(), obj_path, "Test",))
     connection.commit()
     # return the report id
     response = cursor.fetchone()
     close_connection(connection, cursor)
     return response[0]
+
 
 def create_pdf(text: str, appendix: str, path: str):
     """
@@ -547,8 +567,9 @@ def create_pdf(text: str, appendix: str, path: str):
         pdf.set_font('Arial', '', 12)
         appendix = json.loads(appendix)
         for obj in appendix:
-            if obj.get("context", None) is not None and obj.get("reference_number", None) is not None and obj.get("source_name", None) is not None:
-                pdf.cell(190, 5, "["+str(obj["reference_number"])+"]")
+            if obj.get("context", None) is not None and obj.get("reference_number", None) is not None and obj.get(
+                    "source_name", None) is not None:
+                pdf.cell(190, 5, "[" + str(obj["reference_number"]) + "]")
                 pdf.ln()
                 pdf.cell(190, 5, "Context:")
                 lines = obj["context"].split("\n")
@@ -558,9 +579,9 @@ def create_pdf(text: str, appendix: str, path: str):
                     else:
                         pdf.ln()
                 pdf.ln()
-                pdf.set_text_color(0,0,255)
-                pdf.cell(190, 5, "Source: "+str(obj["source_name"]))
-                pdf.set_text_color(0,0,0)
+                pdf.set_text_color(0, 0, 255)
+                pdf.cell(190, 5, "Source: " + str(obj["source_name"]))
+                pdf.set_text_color(0, 0, 0)
                 pdf.ln()
                 pdf.ln()
     except Exception as e:
@@ -569,8 +590,10 @@ def create_pdf(text: str, appendix: str, path: str):
         print(exc_type, fname, exc_tb.tb_lineno)
     pdf.output(name=path, dest="F")
 
+
 @app.post("/smartfactory/reports/generate", status_code=status.HTTP_201_CREATED)
-def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Report, ScheduledReport], Body()], is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
+def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Report, ScheduledReport], Body()],
+                    is_scheduled: bool = False, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to download a report.
     This endpoint receives the report id and sends back the report data in pdf format.
@@ -584,7 +607,7 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
         HTTPException: If a server exception occurs or the user is not found.
     """
     try:
-        connection, cursor = get_db_connection()   
+        connection, cursor = get_db_connection()
         query = "SELECT UserID FROM Users WHERE UserID = %s"
         response = query_db_with_params(cursor, connection, query, (int(userId),))
         if not response:
@@ -595,8 +618,8 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
         if is_scheduled:
             now = time.time()
             now_str = datetime.fromtimestamp(now).strftime("%d/%m/%Y")
-            start_str = datetime.fromtimestamp((now-params.recurrence.seconds)).strftime("%d/%m/%Y")
-            period = start_str+" - "+now_str
+            start_str = datetime.fromtimestamp((now - params.recurrence.seconds)).strftime("%d/%m/%Y")
+            period = start_str + " - " + now_str
         else:
             period = params.period
         prompt = PromptTemplate(
@@ -604,7 +627,7 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
             template=(
                 "Generate the periodic report for the period {period}, including the "
                 "following KPIs: {kpi}; the KPIs concern the specified machines: {machines}."
-            )        
+            )
         )
         filled_prompt = prompt.format(
             period=period,
@@ -615,8 +638,9 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
         ai_response = call_ai_agent(question).json()
         logging.info(ai_response)
         answer = Answer.model_validate(ai_response)
-        tmp_path = "/tmp/"+userId+"_"+params.name+".pdf"
-        create_report_pdf(answer, userId, tmp_path, params.name+("_periodic" if is_scheduled else ""), "Periodic" if is_scheduled else params.type)
+        tmp_path = "/tmp/" + userId + "_" + params.name + ".pdf"
+        create_report_pdf(answer, userId, tmp_path, params.name + ("_periodic" if is_scheduled else ""),
+                          "Periodic" if is_scheduled else params.type)
         close_connection(connection, cursor)
         if is_scheduled:
             return (params.name, params.email, tmp_path)
@@ -636,7 +660,8 @@ def generate_report(userId: Annotated[str, Body()], params: Annotated[Union[Repo
         logging.error("Exception: %s", str(e))
         close_connection(connection, cursor)
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 def generate_and_send_report(userId: str, email: str, params: ScheduledReport, api_key: str):
     """
     This function generates a schedules report and sends it via email.
@@ -648,6 +673,7 @@ def generate_and_send_report(userId: str, email: str, params: ScheduledReport, a
     logging.info("Started scheduled report generation")
     report_name, to_email, tmp_path = generate_report(userId, params, True, api_key)
     send_report(to_email, report_name, tmp_path)
+
 
 @app.get("/smartfactory/reports/schedule")
 def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
@@ -665,19 +691,21 @@ def retrieve_schedules(userId: str, api_key: str = Depends(get_verify_api_key(["
     matching_files = []
     for obj in objects:
         logging.info(obj.object_name)
-        if obj.object_name.endswith("_scheduling.json") and (userId+"/") in obj.object_name:
+        if obj.object_name.endswith("_scheduling.json") and (userId + "/") in obj.object_name:
             matching_files.append(obj.object_name.split('/')[-1])
     logging.info(matching_files)
     for file_name in matching_files:
-        response = minio.get_object("settings", userId+"/"+file_name)
+        response = minio.get_object("settings", userId + "/" + file_name)
         json_str = response.read().decode("utf-8")
         logging.info(json_str)
         sched = json.loads(json_str)
         schedules.append(sched)
     return JSONResponse(content={"data": schedules}, status_code=200)
 
+
 @app.post("/smartfactory/reports/schedule", status_code=status.HTTP_200_OK)
-async def schedule_report(userId: Annotated[str, Body()], params: Annotated[ScheduledReport, Body()], api_key: str = Depends(get_verify_api_key(["gui"]))):
+async def schedule_report(userId: Annotated[str, Body()], params: Annotated[ScheduledReport, Body()],
+                          api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to schedule a report.
     This endpoint receives the user id and schedules a report.
@@ -688,7 +716,7 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
         HTTPException: If a server exception occurs or the user is not found.
     """
     try:
-        connection, cursor = get_db_connection()   
+        connection, cursor = get_db_connection()
         query = "SELECT UserID, Email FROM Users WHERE UserID = %s"
         response = query_db_with_params(cursor, connection, query, (int(userId),))
         if not response:
@@ -707,9 +735,11 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
             params.name = tasks.get(str(params.id)).getDict().name
         json_str = params.model_dump_json()
         minio = get_minio_connection()
-        minio.put_object("settings", userId+"/"+params.name+"_scheduling.json", BytesIO(json_str.encode("utf-8")), length=len(json_str),content_type="application/json")
+        minio.put_object("settings", userId + "/" + params.name + "_scheduling.json", BytesIO(json_str.encode("utf-8")),
+                         length=len(json_str), content_type="application/json")
         async with tasks_lock:
-            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key), delay=params.recurrence.seconds, json=params, start_date=params.startDate)
+            tasks[str(params.id)] = Task(func=generate_and_send_report, args=(userId, email, params, api_key),
+                                         delay=params.recurrence.seconds, json=params, start_date=params.startDate)
     except HTTPException as e:
         logging.error("HTTPException: %s", e.detail)
         close_connection(connection, cursor)
@@ -717,7 +747,8 @@ async def schedule_report(userId: Annotated[str, Body()], params: Annotated[Sche
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+
 @app.get("/smartfactory/kpi", status_code=status.HTTP_200_OK)
 def get_kpi(_: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -744,8 +775,9 @@ def get_kpi(_: str = Depends(get_verify_api_key(["gui"]))):
     }
 
     logging.info("Retrieving all KPIs")
-    response = requests.get(url, headers=headers) 
+    response = requests.get(url, headers=headers)
     return JSONResponse(content=response.json(), status_code=200)
+
 
 @app.get("/smartfactory/retrieveMachines", status_code=status.HTTP_200_OK)
 def get_machines(_: str = Depends(get_verify_api_key(["gui"]))):
@@ -772,8 +804,9 @@ def get_machines(_: str = Depends(get_verify_api_key(["gui"]))):
     }
 
     logging.info("Retrieving all Machines")
-    response = requests.get(url, headers=headers) 
+    response = requests.get(url, headers=headers)
     return JSONResponse(content=response.json(), status_code=200)
+
 
 @app.post("/smartfactory/kpi", status_code=status.HTTP_200_OK)
 def insert_kpi(kpi: Kpi, _: str = Depends(get_verify_api_key(["gui"]))):
@@ -812,6 +845,7 @@ def insert_kpi(kpi: Kpi, _: str = Depends(get_verify_api_key(["gui"]))):
     else:
         return JSONResponse(content=response_data, status_code=400)
 
+
 @app.post("/smartfactory/calculate", status_code=status.HTTP_200_OK)
 def calculate_kpi(request: List[KpiRequest], _: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -839,13 +873,15 @@ def calculate_kpi(request: List[KpiRequest], _: str = Depends(get_verify_api_key
     }
     kpi_request = json.dumps([req.to_dict() for req in request])
     logging.info("Calculating KPIs: %s", kpi_request)
-    
-    response = requests.post(url, headers=headers, data=kpi_request) #TODO Check when the kpi-engine will push its code
+
+    response = requests.post(url, headers=headers,
+                             data=kpi_request)  # TODO Check when the kpi-engine will push its code
     return JSONResponse(content=response.json(), status_code=200)
 
 
 @app.post("/smartfactory/agent/{userId}", response_model=Answer)
-def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: str, api_key: str = Depends(get_verify_api_key(["gui"]))):
+def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: str,
+                         api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to interact with the AI agent.
     This endpoint receives user input and forwards it to the AI agent, then returns the generated response.
@@ -874,7 +910,7 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
             except Exception as e:
                 logging.error("Exception: %s", str(e))
                 raise HTTPException(status_code=500, detail=str(e))
-            
+
         elif answer.label == 'report':
             # generate report
             # name is based on the current datetime
@@ -890,15 +926,17 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
             except Exception as e:
                 logging.error("Exception: %s", str(e))
                 raise HTTPException(status_code=500, detail=str(e))
-            
+
     except Exception as e:
         logging.error("Exception: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
     return answer
 
+
 @app.post('/smartfactory/historical')
-def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: str = Depends(get_verify_api_key(["gui"]))):
+def retrieve_historical_data(historical_params: HistoricalQueryParams,
+                             api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     Endpoint to retrieve historical data.
     This endpoint receives a set of parameters and retrieves historical data from the database based on those parameters.
@@ -1008,6 +1046,7 @@ def retrieve_historical_data(historical_params: HistoricalQueryParams, api_key: 
 
     return response
 
+
 @app.post('/smartfactory/predict', response_model=Json_out)
 def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
@@ -1024,11 +1063,15 @@ def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_
     headers = {
         'Content-Type': 'application/json',
         'x-api-key': os.getenv('API_KEY')
-    }  
-    logging.info("sending request to data processing: %s", pred_request)
+    }
+    DATA_PROCESSING_HOST = os.getenv("DATA_PROCESSING_HOST", "data-processing")
+    DATA_PROCESSING_PORT = os.getenv("DATA_PROCESSING_PORT", "8000")
+    url = f"http://{DATA_PROCESSING_HOST}:{DATA_PROCESSING_PORT}/data-processing/predict"
+
+    logging.info("sending request to %s: %s", url, pred_request)
     try:
         # Send the prediction request to the data processing module and get the response
-        response = requests.post(os.getenv('DATA_PROCESSING_ENDPOINT'), json=jsonable_encoder(pred_request), headers=headers)
+        response = requests.post(url, json=jsonable_encoder(pred_request), headers=headers)
         response.raise_for_status()
     except Exception as e:
         logging.error("Exception: %s", str(e))
@@ -1045,6 +1088,6 @@ async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     return JSONResponse(content={"message": "This is a dummy endpoint"}, status_code=200)
 
+
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0")
- 
