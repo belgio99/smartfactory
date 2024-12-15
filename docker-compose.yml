@@ -231,6 +231,7 @@ services:
       - not-db-init
     env_file:
       - database/.env
+      - data-processing/.env
     depends_on:
       router:
         condition: service_healthy
