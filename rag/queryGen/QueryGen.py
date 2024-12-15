@@ -1,17 +1,15 @@
 from dateutil.relativedelta import relativedelta
-import json
 from itertools import product
-import ast
 from dotenv import load_dotenv
 import os
-from pathlib import Path
 from rdflib import Graph
 # Load environment variables
 load_dotenv()
 from datetime import datetime, timedelta
 # the class is accessible only following the route of classified label == "kpi_calc" or label =="predictions"
 class QueryGenerator:
-
+    ERROR_NO_KPIS = 2
+    ERROR_ALL_KPIS = 1
     def __init__(self, llm):
         self.llm=llm
 
@@ -24,9 +22,8 @@ class QueryGenerator:
         array = []
         for x in string:
             x=x.strip("'")
-            if (type == "machines" and x in self.machine_res) or (type == "kpis" and x in self.kpi_res):
+            if (type == "machines" and (x in self.machine_res)) or (type == "kpis" and (x in self.kpi_res)) or x == "ALL" or x == "NULL":
                 array.append(x)
-
         return array
     
     def _check_absolute_time_window(self,dates:datetime,label):
@@ -160,7 +157,7 @@ class QueryGenerator:
     # output: json formatted string which will be sended to other modules, if all data is not valid the outbut will be {"value": []}
     def _json_parser(self, data, label):
         json_out= []
-        all_kpis = False
+        all_kpis = 0
         data = data.replace("OUTPUT: ","")
         data= data.strip("()").split("), (")
         # for each elem in data, a dictionary (json obj) is created
@@ -171,11 +168,12 @@ class QueryGenerator:
             kpis=elem[1]+"]"
             kpis = self._string_to_array(kpis,"kpis")
             # a request is invalid if it misses the kpi field or if the user query mentions 'all' kpis to be calculate/predicted
-            if kpis == ["NULL"] :
-                continue
+            # return also a log of the fact that the user cant' ask for all kpis
             if kpis == ["ALL"]:
-                # return also a log of the fact that the user cant' ask for all kpis
-                all_kpis= True
+                all_kpis = self.ERROR_ALL_KPIS
+                continue
+            if kpis == ["NULL"]:
+                all_kpis= self.ERROR_NO_KPIS
                 continue
             date = self._date_parser(elem[2],label)
             # if there is no valid time window, the related json obj is not built
@@ -277,33 +275,30 @@ class QueryGenerator:
         else:
             query+=f"""
             4. Output Format:
-                -For each unique combination of machine IDs and KPIs, return a tuple in this format: ([matched LIST_1 IDs], [matched LIST_2 IDs], time window_predict, time window_calculate), where:
-                    +
+                -For each unique combination of machine IDs and KPIs, return a tuple in this format: ([matched LIST_1 IDs], [matched LIST_2 IDs], time window), time window in the format 'YYYY-MM-DD -> YYYY-MM-DD'.
                 
             NOTES:
-            -If no IDs from LIST_1 are associated with the matched KPIs, use NULL for machines.
-            -If a match refers to all machines, use NULL for machines.
             -Ensure output matches the one of the EXAMPLES below exactly, I need only the OUTPUT section.
 
             EXAMPLES:
             '
-            LIST_1: [cost_idle_avg, cost_idle_std, offline_time_med]
+            LIST_1: [cost_idle_avg, cost_idle_std, offline_time_med, offline_time_max, working_time_min, working_time_sum, working_time_avg]
             LIST_2: [Assembly Machine 1, Low Capacity Cutting Machine 1, Assembly Machine 2]
 
-            INPUT: Calculate the kpi cost_idle arg and cost idle std for the assembly machine 1 and Low capacity cutting machine for the past 5 day, calculate offlinetime med for Assembly machine 2 for the last two months and cost_idle_avg for Assembly machine.
-            OUTPUT: ([Assembly Machine 1, Low Capacity Cutting Machine 1], [cost_idle_avg, cost_idle_std], <last, 5, days>), ([Assembly Machine 2], [offline_time_med], <last, 2, months>), ([Assembly Machine 1, Assembly Machine 2], [cost_idle_avg], NULL)
+            INPUT: Calculate the kpi cost_idle arg and cost idle std for the assembly machine 1 and Low capacity cutting machine for the past 5 day, calculate offlinetime med for Assembly machine 2 for the last two months and cost_idle_avg for Assembly machine. How much do the Assembly machine 2 has worked the last three days? Can you calculate all kpis for 20/11/2024 -> 18/11/2024 for Low Capacity Cutting Machine 1?
+            OUTPUT: (['Assembly Machine 1', 'Low Capacity Cutting Machine 1'], ['cost_idle_avg', 'cost_idle_std'], <last, 5, days>), (['Assembly Machine 2'], ['offline_time_med'], <last, 2, months>), (['Assembly Machine 1', 'Assembly Machine 2'], ['cost_idle_avg'], NULL), (['Assembly Machine 2'], ['working_time_sum'], <last, 3, days>), (['Low Capacity Cutting Machine 1'], ['ALL'], 2024-11-20 -> 2024-11-18)
 
-            INPUT: Calculate using data from the last 2 weeks the cost_idle_std Low capacity cutting machine 1 and Assemby Machine 2. Calculate for the same machines also offline time med using data from the past month.
-            OUTPUT: ([Low Capacity Cutting Machine 1, Assembly Machine 2], [cost_idle_std], <last, 2, weeks>), ([Low Capacity Cutting Machine 1, Assembly Machine 2], [offline_time_med], <last, 1, months>)
+            INPUT: Calculate using data from the last 2 weeks the standard deviation for cost_idle of Low capacity cutting machine 1 and Assemby Machine 2. Calculate for the same machines also the offline time median using data from the past month. Calculate the highest offline time for low capacity cutting machine 1?
+            OUTPUT: (['Low Capacity Cutting Machine 1', 'Assembly Machine 2'], ['cost_idle_std'], <last, 2, weeks>), (['Low Capacity Cutting Machine 1', 'Assembly Machine 2'], ['offline_time_med'], <last, 1, months>), (['Low Capacity Cutting Machine 1'], ['offline_time_max'], NULL)
 
-            INPUT: Can you calculate cost idle for Assembly machine 1 based on yesterday data, the same kpi dor Assembly machine 2 for last week and offline time med for low capacity cutting machine 1?
-            OUTPUT: ([Assembly Machine 1], [cost_idle_avg], {YESTERDAY}), ([Assembly Machine 2], [cost_idle_avg], <last, 1, weeks>), ([Low Capacity Cutting Machine 1], [offline_time_med], NULL)
+            INPUT: Calculate the offline time median about laste 3 weeks. Can you calculate the working time for Assembly machine 1 based on yesterday data, the same kpi dor Assembly machine 2 based on data from 03/05/2024 -> 07/06/2024. What is the day low capacity cutting machine 1 had the lowest working time last 2 months.
+            OUTPUT: (['NULL'], ['offline_time_med'], <last, 3, weeks>), (['Assembly Machine 1'], ['working_time_avg'], {YESTERDAY}), (['Assembly Machine 2'], ['working_time_avg'], 2024-05-03 ->2024-06-07), (['Low Capacity Cutting Machine 1'], ['working_time_min'], <last, 2, months>)
 
-            INPUT: Predict offline time med for Assembly machine for {(self.TODAY + relativedelta(days=5)).strftime('%Y/%m/%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y/%m/%d')} and the same kpis for all machines.
-            OUTPUT: ([Assembly Machine 1, Assembly Machine 2], [offline_time_med], {(self.TODAY + relativedelta(days=5)).strftime('%Y-%m-%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y-%m-%d')}), ([NULL], [cost_idle_avg, offline_time_med], NULL)
+            INPUT: Predict working time min and the average for Assembly machine for {(self.TODAY + relativedelta(days=5)).strftime('%d/%m/%Y')} -> {(self.TODAY + relativedelta(days=13)).strftime('%d/%m/%Y')} and the same kpis for all machines. What will be the the total amount of working time for low capacity cutting machine 1 and assembly machine 1 for next 5 weeks.
+            OUTPUT: (['Assembly Machine 1', 'Assembly Machine 2'], ['working_time_min','working_time_avg'], {(self.TODAY + relativedelta(days=5)).strftime('%Y-%m-%d')} -> {(self.TODAY + relativedelta(days=13)).strftime('%Y-%m-%d')}), (['ALL'], ['working_time_min','working_time_avg'], NULL), (['Low Capacity Cutting Machine 1', 'Assembly Machine 1'], ['working_time_sum'], <next, 5, weeks>)
 
-            INPUT: Predict for all the assembly machine the cost idle average and offline_time med for the next 3 weeks and for low capacity cutting machne the cost_idle_std for March 2025. predict also for Assembly machine 1 the cost_idle  for the next two days.
-            OUTPUT: ([Assembly Machine 1, Assembly Machine 2], [cost_idle_avg, offline_time_med], <next, 3, weeks>), ([Low Capacity Cutting Machine 1], [cost_idle_std], 2025-03-01 -> 2025-03-31), ([Assembly Machine 1], [cost_idle_avg], <next, 2, days>)
+            INPUT: Can you predict for next 2 days for Assembly machine 1? predict for all the assembly machine the cost idle average and the sum of working time for the next 3 weeks and for low capacity cutting machne the cost_idle_std for March 2025. predict also for Assembly machine 1 the cost_idle for the next two days.
+            OUTPUT: (['Assembly Machine 1'], ['NULL'], <next, 2, days>), (['Assembly Machine 1', 'Assembly Machine 2'], ['cost_idle_avg', 'working_time_sum'], <next, 3, weeks>), (['Low Capacity Cutting Machine 1'], ['cost_idle_std'], 2025-03-01 -> 2025-03-31), (['Assembly Machine 1'], ['cost_idle_avg'], <next, 2, days>)
             '
             """
 

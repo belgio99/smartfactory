@@ -149,7 +149,7 @@ def prompt_classifier(input: Question, userId: str):
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
-    all_kpis=False
+    all_kpis=0
     if label == "predictions" or label == "kpi_calc" or label == "report":
         json_request, all_kpis = query_gen.query_generation(input, label)
         
@@ -459,7 +459,9 @@ async def ask_question(question: Question): # to add or modify the services allo
         # Execute the handler
         context = await handlers[label]()
         #eventually add the log error if user tried to ask for all kpis
-        if all_kpis:
+        if all_kpis == query_gen.ERROR_NO_KPIS:
+            context+="\nError: You can't calculate/predict for no kpis, try again with at least one kpi.\n"
+        elif all_kpis == query_gen.ERROR_ALL_KPIS:
             context+="\nError: You can't calculate/predict for all kpis, try again with less kpis.\n"
         if label == 'kb_q':
             # Update the history
