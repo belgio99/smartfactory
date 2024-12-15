@@ -12,6 +12,7 @@ from api_auth.api_auth import get_verify_api_key
 
 from model import Json_out, Json_in, Json_out_el, LimeExplainationItem, Severity
 
+
 async def task_scheduler():
     """Central scheduler running periodic tasks"""
     while True:
@@ -55,7 +56,8 @@ API_key = '12d326d6-8895-49b9-8e1b-a760462ac13f'
 # TEST CONNECTIONS
 @app.get("/data-processing/_public")
 def hello_world():
-    return 'Hello public World :)'
+    return retrieve_all_models_from_storage()
+    # return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
 def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
@@ -115,6 +117,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
                 # delta = req_date - today
                 # horizon = delta.days() 
                 if horizon > 0:
+                    
                     if not f_dataprocessing.check_model_exists(machine,KPI_name):
                        f_dataprocessing.characterize_KPI(machine,KPI_name)
                     result = f_dataprocessing.make_prediction(machine, KPI_name, horizon)

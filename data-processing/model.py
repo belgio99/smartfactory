@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from storage.storage_operations import insert_model_to_storage
 from typing import List
 from typing import Optional
 from enum import Enum

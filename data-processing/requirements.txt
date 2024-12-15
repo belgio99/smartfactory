@@ -10,8 +10,10 @@ tqdm
 xgboost
 aix360
 lime
+minio
+python-dotenv
 
-psycopg2-binary==2.9.10
+psycopg2-binary
 passlib==1.7.4
 python-jose==3.3.0
 

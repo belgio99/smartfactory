@@ -27,6 +27,8 @@ import requests
 from datetime import datetime, timedelta
 
 from XAI_forecasting import forecastExplainer
+from storage.storage_operations import insert_model_to_storage, retrieve_model_from_storage
+
 
 ####################################
 #####==========================#####
@@ -133,7 +135,7 @@ def data_normalize_params(data):
   normalized_data = pd.Series(array_scaled.flatten(),index=data.index,name='Timestamp')
   return normalized_data
 
-def create_model_data(machine, kpi, path): #TODO: instead of path we need to save the model on the DB
+def create_model_data(): #TODO: instead of path we need to save the model on the DB
   a_dict = {}
   a_dict['trends'] = {
       'max': 0,
@@ -175,31 +177,46 @@ def create_model_data(machine, kpi, path): #TODO: instead of path we need to sav
 
 
 def save_model_data(machine, kpi, n_dict):
+  
+  file_name = f'{machine}_{kpi}.json'
 
-  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
-  with open(final_path, 'w') as outfile:
-    json.dump(n_dict, outfile)
+  insert_model_to_storage("models", file_name, n_dict, kpi, machine)
+
+  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+  # with open(final_path, 'w') as outfile:
+  #   json.dump(n_dict, outfile)
 
 def load_model(machine, kpi): #handle loading with a query
 
-  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
-  if not os.path.isfile(final_path):
-    return create_model_data(machine, kpi, final_path)
+  dct = retrieve_model_from_storage(kpi,machine)  
+  if dct != None:
+     return dct
   else:
-    dct = {}
-    with open(final_path, "r") as file:
-      dct = json.load(file)
-    return dct
+     return create_model_data()
+  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+  # if not os.path.isfile(final_path):
+  #   return create_model_data(machine, kpi, final_path)
+  # else:
+  #   dct = {}
+  #   with open(final_path, "r") as file:
+  #     dct = json.load(file)
+  #   return dct
 
 def check_model_exists(machine, kpi):
-  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+
+  dct = retrieve_model_from_storage(kpi,machine)
+  if dct == None:
+     return False
+  else:
+     return True
+  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
   
 
-  if os.path.isfile(final_path):
-     a_dict = load_model(machine,kpi)
-     if a_dict["model"]["name"] != "":
-        return True
-  return False
+  # if os.path.isfile(final_path):
+  #    a_dict = load_model(machine,kpi)
+  #    if a_dict["model"]["name"] != "":
+  #       return True
+  # return False
 
    
 
@@ -322,6 +339,8 @@ def custom_tts(data, labels, window_size = 20):
 def characterize_KPI(machine, kpi):
   # DATA LOADING
   a_dict = load_model(machine, kpi)
+  print('AAAAAAAAAAAAAAAAAAAAAa')
+  print(a_dict)
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   # EXTRACT DATA TRENDS
@@ -332,6 +351,7 @@ def characterize_KPI(machine, kpi):
   trends = data_extract_trends(timeseries['Value']) # find range, distribution, or any pattern that may be used
                                                     # to treat missing values or outliers.
                                                     # maybe also find correlations and mutual information
+  
   a_dict['trends'] = trends
 
   # MISSING VALUE HANDLING
