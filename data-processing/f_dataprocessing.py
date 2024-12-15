@@ -27,6 +27,8 @@ import requests
 from datetime import datetime, timedelta
 
 from XAI_forecasting import forecastExplainer
+from storage.storage_operations import insert_model_to_storage, retrieve_model_from_storage
+
 
 ####################################
 #####==========================#####
@@ -38,7 +40,6 @@ from XAI_forecasting import forecastExplainer
 # analyzed in real-time. The same pipeline should be applied to any new batch
 # of data that we wish to add in the future and for which we have enough
 # historical data
-models_path = './models/'
 
 observation_window = 15
 
@@ -133,7 +134,7 @@ def data_normalize_params(data):
   normalized_data = pd.Series(array_scaled.flatten(),index=data.index,name='Timestamp')
   return normalized_data
 
-def create_model_data(machine, kpi, path): #TODO: instead of path we need to save the model on the DB
+def create_model_data(): #TODO: instead of path we need to save the model on the DB
   a_dict = {}
   a_dict['trends'] = {
       'max': 0,
@@ -175,31 +176,46 @@ def create_model_data(machine, kpi, path): #TODO: instead of path we need to sav
 
 
 def save_model_data(machine, kpi, n_dict):
+  
+  file_name = f'{machine}_{kpi}.json'
 
-  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
-  with open(final_path, 'w') as outfile:
-    json.dump(n_dict, outfile)
+  insert_model_to_storage("models", file_name, n_dict, kpi, machine)
+
+  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+  # with open(final_path, 'w') as outfile:
+  #   json.dump(n_dict, outfile)
 
 def load_model(machine, kpi): #handle loading with a query
 
-  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
-  if not os.path.isfile(final_path):
-    return create_model_data(machine, kpi, final_path)
+  dct = retrieve_model_from_storage(kpi,machine)  
+  if dct != None:
+     return dct
   else:
-    dct = {}
-    with open(final_path, "r") as file:
-      dct = json.load(file)
-    return dct
+     return create_model_data()
+  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+  # if not os.path.isfile(final_path):
+  #   return create_model_data(machine, kpi, final_path)
+  # else:
+  #   dct = {}
+  #   with open(final_path, "r") as file:
+  #     dct = json.load(file)
+  #   return dct
 
 def check_model_exists(machine, kpi):
-  final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
+
+  dct = retrieve_model_from_storage(kpi,machine)
+  if dct == None:
+     return False
+  else:
+     return True
+  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
   
 
-  if os.path.isfile(final_path):
-     a_dict = load_model(machine,kpi)
-     if a_dict["model"]["name"] != "":
-        return True
-  return False
+  # if os.path.isfile(final_path):
+  #    a_dict = load_model(machine,kpi)
+  #    if a_dict["model"]["name"] != "":
+  #       return True
+  # return False
 
    
 
@@ -322,6 +338,8 @@ def custom_tts(data, labels, window_size = 20):
 def characterize_KPI(machine, kpi):
   # DATA LOADING
   a_dict = load_model(machine, kpi)
+  print('AAAAAAAAAAAAAAAAAAAAAa')
+  print(a_dict)
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   # EXTRACT DATA TRENDS
@@ -332,6 +350,7 @@ def characterize_KPI(machine, kpi):
   trends = data_extract_trends(timeseries['Value']) # find range, distribution, or any pattern that may be used
                                                     # to treat missing values or outliers.
                                                     # maybe also find correlations and mutual information
+  
   a_dict['trends'] = trends
 
   # MISSING VALUE HANDLING
@@ -719,37 +738,42 @@ def outlier_check(new_value, data):
 
 
 
-def send_Alert(url, data):
+def send_Alert(url, data, api_key):
 
-  new_al = Alert()
-  new_al.title = data["title"]
-  new_al.type = data["type"]
-  new_al.description = data["description"]
-  new_al.triggeredAt = str(datetime.now())
-  new_al.machineName = data["machine"]
-  new_al.isPush = True
-  new_al.isEmail = True
-  new_al.recipients = ["","",""]
-  new_al.severity = data["severity"]
+  headers = {
+      "x-api-key": api_key
+  }
+  # new_al = Alert(
+  #   title = data["title"],
+  #   type = data["type"],
+  #   description = data["description"],
+  #   triggeredAt = str(datetime.now()),
+  #   machineName = data["machine"],
+  #   isPush = True,
+  #   isEmail = True,
+  #   recipients = data["recipients"],
+  #   severity = data["severity"])
+  # print("Sending_Alert")
 
   try:
-      response = requests.post(url, json=new_al)
+      new_al = {
+        "title": data["title"],
+        "type": data["type"],
+        "description": data["description"],
+        "triggeredAt": str(datetime.now()),
+        "machineName": data["machine"],
+        "isPush": True,
+        "isEmail": True,
+        "recipients": data["recipients"],
+        "severity": data["severity"].value
+      }  
+      response = requests.post(url, json=new_al, headers=headers)
       print(f"Response status code: {response.status_code}")
       print(f"Response body: {response.json()}")
-  except requests.exceptions.RequestException as e:
-      print(f"Error sending POST request: {e}")
-
-def incaseofalert():
-    # URL of the other microservice (container name is the hostname)
-    url = "http://service2:5000/api/resource"
-
-    # Data to send in the POST request
-    data = {
-        "key1": "value1",
-        "key2": "value2",
-    }
-    send_Alert(url,data)
-    #title description
+  except requests.RequestException as e:
+      print(f"Request failed: {e}")
+  except Exception as e:
+      print(f"Unexpected error: {e}")
 
 # outlier detection
 def detect_outlier(x, window):
@@ -766,29 +790,24 @@ def elaborate_new_datapoint(machine, kpi):
       daily check of new data point to update the models. 
 
       Args:
-      machine: a machine
-      kpi: a kpi
+      machine: machine ID of the requested machine
+      kpi: KPI ID of the requested machine
 
-      Returns:
-        
+      Returns:      
   """
   ##################################
   ### 1. Initial data processing ###
   ##################################
 
   # LOADING NEW DATA and KPI metadata
-  final_path = f'{models_path}{machine}_{kpi}.json'
   # d = read_value(machine, kpi)
   kpi_data_Date, kpi_data_Avg = data_load(machine, kpi) # load a single time series
 
   d_date = datetime.date(kpi_data_Date[-1])
   d = kpi_data_Avg[-1]
 
-  a_dict = {}
-  with open(final_path, "r") as file:
-    a_dict = json.load(file)
+  a_dict = load_model(machine,kpi)
   
-
   last_pred =  datetime.date(a_dict['predictions']['date_prediction'][0],
                              a_dict['predictions']['date_prediction'][1],
                              a_dict['predictions']['date_prediction'][2])
@@ -805,7 +824,7 @@ def elaborate_new_datapoint(machine, kpi):
      'machine': "",
      'isPush': True,
      'isEmail': True,
-     'recipients': ["","",""],
+     'recipients': [],
      'severity': Severity.MEDIUM
   }
 
@@ -817,6 +836,8 @@ def elaborate_new_datapoint(machine, kpi):
       alert_data['title'] = 'missing value'
       alert_data['description'] = f'{machine} did not yield a new value for:{kpi}'
       alert_data['machine'] = machine
+      alert_data['recipients'] = ["FactoryFloorManager"]
+      alert_data['type'] = 'machine_unreachable'
       send_Alert(url_alert, alert_data)
     elif is_missing == 0:
       a_dict['missingval']['missing_streak'] += 1
@@ -824,8 +845,11 @@ def elaborate_new_datapoint(machine, kpi):
         alert_data['title'] = 'Zero streak'
         alert_data['description'] = f"{kpi} for {machine} returned zeros for {a_dict['missingval']['missing_streak']} days in a row"
         alert_data['machine'] = machine
+        alert_data['recipients'] = ["FactoryFloorManager"]
+        alert_data['type'] = 'machine_unreachable'
         if a_dict['missingval']['missing_streak'] > 5:
-           alert_data['severity'] = Severity.HIGH        
+           alert_data['severity'] = Severity.HIGH 
+           a_dict['missingval']['alert_sent'] = False       
         send_Alert(url_alert, alert_data)        
     else:
       a_dict['missingval']['alert_sent'] = False
@@ -838,6 +862,8 @@ def elaborate_new_datapoint(machine, kpi):
         alert_data['title'] = 'Outlier detected'
         alert_data['description'] = f'{kpi} for {machine} returned a value higher than expected'
         alert_data['machine'] = machine
+        alert_data['recipients'] = ["FactoryFloorManager","SpecialityManufacturingOwner"]
+        alert_data['type'] = 'unexpected output'        
         send_Alert(url_alert, alert_data) 
       prediction_error = d - a_dict['predictions']['first_prediction']
       error = 0

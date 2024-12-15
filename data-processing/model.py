@@ -29,7 +29,8 @@ class Json_out_el(BaseModel):
     Predicted_value (List[flaot]): the list of the results
     Lower_bound, Upper_bound & confidence_score (List[float]): 
         each prediction has a "confidence_score chance to fall between "Lower_bound" and "Upper_bound"
-    Lime_explaination (List[float]): explaination of which components influenced more the answer
+    Lime_explaination (List[List[LimeExplainationItem]]): explaination of which components influence
+      more the answer. For every prediction a list of (str,float) tuples are returned
     Measure_unit (str) the KPI's unit of measure
     Date_prediction (list[str]) date of the corresponding prediction
     Error_message (str): in case of error its description will be here
