@@ -9,7 +9,7 @@ from rdflib import Graph
 # Load environment variables
 load_dotenv()
 from datetime import datetime, timedelta
-# the class is accessible only following the route of classified label == "kpi_calc" or label =="prediction"
+# the class is accessible only following the route of classified label == "kpi_calc" or label =="predictions"
 class QueryGenerator:
 
     def __init__(self, llm):
@@ -25,17 +25,21 @@ class QueryGenerator:
             start = datetime.strptime(dates[0], "%Y-%m-%d")
             end = datetime.strptime(dates[1], "%Y-%m-%d")
         except:
+            print("exc")
             return False
         if (end -start).days < 0:
+            print((end -start).days )
             return False
         # there are two delta due to a the following user case:
         # TODAY is somewhere in the middle of april and the input is "predict/calculate X for the month of April 2024"
         # rag has to calculate for only a fraction of the month
         delta_p = (end - self.TODAY).days
         delta_k = (start - self.TODAY).days
-        if (delta_p > 0 and label == "prediction") or (delta_k < 0 and label == "kpi_calc"):
+        if (delta_p > 0 and label == "predictions") or (delta_k < 0 and label == "kpi_calc"):
             return True
         # time window not consistent with label or attempt to calculate/predict for Today
+        print(delta_k)
+        print(delta_p)
         return False
 
             
@@ -125,7 +129,7 @@ class QueryGenerator:
                 print("log")
                 return "INVALID DATE"
             delta= (datetime.strptime(temp[1], "%Y-%m-%d")-self.TODAY).days
-            if label == "prediction":
+            if label == "predictions":
                 return delta
             if delta >= 0:
                 # the time window is only partially calculable because TODAY is within it
@@ -136,7 +140,7 @@ class QueryGenerator:
             # date format: <last/next, X, days/weeks/months>
             temp=date.strip("<>").split(", ")
             temp[1]=int(temp[1])
-            if (temp[0] == "last" and label != "kpi_calc") or (temp[0] == "next" and label != "prediction") or temp[1] == 0:
+            if (temp[0] == "last" and label != "kpi_calc") or (temp[0] == "next" and label != "predictions") or temp[1] == 0:
                 return "INVALID DATE"
             if temp[2] == "days":
                 return self._last_next_days(self.TODAY,temp[0],temp[1])
@@ -194,10 +198,10 @@ class QueryGenerator:
                     new_dict["KPI_Name"] = kpi
                     json_out.append(new_dict)
 
-        if label == "prediction" :
+        if label == "predictions" :
             json_out={"value":json_out}
             
-        return json.dumps(json_out,indent=4)
+        return json_out
 
     def query_generation(self,input= "predict idle time max, cost wrking sum and good cycles min for last week for all the medium capacity cutting machine, predict the same kpis for Laser welding machines 2 for today. calculate the cnsumption_min for next 4 month and for Laser cutter the offline time sum for last 23 day. "
 , label="kpi_calc"):
@@ -221,13 +225,12 @@ class QueryGenerator:
                 -If 'all' IDs from LIST_2 are associated with the matched KPIs, return ['ALL'] as [matched LIST_2 IDs]. Example: 'predict all kpis for ...' -> ['ALL']
                 -If 'all' IDs from LIST_1 are associated with the matched machines, return ['ALL'] as [matched LIST_1 IDs]. Example: 'calculate for all machines ...' -> ['ALL']
             2. Determine Time Window:
-                -in USER QUERY exact time windows format is 'DD/MM/YYYY -> DD/MM/YYYY'
+                -in USER QUERY exact time windows format is 'DD/MM/YYYY -> DD/MM/YYYY', the output MUST be provided in the format 'YYYY-MM-DD -> YYYY-MM-DD' as shown in the EXAMPLES
                 -if there is a time window described by exact dates, use them, otherwise return the expression which individuates the time window: 'last/next X days/weeks/months' using the format <last/next, X, days/weeks/months>
                 -If no time window is specified, use NULL.
                 -if there is a reference to an exact month and a year, return the time windows starting from the first of that month and ending to the last day of that month.
                 -Yesterday must be returned as {YESTERDAY}, today as {(self.TODAY).strftime('%Y-%m-%d')} -> {(self.TODAY).strftime('%Y-%m-%d')} and tomorrow as {(self.TODAY+relativedelta(days=1)).strftime('%Y-%m-%d')} -> {(self.TODAY+relativedelta(days=1)).strftime('%Y-%m-%d')}.
                 -Allow for minor spelling or formatting mistakes in the matched expressions and correct them as done in the examples below.
-                -If there is a time window logically incorrect, DO NOT fix it and return it as it is. ES: 15/07/2024 -> 10/07/2024 MUST NOT BE CORRECTED as 10/07/2024 -> 15/07/2024
             3. Handle Errors:
                 -Allow for minor spelling or formatting mistakes in the input.
                 -If there is ambiguity matching a kpi, you can match USER QUERY with the one in LIST_2 which ends with '_avg'"""
