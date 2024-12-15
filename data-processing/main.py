@@ -9,11 +9,12 @@ import asyncio
 
 from api_auth.api_auth import get_verify_api_key
 
-from model import Json_out, Json_in, Json_out_el, LimeExplainationItem
+from model import Json_out, Json_in, Json_out_el, LimeExplainationItem, Severity
 
 async def task_scheduler():
     """Central scheduler running periodic tasks"""
     while True:
+        await asyncio.sleep(2)
         new_data_polling()
         print('polling_complete :)')
         await asyncio.sleep(86400)
@@ -60,8 +61,6 @@ def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer
     return 'Hello private World :)'
 
 # ACTUAL PREDICTIONS
-#http://localhost:8000/data-processing?machine=%22Laser%20Welding%20Machine%202%22&KPI=%22consumption_working%22&Horizon=20
-# @app.post("/data-processing/predict", response_model = Json_out)
 @app.post("/data-processing/predict", response_model = Json_out)
 def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
@@ -90,12 +89,6 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
     """
     out_dicts = []
     for json_in in JSONS.value:
-        # json_in = {}
-        # json_in = {
-        #     "Machine_name": 'Large Capacity Cutting Machine 1',
-        #     "KPI_name": 'consumption',
-        #     "Date_prediction": 5
-        # }
         machine = json_in.Machine_name#['Machine_name'] #direttamente valore DB
         KPI_name = json_in.KPI_name#['KPI_name']
         json_out_el = Json_out_el(
@@ -163,9 +156,22 @@ def new_data_polling():
     # response = f_dataprocessing.execute_druid_query(query_body)
     # #TODO: link response to available models
     # availableModels = []
-    # for m in availableModels:
-    #     f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
+    availableModels = []
+    for m in availableModels:
+        f_dataprocessing.elaborate_new_datapoint(m['Machine_name'], m['KPI_name'])
     print(datetime.datetime.today())
+    alert_data = {
+     'title': "A",
+     'type': "V",
+     'description': "Desc",
+     'machine': "Machine",
+     'isPush': True,
+     'isEmail': True,
+     'recipients': ["FactoryFloorManager"],
+     'severity': Severity.MEDIUM
+    }
+    url_alert = f"http://api:8000/smartfactory/postAlert"
+    f_dataprocessing.send_Alert(url_alert,alert_data,API_key)
  
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0") # potrebbe essere bloccante

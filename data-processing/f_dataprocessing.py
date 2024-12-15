@@ -719,37 +719,42 @@ def outlier_check(new_value, data):
 
 
 
-def send_Alert(url, data):
+def send_Alert(url, data, api_key):
 
-  new_al = Alert()
-  new_al.title = data["title"]
-  new_al.type = data["type"]
-  new_al.description = data["description"]
-  new_al.triggeredAt = str(datetime.now())
-  new_al.machineName = data["machine"]
-  new_al.isPush = True
-  new_al.isEmail = True
-  new_al.recipients = ["","",""]
-  new_al.severity = data["severity"]
+  headers = {
+      "x-api-key": api_key
+  }
+  # new_al = Alert(
+  #   title = data["title"],
+  #   type = data["type"],
+  #   description = data["description"],
+  #   triggeredAt = str(datetime.now()),
+  #   machineName = data["machine"],
+  #   isPush = True,
+  #   isEmail = True,
+  #   recipients = data["recipients"],
+  #   severity = data["severity"])
+  # print("Sending_Alert")
 
   try:
-      response = requests.post(url, json=new_al)
+      new_al = {
+        "title": data["title"],
+        "type": data["type"],
+        "description": data["description"],
+        "triggeredAt": str(datetime.now()),
+        "machineName": data["machine"],
+        "isPush": True,
+        "isEmail": True,
+        "recipients": data["recipients"],
+        "severity": data["severity"].value
+      }  
+      response = requests.post(url, json=new_al, headers=headers)
       print(f"Response status code: {response.status_code}")
       print(f"Response body: {response.json()}")
-  except requests.exceptions.RequestException as e:
-      print(f"Error sending POST request: {e}")
-
-def incaseofalert():
-    # URL of the other microservice (container name is the hostname)
-    url = "http://service2:5000/api/resource"
-
-    # Data to send in the POST request
-    data = {
-        "key1": "value1",
-        "key2": "value2",
-    }
-    send_Alert(url,data)
-    #title description
+  except requests.RequestException as e:
+      print(f"Request failed: {e}")
+  except Exception as e:
+      print(f"Unexpected error: {e}")
 
 # outlier detection
 def detect_outlier(x, window):
@@ -766,11 +771,10 @@ def elaborate_new_datapoint(machine, kpi):
       daily check of new data point to update the models. 
 
       Args:
-      machine: a machine
-      kpi: a kpi
+      machine: machine ID of the requested machine
+      kpi: KPI ID of the requested machine
 
-      Returns:
-        
+      Returns:      
   """
   ##################################
   ### 1. Initial data processing ###
@@ -805,7 +809,7 @@ def elaborate_new_datapoint(machine, kpi):
      'machine': "",
      'isPush': True,
      'isEmail': True,
-     'recipients': ["","",""],
+     'recipients': [],
      'severity': Severity.MEDIUM
   }
 
@@ -817,6 +821,8 @@ def elaborate_new_datapoint(machine, kpi):
       alert_data['title'] = 'missing value'
       alert_data['description'] = f'{machine} did not yield a new value for:{kpi}'
       alert_data['machine'] = machine
+      alert_data['recipients'] = ["FactoryFloorManager"]
+      alert_data['type'] = 'machine_unreachable'
       send_Alert(url_alert, alert_data)
     elif is_missing == 0:
       a_dict['missingval']['missing_streak'] += 1
@@ -824,8 +830,11 @@ def elaborate_new_datapoint(machine, kpi):
         alert_data['title'] = 'Zero streak'
         alert_data['description'] = f"{kpi} for {machine} returned zeros for {a_dict['missingval']['missing_streak']} days in a row"
         alert_data['machine'] = machine
+        alert_data['recipients'] = ["FactoryFloorManager"]
+        alert_data['type'] = 'machine_unreachable'
         if a_dict['missingval']['missing_streak'] > 5:
-           alert_data['severity'] = Severity.HIGH        
+           alert_data['severity'] = Severity.HIGH 
+           a_dict['missingval']['alert_sent'] = False       
         send_Alert(url_alert, alert_data)        
     else:
       a_dict['missingval']['alert_sent'] = False
@@ -838,6 +847,8 @@ def elaborate_new_datapoint(machine, kpi):
         alert_data['title'] = 'Outlier detected'
         alert_data['description'] = f'{kpi} for {machine} returned a value higher than expected'
         alert_data['machine'] = machine
+        alert_data['recipients'] = ["FactoryFloorManager","SpecialityManufacturingOwner"]
+        alert_data['type'] = 'unexpected output'        
         send_Alert(url_alert, alert_data) 
       prediction_error = d - a_dict['predictions']['first_prediction']
       error = 0
