@@ -456,10 +456,10 @@ export class ForecastDataEx {
 
 
     static decode(json: Record<string, any>): ForecastDataEx {
-        if (typeof json.Machine_name !== "string") {
+        if (typeof json.Machine_Name !== "string") {
             throw new Error("Invalid type for Machine_name");
         }
-        if (typeof json.KPI_name !== "string") {
+        if (typeof json.KPI_Name !== "string") {
             throw new Error("Invalid type for KPI_name");
         }
         if (!Array.isArray(json.Predicted_value)) {
@@ -487,6 +487,6 @@ export class ForecastDataEx {
             throw new Error("Invalid type for Forecast");
         }
 
-        return new ForecastDataEx(json.Machine_name, json.KPI_name, json.Predicted_value, json.Lower_bound, json.Upper_bound, json.Confidence_score, json.Lime_explaination.map(LimeData.decodeArray), json.Measure_unit, json.Date_prediction, json.Forecast);
+        return new ForecastDataEx(json.Machine_Name, json.KPI_Name, json.Predicted_value, json.Lower_bound, json.Upper_bound, json.Confidence_score, json.Lime_explaination.map(LimeData.decodeArray), json.Measure_unit, json.Date_prediction, json.Forecast);
     }
 }
