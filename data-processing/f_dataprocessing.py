@@ -14,6 +14,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from model import Severity, Alert
+from math import isnan
 
 import json
 import os
@@ -717,7 +718,8 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
     self.s_mean = self.state_json['drift']["s_mean"]
 
 def missingdata_check(current_value):
-  if current_value == float('nan'):
+  
+  if isnan(current_value):
     return -1
   elif current_value == 0:
     return 0
@@ -745,7 +747,7 @@ def send_Alert(url, data, api_key):
         "title": data["title"],
         "type": data["type"],
         "description": data["description"],
-        "triggeredAt": str(datetime.now()),
+        "triggeredAt": data["alert_date"],
         "machineName": data["machine"],
         "isPush": True,
         "isEmail": True,
@@ -799,6 +801,7 @@ def elaborate_new_datapoint(machine, kpi):
      'machine': "",
      'isPush': True,
      'isEmail': True,
+     'alert_date': str(datetime.now()),
      'recipients': [],
      'severity': Severity.MEDIUM
   }
@@ -809,7 +812,7 @@ def elaborate_new_datapoint(machine, kpi):
     if is_missing == -1: # the data is 'nan', fill it and send an alert
       d = a_dict['predictions']['first_prediction']
       alert_data['title'] = 'missing value'
-      alert_data['description'] = f'{machine} did not yield a new value for:{kpi}'
+      alert_data['description'] = f'{machine} did not yield a new value for: {kpi}'
       alert_data['machine'] = machine
       alert_data['recipients'] = ["FactoryFloorManager"]
       alert_data['type'] = 'machine_unreachable'
@@ -824,7 +827,7 @@ def elaborate_new_datapoint(machine, kpi):
         alert_data['type'] = 'machine_unreachable'
         if a_dict['missingval']['missing_streak'] > 5:
            alert_data['severity'] = Severity.HIGH 
-           a_dict['missingval']['alert_sent'] = False       
+           a_dict['missingval']['alert_sent'] = True       
         send_Alert(url_alert, alert_data)        
     else:
       a_dict['missingval']['alert_sent'] = False

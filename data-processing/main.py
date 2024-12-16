@@ -17,11 +17,47 @@ from pathlib import Path
 
 async def task_scheduler():
     """Central scheduler running periodic tasks"""
+    i = 0
+    alertList = {
+        'Machine': ["Large Capacity Cutting Machine 1",
+                    "Laser Welding Machine 1",
+                    "Assembly Machine 2",
+                    "Testing Machine 3",
+                    "Testing Machine 3"],
+        'Date': ["2024-04-09","2024-05-03","2024-10-19","2024-03-03","2024-03-20"],
+        'Description': ['Power is higher than expected',
+                        "consumption for Laser Welding Machine 1 returned a value higher than expected",
+                        "Assembly Machine 2 did not yield a new value for: average_cycle_time",
+                        "working_time for Testing Machine 3 returned zeros for 3 days in a row",
+                        "working_time for Testing Machine 3 returned zeros for 20 days in a row"],
+        'Type': ['unexpected output','unexpected output',
+                 "Machine_unreachable","Machine_unreachable","Machine_unreachable"],
+        'Recipients':[["FactoryFloorManager","SpecialityManufacturingOwner"],
+                      ["FactoryFloorManager","SpecialityManufacturingOwner"],
+                      ["FactoryFloorManager"],["FactoryFloorManager"]],
+        'severity': [Severity.MEDIUM,Severity.MEDIUM,Severity.MEDIUM,Severity.MEDIUM,Severity.HIGH]
+    }
     while True:
-        await asyncio.sleep(2)
-        new_data_polling()
-        #send here a bunch of alerts
-        await asyncio.sleep(86400)
+        await asyncio.sleep(15)
+        alert_data = {
+        'title': alertList["Description"][i],
+        'type': alertList["Type"][i],
+        'description': alertList["Description"][i],
+        'machine': alertList["Machine"][i],
+        'isPush': True,
+        'isEmail': True,
+        'alert_date': alertList["Date"][i],
+        'recipients': alertList["Recipients"][i],
+        'severity': alertList["severity"][i]
+        }
+        send_dummy_alert(alert_data)
+        i+=1
+        await asyncio.sleep(15)
+        # new_data_polling()
+        
+        # #send here a bunch of alerts
+        # await asyncio.sleep(86400)
+        
         # await asyncio.sleep(10)
             
 
@@ -200,20 +236,13 @@ def new_data_polling():
     for m in availableModels:
         f_dataprocessing.elaborate_new_datapoint(m['Machine_Name'], m['KPI_Name'])
     print(datetime.datetime.today())
-    alert_data = {
-     'title': "A",
-     'type': "V",
-     'description': "Desc",
-     'machine': "Machine",
-     'isPush': True,
-     'isEmail': True,
-     'recipients': ["FactoryFloorManager"],
-     'severity': Severity.MEDIUM
-    }
+
+def send_dummy_alert(alert_data):
     url_alert = f"http://api:8000/smartfactory/postAlert"
     API_key = os.getenv('my_key')
     f_dataprocessing.send_Alert(url_alert,alert_data,API_key)
- 
+
+
 if __name__ == "__main__":
     uvicorn.run(app, port=8000, host="0.0.0.0") # potrebbe essere bloccante
     
