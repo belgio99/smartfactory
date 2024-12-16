@@ -1,5 +1,4 @@
 import asyncio
-import hashlib
 import json
 import logging
 import sys
@@ -38,6 +37,7 @@ from model.user import *
 from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, \
     load_dashboard_settings
+from AES_lib import encrypt_data, decrypt_data
 
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -47,14 +47,6 @@ logging.basicConfig(level=logging.INFO)
 tasks: dict[str, Task] = dict()
 tasks_lock = asyncio.Lock()
 last_task_id = 0
-
-
-def hash_data(data: tuple) -> tuple:
-    hashed_data = [] 
-    for item in data: 
-        #hashed_value = hashlib.sha256(str(item).encode('utf-8')).hexdigest()  # TODO: use a reversible hash function!!!
-        hashed_data.append(item)  
-    return tuple(hashed_data)
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
@@ -223,7 +215,8 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     try:
         connection, cursor = get_db_connection()
         query = "SELECT * FROM Users WHERE " + ("Email" if body.isEmail else "Username") + "=%s"
-        response = query_db_with_params(cursor, connection, query, hash_data((body.user,)))
+        key = bytes.fromhex(os.getenv("AES_KEY").strip())
+        response = query_db_with_params(cursor, connection, query, (encrypt_data(body.user, key),))
 
         if not response or (body.password != response[0][4]):
             logging.error("Invalid credentials")
@@ -240,8 +233,9 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
             algorithm=ALGORITHM
         )
         logging.info(result)
-        user = UserInfo(userId=result[0], username=result[1], email=result[2], role=result[3],
-                        access_token=access_token, site=result[5])
+        dec_username, dec_email, dec_site = decrypt_data(result[1],key), decrypt_data(result[2],key), decrypt_data(result[5],key)
+        user = UserInfo(userId=result[0], username=dec_username, email=dec_email, role=result[3],
+                        access_token=access_token, site=dec_site)
         return JSONResponse(content=user.to_dict(), status_code=200)
 
     except HTTPException as e:
@@ -301,7 +295,9 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
         connection, cursor = get_db_connection()
         # Check if user already exists
         query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
-        response = query_db_with_params(cursor, connection, query, hash_data((body.username, body.email)))
+        key = bytes.fromhex(os.getenv("AES_KEY").strip())
+        enc_username, enc_email = encrypt_data(body.username, key), encrypt_data(body.email, key)
+        response = query_db_with_params(cursor, connection, query, (enc_username, enc_email))
         user_exists = response
         logging.info(user_exists)
 
@@ -309,12 +305,10 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
             logging.error("User already registered")
             raise HTTPException(status_code=400, detail="User already registered")
         else:
-            hashed_username, hashed_email, hashed_role = hash_data((body.username, body.email, body.role))
-            hashed_site = hash_data((body.site,))[0]
-
+            enc_site = encrypt_data(body.site, key)
             # Insert new user into the database
             query_insert = "INSERT INTO Users (Username, Email, Role, Password, SiteName) VALUES (%s, %s, %s, %s, %s) RETURNING UserID;"
-            cursor.execute(query_insert, (hashed_username, hashed_email, hashed_role, body.password, hashed_site))
+            cursor.execute(query_insert, (enc_username, enc_email, body.role, body.password, enc_site))
             connection.commit()
             userid = cursor.fetchone()[0]
             close_connection(connection, cursor)
