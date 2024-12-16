@@ -2,10 +2,11 @@ import {useLocation} from "react-router-dom";
 import {DashboardEntry, DashboardFolder, DashboardLayout} from "../../api/DataStructures";
 import React, {useEffect, useState} from "react";
 import Chart from "../Chart/Chart";
-import {simulateChartData} from "../../api/DataFetcher";
+import {fetchData} from "../../api/DataFetcher";
 import FilterOptionsV2, {Filter} from "../Selectors/FilterOptions";
 import TimeSelector, {TimeFrame} from "../Selectors/TimeSelect";
 import PersistentDataManager from "../../api/DataManager";
+import {handleTimeAdjustments} from "../../utils/chartUtil";
 
 class TemporaryLayout {
 
@@ -19,6 +20,7 @@ class TemporaryLayout {
     static fromChat(json: Record<string, any>): TemporaryLayout {
         // the json received is a list of json DashboardEntry objects to decode with the DashboardEntry.decodeChat
         console.log(json);
+
         const entries: DashboardEntry[] = json.map((entry: Record<string, any>) => DashboardEntry.decodeChat(entry));
         return new TemporaryLayout(entries);
     }
@@ -45,11 +47,16 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
     const [chartData, setChartData] = useState<any[][]>([]);
     const kpiList = dataManager.getKpiList(); // Cache KPI list once
     const [filters, setFilters] = useState(new Filter("All", []));
-    const [timeFrame, setTimeFrame] = useState<TimeFrame>({from: new Date(), to: new Date(), aggregation: 'hour'});
+    const [timeFrame, setTimeFrame] = useState<TimeFrame>({
+        from: new Date(2024, 9, 10),
+        to: new Date(2024, 9, 19),
+        aggregation: 'day'
+    });
     const [temporaryName, setTemporaryName] = useState<string>("");
     const [temporaryFolder, setTemporaryFolder] = useState<string>("");
     const [selectedFolder, setSelectedFolder] = useState<string>("new");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [isRollbackTime, setIsRollbackTime] = useState(false);
 
     // Set the user ID for the API calls
     dataManager.setUserId(userId);
@@ -61,10 +68,15 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                 setLoading(true);
                 setFilters(new Filter("All", [])); // Reset filters
 
+                // Convert metadata into json
+                const json = JSON.parse(metadata);
+
                 // Fetch dashboard data by id
-                let dash = TemporaryLayout.fromChat(metadata);
+                let dash = TemporaryLayout.fromChat(json);
 
                 setDashboardData(dash);
+
+                let timeframe = handleTimeAdjustments(timeFrame, isRollbackTime);
 
                 // Fetch chart data for each view
                 const chartDataPromises = dash.charts.map(async (entry: DashboardEntry) => {
@@ -73,10 +85,15 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                         console.error(`KPI with ID ${entry.kpi} not found.`);
                         return [];
                     }
-                    return await simulateChartData(kpi, timeFrame, entry.graph_type, undefined); // Add appropriate filters
+                    return await fetchData(kpi, timeframe, entry.graph_type, undefined); // Add appropriate filters
                 });
 
-                const resolvedChartData = await Promise.all(chartDataPromises);
+                const resolvedChartData = await Promise.all(chartDataPromises).catch(
+                    (error) => {
+                        console.error("Error fetching chart data:", error);
+                        return [];
+                    }
+                );
                 setChartData(resolvedChartData);
             } catch (error) {
                 console.error("Error fetching dashboard or chart data:", error);
@@ -97,7 +114,8 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                     console.error(`KPI with ID ${entry.kpi} not found.`);
                     return [];
                 }
-                return await simulateChartData(kpi, timeFrame, entry.graph_type, filters); // Add appropriate filters
+                let timeframe = handleTimeAdjustments(timeFrame, isRollbackTime);
+                return await fetchData(kpi, timeframe, entry.graph_type, filters); // Add appropriate filters
             });
 
             const resolvedChartData = await Promise.all(chartDataPromises);
@@ -108,13 +126,14 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
         if (!loading) {
             fetchChartData();
         }
-    }, [filters, timeFrame]);
+    }, [filters, timeFrame, isRollbackTime]);
 
 
     if (loading) {
-        return <div className="flex justify-center items-center h-screen">
+        return <div className="flex flex-col justify-center items-center h-screen">
             <div className="text-lg text-gray-600">Loading...</div>
-        </div>;
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-500"></div>
+        </div>
     }
     return <div className="p-8 space-y-8 bg-gray-50 min-h-screen">
         {/* Disclaimer */}
@@ -156,7 +175,7 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
             <button
                 className="w-fit p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                 onClick={
-                    () => {
+                    async () => {
 
                         // set the dashboard id to a unique id
                         const dashboardTemporaryId = dataManager.getUniqueDashboardId(temporaryName.trim().toLowerCase());
@@ -177,7 +196,7 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                             return;
                         }
                         // Create a new dashboard layout with (name, id, charts)
-                        dataManager.addDashboard(TemporaryLayout.saveToLayout(dashboardData, temporaryName), dashboardFolder);
+                        await dataManager.addDashboard(TemporaryLayout.saveToLayout(dashboardData, temporaryName), dashboardFolder);
                         //
                         console.log("Dashboard saved with name:", temporaryName + " and id: " + dashboardTemporaryId);
                     }
@@ -194,6 +213,17 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
         <div className="flex space-x-4">
             <div><FilterOptionsV2 filter={filters} onChange={setFilters}/></div>
             <div><TimeSelector timeFrame={timeFrame} setTimeFrame={setTimeFrame}/></div>
+            <div>
+                <label htmlFor="timeRollback" className="text-gray-700">Back to last data available</label>
+                <input
+                    type="checkbox"
+                    id="timeRollback"
+                    name="timeRollback"
+                    checked={isRollbackTime}
+                    onChange={() => setIsRollbackTime(!isRollbackTime)}
+                    className="ml-2"
+                />
+            </div>
         </div>
         {/* Grid Layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center w-f">
