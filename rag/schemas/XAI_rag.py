@@ -494,6 +494,9 @@ class RagExplainer:
         if not isinstance(response, str):
             raise ValueError(f"The 'response' parameter must be a string. Received type {type(response).__name__}.")
 
+        if not self.context_sentences:
+            raise ValueError("The context is empty. Please add valid context before attributing response.")
+
         response_segments = sent_tokenize(response)
         if not response_segments:
             raise ValueError("The 'response' parameter does not contain any sentences after tokenization.")
