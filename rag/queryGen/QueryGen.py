@@ -191,7 +191,9 @@ class QueryGenerator:
             machines=elem[0]+"]"
             # transform the string containing the array of machines in an array of string
             machines = self._string_to_array(machines,"machines")
-            # machines == ["NULL/ALL"] => no usage of the Machine_Name key
+            if machines == ["ALL"] and label == "predictions":
+                machines = self.machine_res
+            # machines == ["NULL/ALL"] => no usage of the Machine_Name key if label == "kpi_calc" only for ["NULL"] otherwise
             if  machines != ["NULL"] and machines != ["ALL"]:                
                 for machine, kpi in product(machines,kpis):
                     new_dict=obj.copy()
