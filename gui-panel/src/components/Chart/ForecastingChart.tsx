@@ -91,15 +91,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
 
     const machineKey = futureDataEx?.machineName || "Machine";
     pastData = transformPastData(pastData, machineKey);
-    if (pastData.length > 0) {
-        // add a lower and upper bound to the last element of the past data so the line chart connects
-        pastData[pastData.length - 1] = {
-            ...pastData[pastData.length - 1],
-            lowerBound: pastData[pastData.length - 1].value,
-            upperBound: pastData[pastData.length - 1].value,
-        };
-    }
-    const data = [...pastData, ...futureData];
+    let data = [...pastData, ...futureData];
 
     if (!data || data.length === 0) {
         return <p style={{textAlign: "center", marginTop: "20px", color: "#555"}}>
@@ -121,6 +113,11 @@ const ForeChart: React.FC<ForeChartProps> = ({
     ) : 0;
 
     const breakpoint = pastData.length; // point to the last past data point
+    data = data.map((d) => ({
+        ...d,
+        numericTimestamp: new Date(d.timestamp).getTime(),
+    }));
+    console.log("Data:", data);
     return <div>
         {/* Forecasting Chart */}
         <ResponsiveContainer width="100%" height={400}>
@@ -134,14 +131,16 @@ const ForeChart: React.FC<ForeChartProps> = ({
             >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0"/>
                 <XAxis
-                    dataKey="timestamp"
+                    type="number"
+                    dataKey="numericTimestamp"
                     tick={{fill: "#666"}}
-                    tickFormatter={d => formatTimeFrame(d, timeUnit)}
+                    domain={["dataMin", "dataMax"]}
+                    tickFormatter={d => formatTimeFrame(new Date(d).toISOString(), timeUnit)}
                 />
                 <YAxis tick={{fill: "#666"}}/>
                 <Tooltip content={<ForecastTooltip kpi={kpi}/>} trigger={"hover"}/>
                 {data.length > 0 && <ReferenceLine
-                    x={data[breakpoint - 1].timestamp}
+                    x={new Date("2024-10-19").getTime()}
                     stroke="red"
                     label="Today"
                 />}

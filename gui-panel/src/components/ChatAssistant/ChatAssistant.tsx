@@ -142,8 +142,6 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
         }, 60);
 
     }
-
-
     return (
         <div className="fixed bottom-1.5 right-2 z-50">
             {!isChatOpen && (
