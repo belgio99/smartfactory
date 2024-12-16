@@ -33,7 +33,7 @@ REQUIREMENTS:
 1. Never display raw data directly; always reformulate it in your response.  
 2. Always explain errors in computation or forecasting clearly and concisely.  
 3. Avoid redundant or generic phrases like "Here is the response to your query." Focus on delivering precise, actionable insights.  
-
+4. If Error_message is not empty in forecasted KPI explain why the request has failed
 
 
 CONTEXT: 
