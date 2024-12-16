@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {KPI, Machine} from './DataStructures';
+import {KPI, Machine, ForecastDataEx} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -55,6 +55,12 @@ export interface HistoricalDataRequest {
  */
 export interface HistoricalDataResponse {
     [key: string]: any; //
+}
+
+export interface ForecastRequest {
+    Machine_Name: string
+    KPI_Name: string
+    Date_prediction: number
 }
 
 /**
@@ -320,7 +326,7 @@ export const getReports = async (userId: string): Promise<Report[]> => {
  */
 export const getHistoricalData = async (query: HistoricalDataRequest): Promise<HistoricalDataResponse> => {
     try {
-        console.log('Sending ', query);
+        console.log('Sending to Historical ', query);
         const response = await axios.post<{ data: HistoricalDataResponse }>(
             `${BASE_URL}/smartfactory/historical`,
             query,
@@ -338,6 +344,37 @@ export const getHistoricalData = async (query: HistoricalDataRequest): Promise<H
         throw new Error(error.response?.data?.message || 'Failed to retrieve historical data');
     }
 };
+
+/**
+ * API GET used to get predicted data
+ * @param request - The request for the forecast
+ * @returns Promise will return the predicted data from the forecasting model
+ */
+export const getForecastData = async (request: ForecastRequest): Promise<ForecastDataEx> => {
+    try {
+        const toSend = {value:[request]};
+        console.log('Sending to Forecast ', toSend);
+        const response = await axios.post(
+            `${BASE_URL}/smartfactory/predict`,
+            toSend,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+        if (!response.data || !Array.isArray(response.data.value) || response.data.value.length === 0) {
+            console.log("No forecast data available in the response.");
+            return new ForecastDataEx(request.Machine_Name, request.KPI_Name, [], [], [], [], [], "", [], true);
+        }
+        return ForecastDataEx.decode(response.data.value[0]);
+    } catch (error: any) {
+        console.error('Get Forecast Data API error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to retrieve forecast data');
+    }
+}
+
 
 /**
  * API POST used to update user settings

@@ -128,9 +128,11 @@ const Dashboard: React.FC = () => {
 
 
     if (loading) {
-        return <div className="flex justify-center items-center h-screen">
+        return <div className="flex flex-col justify-center items-center h-screen">
             <div className="text-lg text-gray-600">Loading...</div>
-        </div>;
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-500"></div>
+        </div>
+
     }
     return <div className="p-8 space-y-8 bg-gray-50 min-h-screen">
 

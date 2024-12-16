@@ -12,13 +12,17 @@ import {
     XAxis,
     YAxis
 } from "recharts";
-import {KPI} from "../../api/DataStructures";
+import {ForecastDataEx, KPI} from "../../api/DataStructures";
 import {COLORS, formatTimeFrame} from "../../utils/chartUtil";
 
 const ForecastTooltip = ({active, payload, label, kpi}: any) => {
     if (active && payload && payload.length) {
         // Variable to store the confidence value (which is the same for all three lines)
-        let confidence: number = payload[0].payload.confidence;
+        let confidence: number = payload[0].payload.confidenceScore;
+        if (confidence) {
+            // Remove the confidence value from the payload
+            confidence *= 100; // Convert to percentage
+        }
         return <div
             style={{
                 backgroundColor: '#fff',
@@ -54,22 +58,39 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
 
 interface ForeChartProps {
     pastData: any[];
-    futureData: any[];
+    futureDataEx: ForecastDataEx;
     kpi: KPI | null;
     timeUnit?: string;
     timeThreshold?: number;
-    explanationData?: any[];
 }
 
 const ForeChart: React.FC<ForeChartProps> = ({
                                                  pastData,
-                                                 futureData,
+                                                 futureDataEx,
                                                  kpi,
                                                  timeUnit = "day",
-                                                 explanationData,
                                              }) => {
     const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
 
+    const explanationData = futureDataEx?.limeExplanation;
+    const futureData = futureDataEx?.toChartData() || [];
+
+    // remaps historical data to match the chart data format
+    function transformPastData(
+        pastData: any[],
+        machineName: string
+    ): { timestamp: string; value: number; }[] {
+        return pastData.map((entry) => {
+            const value = entry[machineName];
+            return {
+                timestamp: entry.timestamp,
+                value: value,
+            };
+        });
+    }
+
+    const machineKey = futureDataEx?.machineName || "Machine";
+    pastData = transformPastData(pastData, machineKey);
     const data = [...pastData, ...futureData];
 
     if (!data || data.length === 0) {
@@ -79,8 +100,6 @@ const ForeChart: React.FC<ForeChartProps> = ({
     }
 
     const handleLineClick = (pointIndex: number) => {
-        console.log("Selected point:", pointIndex);
-        console.log("Explanation data:", explanationData?.length);
         setSelectedPoint(pointIndex - breakpoint);
     };
 
@@ -93,31 +112,12 @@ const ForeChart: React.FC<ForeChartProps> = ({
         ...selectedExplanationData.map((d: { feature: string; importance: number; }) => Math.abs(d.importance))
     ) : 0;
 
-    const breakpoint = pastData.length - 1; // point to the last past data point
-    const dataWithBounds = data.map((point, index) => {
-        const newPoint = {...point};
-
-        // Loop through each machine in the point
-        Object.keys(point).forEach(key => {
-            if (key !== "timestamp" && key !== "confidence") {
-                const machineValue = point[key];
-                // Apply ±20% margin for the bounds starting from the second half
-                newPoint[`UpperBound`] = index >= breakpoint ? machineValue * 1.2 : null;
-                newPoint[`LowerBound`] = index >= breakpoint ? machineValue * 0.8 : null;
-            }
-        });
-
-        return newPoint;
-    });
-    const machineKey = Object.keys(data[0] || {}).find(
-        key => key !== "timestamp" && key !== "confidence"
-    );
-
+    const breakpoint = pastData.length; // point to the last past data point
     return <div>
         {/* Forecasting Chart */}
         <ResponsiveContainer width="100%" height={400}>
             <LineChart
-                data={dataWithBounds}
+                data={data}
                 onClick={(e: any) => {
                     if (e && e.activeTooltipIndex !== undefined) {
                         handleLineClick(e.activeTooltipIndex);
@@ -133,7 +133,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 <YAxis tick={{fill: "#666"}}/>
                 <Tooltip content={<ForecastTooltip kpi={kpi}/>} trigger={"hover"}/>
                 {data.length > 0 && <ReferenceLine
-                    x={data[breakpoint].timestamp}
+                    x={data[breakpoint-1].timestamp}
                     stroke="red"
                     label="Today"
                 />}
@@ -142,7 +142,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 <Line
                     key={machineKey}
                     type="monotone"
-                    dataKey={machineKey}
+                    dataKey={"value"}
                     stroke={COLORS[0]} // Assuming only one machine, use the first color
                     strokeWidth={2}
                     dot={{r: 5}}
@@ -154,7 +154,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 <Line
                     key={`UpperBound`}
                     type="monotone"
-                    dataKey={`UpperBound`}
+                    dataKey={`upperBound`}
                     stroke="#82ca9d"
                     strokeWidth={1.5}
                     strokeDasharray="5 5"
@@ -165,7 +165,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 <Line
                     key={`LowerBound`}
                     type="monotone"
-                    dataKey={`LowerBound`}
+                    dataKey={`lowerBound`}
                     stroke="#8884d8"
                     strokeWidth={1.5}
                     strokeDasharray="5 5"
@@ -173,7 +173,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 /> </LineChart>
         </ResponsiveContainer>
         {/* Explanation Chart */}
-        {selectedExplanationData && selectedPoint ? <div className="mt-4">
+        {selectedExplanationData && selectedPoint !== null ? <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">
                     Explanation of prediction for date: {formatTimeFrame(data[selectedPoint + breakpoint].timestamp,)}
                 </h3>

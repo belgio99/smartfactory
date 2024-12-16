@@ -16,7 +16,6 @@ volumes:
   backrest_cache: {}
   target_volume: {}
   vault_data: {}
-  data_processing_models: {}
 
 services:
   postgres:
@@ -221,8 +220,6 @@ services:
     build:
       context: ./data-processing
       dockerfile: Dockerfile
-    volumes:
-      - data_processing_models:/models
     image: ghcr.io/belgio99/smartfactory/data-processing:latest
     ports: 
       - "10030:8000"
@@ -231,6 +228,7 @@ services:
       - not-db-init
     env_file:
       - database/.env
+      - data-processing/.env
     depends_on:
       router:
         condition: service_healthy
@@ -285,6 +283,8 @@ services:
     build:
       context: ./gui-panel
       dockerfile: Dockerfile
+    env_file:
+      - gui-panel/.env
     ports: 
       - "10060:8080"
     profiles:
