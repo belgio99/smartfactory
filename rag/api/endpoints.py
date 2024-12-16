@@ -454,7 +454,7 @@ async def ask_question(question: Question): # to add or modify the services allo
             if question_language.lower() != "english":
                 llm_result = await translate_answer(question, question_language, llm_result.content)
                 
-            return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
+            return Answer(textResponse=llm_result.content, textExplanation='', data='', label='kb_q') # da rivedere
 
         # Execute the handler
         context = await handlers[label]()
