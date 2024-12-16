@@ -3,7 +3,6 @@ import {useNavigate} from 'react-router-dom';
 import {interactWithAgent} from '../../api/ApiService';
 import ChatInput from './ChatInput';
 import MessageBubble, {XAISources} from "./ChatComponents";
-import XAIEX from "../../api/mockData/XAIEX";
 import DataManager from "../../api/DataManager";
 
 export interface Message {
@@ -58,141 +57,89 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
 
         setMessages((prev) => [...prev, userMessage]);
 
-        function handleCommand(userMessage: Message) {
-            if (userMessage.content === '/clear') {
-                setMessages([]);
-                return true;
-            }
-            if (userMessage.content === '/dashboard') {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        id: messages.length + 2,
-                        sender: 'assistant',
-                        content: 'This is an example dashboard.',
-                        extraData: {
-                            explanation: XAIEX,
-                            dashboardData: {
-                                target: '/dashboard/new',
-                                metadata:
-                                    JSON.parse("[\n  {\n    \"line\": \"power_consumption_efficiency\"\n  },\n  {\n    \"area\": \"power_consumption_efficiency\"\n  },\n  {\n    \"barv\": \"power_consumption_efficiency\"\n  },\n  {\n    \"barh\": \"power_consumption_efficiency\"\n  }\n]")
-                                ,
-                            },
-                        }
-                    },
-                ]);
-                return true;
-            }
-            if (userMessage.content === '/report') {
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        id: messages.length + 2,
-                        sender: 'assistant',
-                        content: 'Your report is ready for review.',
-                        extraData: {
-                            explanation: XAIEX,
-                            report: {
-                                userId: userId,
-                                reportId: 'report_123',
-                            },
-                        },
-                    },
-                ]);
-                return true;
-            }
-            return false;
-        }
-
         //if the message is a command, handle it
-        if (!(newMessage.startsWith('/') && handleCommand(userMessage))) {
+        setIsTyping(true);
+        interactWithAgent(userId, userMessage.content)
+            .then((response) => {
+                let extraData = {};
+                console.log(response);
+                let explanation: XAISources[];
 
-            setIsTyping(true);
-            interactWithAgent(userId, userMessage.content)
-                .then((response) => {
-                    let extraData = {};
-                    console.log(response);
-                    let explanation: XAISources[];
+                try {
+                    //try decoding the explanation string
+                    const decodedExplanation: Record<string, any>[] = JSON.parse(response.textExplanation);
+                    explanation = decodedExplanation.map(XAISources.decode);
+                } catch (e) {
+                    console.error("Error decoding explanation: ", e);
+                    explanation = [];
+                }
 
-                    try {
-                        //try decoding the explanation string
-                        const decodedExplanation: Record<string, any>[] = JSON.parse(response.textExplanation);
-                        explanation = decodedExplanation.map(XAISources.decode);
-                    } catch (e) {
-                        console.error("Error decoding explanation: ", e);
-                        explanation = [];
+                if (response.label) {
+                    switch (response.label) {
+                        case 'dashboard':
+                            extraData = {
+                                explanation: explanation,
+                                dashboardData: {
+                                    target: '/dashboard/new',
+                                    metadata: response.data,
+                                },
+                            };
+                            break;
+                        case 'report':
+                            extraData = {
+                                explanation: explanation,
+                                report: {
+                                    userId: userId,
+                                    reportId: response.data,
+                                },
+                            };
+                            response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
+                            break;
+                        case 'new_kpi':
+                            DataManager.getInstance().refreshKPI();
+                            extraData = {
+                                explanation: explanation,
+                            };
+                            break;
+                        default:
+                            extraData = {
+                                explanation: explanation,
+                            };
                     }
+                }
 
-                    if (response.label) {
-                        switch (response.label) {
-                            case 'dashboard':
-                                extraData = {
-                                    explanation: explanation,
-                                    dashboardData: {
-                                        target: '/dashboard/new',
-                                        metadata: response.data,
-                                    },
-                                };
-                                break;
-                            case 'report':
-                                extraData = {
-                                    explanation: explanation,
-                                    report: {
-                                        userId: userId,
-                                        reportId: response.data,
-                                    },
-                                };
-                                response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
-                                break;
-                            case 'new_kpi':
-                                DataManager.getInstance().refreshKPI();
-                                extraData = {
-                                    explanation: explanation,
-                                };
-                                break;
-                            default:
-                                extraData = {
-                                    explanation: explanation,
-                                };
-                        }
-                    }
-
-                    const assistantMessage: Message = {
+                const assistantMessage: Message = {
+                    id: messages.length + 2,
+                    sender: 'assistant',
+                    content: response.textResponse,
+                    extraData: extraData,
+                };
+                setMessages((prev) => [...prev, assistantMessage]);
+            })
+            .catch(() => {
+                setMessages((prev) => [
+                    ...prev,
+                    {
                         id: messages.length + 2,
                         sender: 'assistant',
-                        content: response.textResponse,
-                        extraData: extraData,
-                    };
-                    setMessages((prev) => [...prev, assistantMessage]);
-                })
-                .catch(() => {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: messages.length + 2,
-                            sender: 'assistant',
-                            content: `Sorry, I couldn't process that.`,
-                        },
-                    ]);
-                }).finally(() => {
-                setIsTyping(false); // Unlock input
-            });
-
-            // if the response is taking too long, send a message to the user
-            // to let them know that the assistant is still processing
-            setTimeout(() => {
-                if (isTyping) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: messages.length + 3,
-                            sender: 'assistant',
-                            content: `I'm still processing your request...`,
-                        },
-                    ]);
-                }
-            }, 5000);
-        }
+                        content: `Sorry, I couldn't process that.`,
+                    },
+                ]);
+            }).finally(() => {
+            setIsTyping(false); // Unlock input
+        });
+        setTimeout(() => {
+            if (isTyping) {
+                setMessages((prev) => [
+                    ...prev,
+                    {
+                        id: messages.length + 3,
+                        sender: 'assistant',
+                        content: `I'm still processing your request...`,
+                    },
+                ]);
+            }
+        }, 60);
 
     }
 
