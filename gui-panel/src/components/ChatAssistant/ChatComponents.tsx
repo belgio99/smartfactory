@@ -125,7 +125,7 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
                     {isExplanationOpen && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
                             <div
-                                className="bg-white max-h-[95vh] min-h-[50vh] rounded-lg shadow-lg p-4 max-w-lg w-full">
+                                className="bg-white max-h-[95vh] min-h-[50vh] rounded-lg shadow-lg p-4 max-w-lg w-full overflow-y-auto">
                                 <div className="flex justify-between items-center mb-4">
                                     <h3 className="text-lg font-bold text-gray-800">Explanation</h3>
                                     <button

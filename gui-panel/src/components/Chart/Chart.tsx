@@ -35,7 +35,8 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
     if (!data || data.length === 0) {
         return (
             <p style={{textAlign: 'center', marginTop: '20px', color: '#555'}}>
-                No data available for defined options. Please select a different set of options.
+                No data available yet for selected filters. Please select a different set of options, then press
+                Generate Chart.
             </p>
         );
     }

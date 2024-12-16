@@ -1,10 +1,12 @@
 // Helper function to format date as 'HH:mm' for hours, 'DD' for days, 'MMM' for months
+import {TimeFrame} from "../components/Selectors/TimeSelect";
+
 export const formatTimeFrame = (timestamp: string, timeUnit?: string): string => {
     const date = new Date(timestamp);
 
     switch (timeUnit) {
-        case 'hour':
-            return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`; // HH:mm
+        //case 'hour':
+        //    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`; // HH:mm
         case 'day':
             return `${String(date.getDate()).padStart(2, '0')}`; // DD (day of the month plus month name)
         case 'week':
@@ -30,3 +32,50 @@ export const getColor = (value: number, min: number, max: number) => {
 
     return `rgb(${r},${g},${b})`;
 };
+export const handleTimeAdjustments = (timeFrame: TimeFrame, isRollbackTime: boolean) => {
+    if (isRollbackTime) {
+        console.log("TimeFrame before rollback:", timeFrame);
+
+        const lastDate = new Date(2024, 9, 19); // 19 October 2024
+        const databaseStartDate = new Date(2024, 2, 1); // 1 March 2024
+        const fromDate = new Date(timeFrame.from);
+        const toDate = new Date(timeFrame.to);
+
+        // Validate input dates
+        if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
+            throw new Error("Invalid timeFrame dates");
+        }
+
+        // Calculate the difference in milliseconds
+        const diff = toDate.getTime() - fromDate.getTime();
+
+        // Adjust the 'from' and 'to' dates for rollback
+        const newTo = new Date(lastDate); // End date is fixed to 19 October 2024
+        const newFrom = new Date(newTo.getTime() - diff); // Shift the range backward
+
+        // Validate 'newFrom' against the database start date
+        if (newFrom < databaseStartDate) {
+            console.warn("New 'from' date exceeds database start date. Adjusting...");
+            // Calculate the difference between the database start date and the adjusted 'from' date
+            const adjustedDiff = newTo.getTime() - databaseStartDate.getTime();
+
+            // Adjust the 'to' date by the same difference (i.e., keep the range consistent)
+            return {
+                from: databaseStartDate,
+                to: new Date(databaseStartDate.getTime() + adjustedDiff),
+                aggregation: timeFrame.aggregation,
+            };
+        }
+
+        console.log("TimeFrame after rollback:", {from: newFrom, to: newTo, aggregation: timeFrame.aggregation});
+        return {
+            from: newFrom,
+            to: newTo,
+            aggregation: timeFrame.aggregation,
+        };
+    }
+    console.log("TimeFrame without rollback:", timeFrame);
+
+    // No rollback, return original time frame
+    return timeFrame;
+}

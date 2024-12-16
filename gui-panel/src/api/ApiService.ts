@@ -1,5 +1,7 @@
 import axios from 'axios';
-import {KPI, Machine, ForecastDataEx} from './DataStructures';
+
+import {DashboardFolder, ForecastDataEx, KPI, Machine} from './DataStructures';
+import {Schedule} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -64,15 +66,6 @@ export interface ForecastRequest {
 }
 
 /**
- * Interface DashboardData
- * @param any [key: string] any - The key of the dashboard data
- */
-export interface DashboardData {
-    // json object
-    [key: string]: any;
-}
-
-/**
  * Interface UserSettings
  * @param any [key: string] string | number | boolean - The key of the user settings
  */
@@ -104,16 +97,6 @@ export interface Alert {
     isEmail: boolean;
     recipients: string[];
     severity: string;
-}
-
-/**
- * Interface AIResponse
- * @param textResponse string - The text response of the AI
- * @param data string (optional) - The data of the AI
- */
-interface AIResponse {
-    textResponse: string;
-    data?: string;
 }
 
 /**
@@ -352,7 +335,7 @@ export const getHistoricalData = async (query: HistoricalDataRequest): Promise<H
  */
 export const getForecastData = async (request: ForecastRequest): Promise<ForecastDataEx> => {
     try {
-        const toSend = {value:[request]};
+        const toSend = {value: [request]};
         console.log('Sending to Forecast ', toSend);
         const response = await axios.post(
             `${BASE_URL}/smartfactory/predict`,
@@ -535,7 +518,7 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
     try {
         console.log('Sending calculate KPI value request to:', `${BASE_URL}/smartfactory/calculate`);
         console.log('Payload:', {requests});
-        const response = await axios.post<KPICalculation[]>(
+        const response = await axios.post(
             `${BASE_URL}/smartfactory/calculate`,
             requests,
             {
@@ -544,9 +527,9 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
                     "x-api-key": API_KEY,
                 },
             },
-        );
+        )
         console.log('Calculate KPI Value response:', response.data);
-        return response.data;
+        return response.data as KPICalculation[];
     } catch (error: any) {
         console.error('Calculate KPI Value API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to calculate KPI value');
@@ -559,9 +542,9 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
  * @param settings DashboardData - The dashboard settings
  * @returns Promise will return void
  */
-export const postDashboardSettings = async (userId: string, settings: DashboardData): Promise<void> => {
+export const postDashboardSettings = async (userId: string, settings: Record<string, any>): Promise<string> => {
     try {
-        await axios.post(
+        const response = await axios.post(
             `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
             settings,
             {
@@ -571,6 +554,7 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
                 },
             }
         );
+        return response.data;
     } catch (error: any) {
         console.error('Post Dashboard Settings API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to post dashboard settings');
@@ -582,9 +566,9 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
  * @param userId string - The user ID
  * @returns Promise will return the dashboard settings
  */
-export const retrieveDashboardSettings = async (userId: string): Promise<DashboardData> => {
+export const retrieveDashboardSettings = async (userId: string): Promise<DashboardFolder> => {
     try {
-        const response = await axios.get<DashboardData>(
+        const response = await axios.get<Record<string, any>>(
             `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
             {
                 headers: {
@@ -593,7 +577,7 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
                 },
             }
         );
-        return response.data;
+        return DashboardFolder.decode(response.data);
     } catch (error: any) {
         console.error('Retrieve Dashboard Settings API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');
@@ -630,11 +614,18 @@ export const instantReport = async (userId: string, params: ScheduleParams): Pro
  * @param period number - The scheduling frequency (e.g., in seconds).
  * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
  */
-export const scheduleReport = async (requestData: ScheduleRequest): Promise<any> => {
+export const scheduleReport = async (requestData: Record<string, any>, user_id: string): Promise<any> => {
     try {
+        const payload = {
+            userId: user_id,
+            params: requestData
+        };
+        //
+        console.log('Sending schedule report request to:', `${BASE_URL}/smartfactory/reports/schedule`);
+        console.log('Payload:', payload);
         const response = await axios.post(
             `${BASE_URL}/smartfactory/reports/schedule`,
-            requestData,
+            payload,
             {
                 headers: {
                     "Content-Type": "application/json",
@@ -711,3 +702,31 @@ export const dummyCheck = async (): Promise<void> => {
         throw new Error(error.response?.data?.message || 'Failed to check dummy');
     }
 }
+
+/**
+ * API GET used to retrieve the scheduled reports
+ * @param userId string - The user ID
+ * @returns Promise<ScheduleParams[]> - The list of scheduled reports
+ */
+export const retrieveSchedule = async (userId: string): Promise<Schedule[]> => {
+    try {
+        const response = await axios.get<{ data: Record<string, any>[] }>(
+            `${BASE_URL}/smartfactory/reports/schedule?userId=${userId}`,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+        
+        console.log("Retrieve Schedule API response:", response.data);
+        console.log("Retrieve Schedule API response.data.data:", response.data.data);
+        // MAP the response data to the Schedule class
+        const schedules = response.data.data.map(Schedule.decode);
+        return schedules;
+    } catch (error: any) {
+        console.error("Retrieve Schedule API error:", error);
+        throw new Error(error.response?.data?.message || "Failed to retrieve schedule");
+    }
+};

@@ -14,6 +14,7 @@ from sklearn.model_selection import ParameterGrid
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from model import Severity, Alert
+from math import isnan
 
 import json
 import os
@@ -375,24 +376,27 @@ def characterize_KPI(machine, kpi):
     }
     if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
       diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
-      diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
+      call_status, diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
       # data['Value'] = data_normalize_params(diff1_series['Value'])
-      stationarity_results = {
-        'Differencing': 1,
-        'Statistic': round(diff1_statistic, 3),
-        'P-value': f'{diff1_p_value:.2E}',
-        'Stationary': 1 if diff1_p_value < 0.05 else 0
-      }
-      if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
-          diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
-          diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
-          # data['Value'] = data_normalize_params(diff2_series['Value'])
-          stationarity_results = {
-            'Differencing': 2,
-            'Statistic': round(diff2_statistic, 3),
-            'P-value': f'{diff2_p_value:.2E}',
-            'Stationary': 1 if diff2_p_value < 0.05 else 0
-          }
+      if call_status == 0:
+        stationarity_results = {
+          'Differencing': 1,
+          'Statistic': round(diff1_statistic, 3),
+          'P-value': f'{diff1_p_value:.2E}',
+          'Stationary': 1 if diff1_p_value < 0.05 else 0
+        }
+        if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
+            diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
+            call_status, diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
+            # data['Value'] = data_normalize_params(diff2_series['Value'])
+            if call_status == 0:
+              stationarity_results = {
+                'Differencing': 2,
+                'Statistic': round(diff2_statistic, 3),
+                'P-value': f'{diff2_p_value:.2E}',
+                'Stationary': 1 if diff2_p_value < 0.05 else 0
+              }
+  if call_status == 0:
     # else:
     #   data['Value'] = data_normalize_params(data['Value'])
     a_dict['stationarity'] = stationarity_results
@@ -448,6 +452,7 @@ def characterize_KPI(machine, kpi):
     return 0
   else:
     return call_status
+
 
 
 ##############################
@@ -717,7 +722,8 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
     self.s_mean = self.state_json['drift']["s_mean"]
 
 def missingdata_check(current_value):
-  if current_value == float('nan'):
+  
+  if isnan(current_value):
     return -1
   elif current_value == 0:
     return 0
@@ -745,7 +751,7 @@ def send_Alert(url, data, api_key):
         "title": data["title"],
         "type": data["type"],
         "description": data["description"],
-        "triggeredAt": str(datetime.now()),
+        "triggeredAt": data["alert_date"],
         "machineName": data["machine"],
         "isPush": True,
         "isEmail": True,
@@ -799,6 +805,7 @@ def elaborate_new_datapoint(machine, kpi):
      'machine': "",
      'isPush': True,
      'isEmail': True,
+     'alert_date': str(datetime.now()),
      'recipients': [],
      'severity': Severity.MEDIUM
   }
@@ -809,7 +816,7 @@ def elaborate_new_datapoint(machine, kpi):
     if is_missing == -1: # the data is 'nan', fill it and send an alert
       d = a_dict['predictions']['first_prediction']
       alert_data['title'] = 'missing value'
-      alert_data['description'] = f'{machine} did not yield a new value for:{kpi}'
+      alert_data['description'] = f'{machine} did not yield a new value for: {kpi}'
       alert_data['machine'] = machine
       alert_data['recipients'] = ["FactoryFloorManager"]
       alert_data['type'] = 'machine_unreachable'
@@ -824,7 +831,7 @@ def elaborate_new_datapoint(machine, kpi):
         alert_data['type'] = 'machine_unreachable'
         if a_dict['missingval']['missing_streak'] > 5:
            alert_data['severity'] = Severity.HIGH 
-           a_dict['missingval']['alert_sent'] = False       
+           a_dict['missingval']['alert_sent'] = True       
         send_Alert(url_alert, alert_data)        
     else:
       a_dict['missingval']['alert_sent'] = False

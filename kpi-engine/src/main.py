@@ -131,6 +131,8 @@ async def calculate(request: List[KPIRequest], api_key: str = Depends(get_verify
             }
     
     response = [process_single_request(req) for req in request]
+    if len(response) == 0:
+        return [{"Value": "Error: Request input not valid"}]
     return response
 
 if __name__ == "__main__":

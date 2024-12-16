@@ -2,7 +2,7 @@ import PersistentDataManager from "./DataManager";
 import {KPI, Machine} from "./DataStructures";
 import {Filter} from "../components/Selectors/FilterOptions";
 import {TimeFrame} from "../components/Selectors/TimeSelect";
-import {calculateKPIValue, getHistoricalData, HistoricalDataRequest, KPIRequest} from "./ApiService";
+import {calculateKPIValue, getHistoricalData, HistoricalDataRequest, KPICalculation, KPIRequest} from "./ApiService";
 
 const dataManager = PersistentDataManager.getInstance();
 const smoothData = (data: number[], alpha: number = 0.3): number[] => {
@@ -186,8 +186,10 @@ export async function fetchData(
     if (!aggregationMethods.includes(aggregationMethod)) {
         // if the aggregation method is not found, request calculation
         const request = requestCalculation(isTimeSeries, kpi, timeFrame, filters);
-        console.log("Request:", request);
-        const response = await calculateKPIValue(request);
+        const response: KPICalculation[] = await calculateKPIValue(request).catch((error) => {
+            console.error("Error executing this request:", request, error);
+            return [];
+        });
 
         if (isHist) {
             // if it's a histogram, we need to group the data by bins and calculate the frequency
@@ -234,7 +236,7 @@ export async function fetchData(
             // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
 
         if (isTimeSeries) {
-            console.log("Time series received:", response);
+            //console.log("Time series received:", response);
 
             // group by timestamp like below
             // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
@@ -261,7 +263,7 @@ export async function fetchData(
             data = Object.values(data);
 
 
-            console.log("Data grouped by timestamp:", data);
+            //console.log("Data grouped by timestamp:", data);
         } else {
             // if it's categorical data, we can just return a reformatted version of the response
             // format like {name: 'machine1', value: 20}
@@ -278,7 +280,10 @@ export async function fetchData(
         // if the aggregation method is found, request historical data
         const query = constructQuery(isTimeSeries, kpi, timeFrame, filters);
         // Send the query to the historical data endpoint
-        data = await getHistoricalData(query);
+        data = await getHistoricalData(query).catch((error) => {
+            console.error("Error executing this query:", query, error);
+            return [];
+        });
 
         if (isHist) {
             // here data is formatted like [{timestamp: '2024-12-02', machine1: 20}, {timestamp: '2024-12-02', machine2: 40}]
