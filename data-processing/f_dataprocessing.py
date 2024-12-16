@@ -484,7 +484,7 @@ def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q
 
     return pred_ARIMA[:horizon]
 
-def XAI_PRED(data, model, total_points, seq_length = 10, n_predictions = 30):
+def XAI_PRED(data,Last_date, model, total_points, seq_length = 10, n_predictions = 30):
   # Seed
   np.random.seed(42)
 
@@ -502,7 +502,9 @@ def XAI_PRED(data, model, total_points, seq_length = 10, n_predictions = 30):
   input_data = data[(total_points - seq_length - n_predictions): (total_points - n_predictions)]
 
   # Generate labels for the input_data
-  start_date = datetime.today().date() - timedelta(observation_window - 1)
+  print(Last_date, type(Last_date))
+  Last_date = datetime.strptime(Last_date, "%Y-%m-%dT%H:%M:%S.%fZ")
+  start_date = Last_date - timedelta(observation_window - 1)
   input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
   # Initialize the explainer
@@ -525,6 +527,7 @@ def make_prediction(machine, kpi, length):
   a_dict = load_model(machine, kpi)
 
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
+  Last_date = kpi_data_Time[-1]
 
   timestamps = pd.to_datetime(kpi_data_Time)
   timeseries = pd.DataFrame({'Timestamp':timestamps, 'Value': kpi_data_Avg})
@@ -595,7 +598,7 @@ def make_prediction(machine, kpi, length):
     # explainer = ForecastExplainer(loaded_model, X_train)
     # formatted_dates = [datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d") for date in kpi_data_Time[-11:-1]]
 
-    results = XAI_PRED(avg_values1,loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
+    results = XAI_PRED(avg_values1,Last_date, loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
     
     x = [r.item() for r in results['Predicted_value']]
     y = [r.item() for r in results['Lower_bound']]
