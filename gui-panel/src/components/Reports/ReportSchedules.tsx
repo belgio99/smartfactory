@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
 import ScheduleModal from "./ScheduleModal";
-import PersistentDataManager, {loadFromLocal} from "../../api/DataManager";
-import {scheduleReport} from "../../api/ApiService";
+import PersistentDataManager, {loadFromApi, loadFromLocal} from "../../api/DataManager";
+
+// API
+import { retrieveSchedule, scheduleReport } from "../../api/ApiService";
 
 interface SchedulesListProps {
     schedules: Schedule[];
@@ -66,7 +68,9 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const loadedSchedules = await loadFromLocal("/mockData/schedules.json", Schedule.decode);
+            //const loadedSchedules = await loadFromLocal("/mockData/schedules.json", Schedule.decode);
+            const loadedSchedules = await retrieveSchedule(userId);
+            console.log("Loaded schedules:", loadedSchedules);
             setSchedules(loadedSchedules);
         };
         fetchData();
@@ -80,7 +84,7 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
         } else {
             const newId = schedules.length ? Math.max(...schedules.map((s) => s.id)) + 1 : 1;
 
-            // Crea un nuovo oggetto Schedule
+            // Create a new Schedule object
             const newSchedule: Schedule = new Schedule(
                 newId,
                 schedule.name || "Unnamed Schedule",
@@ -92,11 +96,11 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                 schedule.machines || []
             );
 
-            // Aggiungi " 00:00:00" alla data (formato richiesto dal server)
+            // Add "00:00:00"
             newSchedule.startDate = newSchedule.startDate + " 00:00:00";
 
             try {
-                // Prepara il payload per l'API
+                // Prepere the payload for the API
                 const requestData = {
                     userId: userId,
                     params: {
