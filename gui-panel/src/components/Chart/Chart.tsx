@@ -35,7 +35,8 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
     if (!data || data.length === 0) {
         return (
             <p style={{textAlign: 'center', marginTop: '20px', color: '#555'}}>
-                No data available for defined options. Please select a different set of options.
+                No data available yet for selected filters. Please select a different set of options, then press
+                Generate Chart.
             </p>
         );
     }
@@ -54,7 +55,11 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         />
                         <YAxis tick={{fill: '#666'}}/>
                         <Tooltip content={<DrillDownTooltip kpi={kpi}/>}/>
-                        <Bar dataKey="value" fill="#8884d8" radius={[10, 10, 0, 0]}/>
+                        <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                            {data.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             );
@@ -66,8 +71,11 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                         <XAxis type="number" tick={{fill: '#666'}}/>
                         <YAxis type="category" dataKey="name" tick={{fill: '#666', fontSize: 14, textAnchor: 'end'}}/>
                         <Tooltip content={<DrillDownTooltip kpi={kpi}/>}/>
-                        <Bar dataKey="value" fill="#8884d8" radius={[0, 10, 10, 0]}/>
-                    </BarChart>
+                        <Bar dataKey="value" radius={[0, 10, 10, 0]}>
+                            {data.map((_, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Bar>                    </BarChart>
                 </ResponsiveContainer>
             );
         case 'line':
@@ -176,7 +184,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                             dataKey="bin"
                             tick={{fill: "#666"}}
                             label={{
-                                value: "Bins",
+                                value: kpi?.unit,
                                 position: "insideBottom",
                                 offset: -10,
                                 fill: "#666",
@@ -191,7 +199,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                                 fill: "#666",
                             }}
                         />
-                        <Tooltip content={<DrillDownTooltip kpi={kpi}/>}/>
+                        <Tooltip content={<DrillDownTooltip/>}/>
                         <Bar dataKey="value" fill="#8884d8" name="Frequency"/>
                     </BarChart>
                 </ResponsiveContainer>
@@ -225,7 +233,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                             style={{fontSize: "16px", fontWeight: "bold", fill: "#333"}}
                         >
                             {`Total: ${
-                                data.find((entry) => entry.name === "Total")?.value || "N/A"
+                                data.reduce((sum, entry) => sum + (entry.value || 0), 0)
                             }`}
                         </text>
                     </PieChart>

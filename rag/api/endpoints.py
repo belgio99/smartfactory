@@ -149,7 +149,7 @@ def prompt_classifier(input: Question, userId: str):
     print(f"user input request label = {label}")
     # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
     json_request=""
-    all_kpis=False
+    all_kpis=0
     if label == "predictions" or label == "kpi_calc" or label == "report":
         json_request, all_kpis = query_gen.query_generation(input, label)
         
@@ -305,20 +305,20 @@ async def handle_new_kpi(question: Question, llm, graph, history):
     response = kpi_generation.chain.invoke(question.userInput)
     return response['result']
 
-async def handle_report(json_obj):
+async def handle_report(json_objs):
     """
     Handles the generation of a report by querying both the predictor and KPI engines.
 
     This function fetches data from both engines and formats it into a report string.
 
     Args:
-        url (str): The URL endpoint for the engine APIs.
+        json_objs : array of json request to kpi engine and predictor.
 
     Returns:
         str: A formatted report string containing both KPI and prediction data.
     """
-    predictor_response = await ask_predictor_engine(json_obj)
-    kpi_response = await ask_kpi_engine(json_obj)
+    predictor_response = await ask_predictor_engine(json_objs[1])
+    kpi_response = await ask_kpi_engine(json_objs[0])
     predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
     kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
     return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
@@ -454,12 +454,14 @@ async def ask_question(question: Question): # to add or modify the services allo
             if question_language.lower() != "english":
                 llm_result = await translate_answer(question, question_language, llm_result.content)
                 
-            return Answer(textResponse=llm_result.content, textExplanation='', data='query', label='kb_q') # da rivedere
+            return Answer(textResponse=llm_result.content, textExplanation='', data='', label='kb_q') # da rivedere
 
         # Execute the handler
         context = await handlers[label]()
         #eventually add the log error if user tried to ask for all kpis
-        if all_kpis:
+        if all_kpis == query_gen.ERROR_NO_KPIS:
+            context+="\nError: You can't calculate/predict for no kpis, try again with at least one kpi.\n"
+        elif all_kpis == query_gen.ERROR_ALL_KPIS:
             context+="\nError: You can't calculate/predict for all kpis, try again with less kpis.\n"
         if label == 'kb_q':
             # Update the history
@@ -541,7 +543,7 @@ async def ask_question(question: Question): # to add or modify the services allo
                     history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
                 textResponse = textResponse.replace('{', '').replace('}', '').replace('\n\n', '')                
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data="response_cleaned", label=label) 
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label) 
 
             if label == 'report':
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)

@@ -383,3 +383,110 @@ export class DashboardFolder {
         return DashboardFolder.encode(root);
     }
 }
+
+// Data structure for decoding the forecast data from the API and displaying it in the ForeChart
+class LimeData {
+
+    feature: string;
+    importance: number;
+
+    constructor(feature: string, importance: number) {
+        this.feature = feature;
+        this.importance = importance;
+    }
+
+    static decode(json: Record<string, any>): LimeData {
+        if (typeof json.date_info !== "string") {
+            throw new Error("Invalid type for feature", json.date_info);
+        }
+        if (typeof json.value !== "number") {
+            throw new Error("Invalid type for importance", json.value);
+        }
+
+        return new LimeData(json.date_info, json.value);
+    }
+
+    static decodeArray(json: Record<string, any>): LimeData[] {
+        return json.map(LimeData.decode);
+    }
+}
+
+export class ForecastDataEx {
+    machineName: string
+    kpiName: string
+    predictedValue: number[]
+    lowerBound: number[]
+    upperBound: number[]
+    confidenceScore: number[]
+    limeExplanation: LimeData[][]
+    measureUnit: string
+    datePrediction: string[]
+    forecast: boolean
+
+    constructor(machineName: string, kpiName: string, predictedValue: number[], lowerBound: number[], upperBound: number[], confidenceScore: number[], limeExplanation: LimeData[][], measureUnit: string, datePrediction: string[], forecast: boolean) {
+        this.machineName = machineName;
+        this.kpiName = kpiName;
+        this.predictedValue = predictedValue;
+        this.lowerBound = lowerBound;
+        this.upperBound = upperBound;
+        this.confidenceScore = confidenceScore;
+        this.limeExplanation = limeExplanation;
+        this.measureUnit = measureUnit;
+        this.datePrediction = datePrediction;
+        this.forecast = forecast;
+    }
+
+    toChartData(): {
+        timestamp: string, value: number, lowerBound: number, upperBound: number, confidenceScore: number }[] {
+        // create a list of objects from the predictedValue, lowerBound, upperBound, confidenceScore, and datePrediction fields
+        // to be used in the ForeChart component
+
+        let data = [];
+        for (let i = 0; i < this.predictedValue.length; i++) {
+            data.push({
+                timestamp: this.datePrediction[i],
+                value: this.predictedValue[i],
+                lowerBound: this.lowerBound[i],
+                upperBound: this.upperBound[i],
+                confidenceScore: this.confidenceScore[i]
+            });
+        }
+        return data;
+    }
+
+
+    static decode(json: Record<string, any>): ForecastDataEx {
+        if (typeof json.Machine_Name !== "string") {
+            throw new Error("Invalid type for Machine_name");
+        }
+        if (typeof json.KPI_Name !== "string") {
+            throw new Error("Invalid type for KPI_name");
+        }
+        if (!Array.isArray(json.Predicted_value)) {
+            throw new Error("Invalid type for Predicted_value");
+        }
+        if (!Array.isArray(json.Lower_bound)) {
+            throw new Error("Invalid type for Lower_bound");
+        }
+        if (!Array.isArray(json.Upper_bound)) {
+            throw new Error("Invalid type for Upper_bound");
+        }
+        if (!Array.isArray(json.Confidence_score)) {
+            throw new Error("Invalid type for Confidence_score");
+        }
+        if (!Array.isArray(json.Lime_explaination)) {
+            throw new Error("Invalid type for Lime_explanation");
+        }
+        if (typeof json.Measure_unit !== "string") {
+            throw new Error("Invalid type for Measure_unit");
+        }
+        if (!Array.isArray(json.Date_prediction)) {
+            throw new Error("Invalid type for Date_prediction");
+        }
+        if (typeof json.Forecast !== "boolean") {
+            throw new Error("Invalid type for Forecast");
+        }
+
+        return new ForecastDataEx(json.Machine_Name, json.KPI_Name, json.Predicted_value, json.Lower_bound, json.Upper_bound, json.Confidence_score, json.Lime_explaination.map(LimeData.decodeArray), json.Measure_unit, json.Date_prediction, json.Forecast);
+    }
+}

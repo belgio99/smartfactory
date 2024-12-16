@@ -21,6 +21,7 @@ REQUIREMENTS:
 4. Create only NON-atomic KPIs based on existing KPIs provided as context.
 5. Do not invent KPIs to create the new one, just rely on the ones passed as context
 6. do not rename KPI from context, just use their original name
+7. use at least two of the KPIs in context to create the new KPI, never use just one
 
 CONTEXT: 
 {_CONTEXT_}

@@ -66,11 +66,11 @@ if __name__ == "__main__":
             """
             CREATE TABLE IF NOT EXISTS Users (
             UserID SERIAL PRIMARY KEY,
-            Username VARCHAR(300) NOT NULL,
-            Email VARCHAR(300) NOT NULL,
-            Role VARCHAR(300) NOT NULL,
+            Username VARCHAR(255) NOT NULL,
+            Email VARCHAR(255) NOT NULL,
+            Role VARCHAR(255) NOT NULL,
             Password VARCHAR(255) NOT NULL,
-            SiteName VARCHAR(300) NOT NULL,
+            SiteName VARCHAR(255) NOT NULL,
             UserSettings TEXT,
             UserDashboards TEXT,
             UserSchedules TEXT
@@ -84,14 +84,14 @@ if __name__ == "__main__":
             OwnerID INT NOT NULL,
             GeneratedAt TIMESTAMP NOT NULL,
             FilePath TEXT NOT NULL,
-            SiteName VARCHAR(50) NOT NULL,
+            SiteName VARCHAR(100) NOT NULL,
             FOREIGN KEY (OwnerID) REFERENCES Users(UserID)
             )
             """,
             """
             CREATE TABLE IF NOT EXISTS Alerts (
             AlertID SERIAL PRIMARY KEY,
-            Title VARCHAR(50) NOT NULL,
+            Title VARCHAR(100) NOT NULL,
             Type VARCHAR(50) NOT NULL,
             Description VARCHAR(255) NOT NULL,
             TriggeredAt TIMESTAMP NOT NULL,
@@ -106,6 +106,7 @@ if __name__ == "__main__":
             ID SERIAL PRIMARY KEY,
             AlertID INT NOT NULL,
             UserID INT NOT NULL,
+            Read BOOLEAN NOT NULL DEFAULT FALSE,
             UNIQUE(AlertID, UserID),
             FOREIGN KEY (AlertID) REFERENCES Alerts(AlertID) ON DELETE CASCADE,
             FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE

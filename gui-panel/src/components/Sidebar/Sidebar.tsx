@@ -172,11 +172,20 @@ const DashboardSidebar: React.FC = () => {
             <SidebarSection title="Sections" items={sectionsItems}/>
             {/* Dashboards Section */}
             {/* Form for Adding a New Dashboard Folder */}
+
+            {/* Dashboards Section */}
+            {isLoading ?
+                <div className="flex justify-center items-center h-40">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900"/>
+                </div>
+                : (
+                <SidebarSection title="Dashboard" items={dashboardsItems}/>)}
+
             {!isFormVisible && (
                 <div className="w-full flex justify-center mt-4">
                     <button
                         onClick={() => setFormVisible(true)}
-                        className="bg-blue-100 text-blue-600 font-medium py-1.5 px-4 rounded-md hover:bg-blue-200 transition duration-200"
+                        className="bg-blue-500 text-white shadow-md font-medium py-1.5 px-4 rounded-md hover:bg-blue-200 transition duration-200"
                     >
                         New Folder
                     </button>
@@ -185,7 +194,7 @@ const DashboardSidebar: React.FC = () => {
 
             {isFormVisible && (
                 <div
-                    className="w-full mt-4 flex flex-col items-center bg-gray-50 p-3 rounded-md border border-gray-200">
+                    className="w-full mt-4 flex flex-col items-center bg-gray-50 p-3 rounded-md shadow-md border border-gray-200">
                     <input
                         type="text"
                         placeholder="Enter folder name"
@@ -218,14 +227,6 @@ const DashboardSidebar: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* Dashboards Section */}
-            {isLoading ?
-                <div className="flex justify-center items-center h-40">
-                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900"/>
-                </div>
-                : (
-                <SidebarSection title="Dashboard" items={dashboardsItems}/>)}
         </aside>
     );
 };

@@ -78,6 +78,8 @@ class kpi_engine:
             if isinstance(total_working_time, ValueError):
                 return total_working_time, "-"
 
+            if total_working_time == 0:
+                return "Error: tried to divide by zero", "-"
             return  total_energy_cost / total_working_time, "€/kWh"
 
     def energy_cost_idle_time(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -115,6 +117,8 @@ class kpi_engine:
         if isinstance(total_working_time, ValueError):
             return total_working_time, "-"
         
+        if total_working_time == 0:
+            return "Error: tried to divide by zero", "-"
         return  total_energy_cost / total_working_time, "€/kWh"
 
     def energy_cost_per_unit(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -188,6 +192,8 @@ class kpi_engine:
         if isinstance(total_power_consumption, ValueError):
             return total_power_consumption, "-"
 
+        if total_power_consumption == 0:
+            return "Error: tried to divide by zero", "-"
         return total_working_time / total_power_consumption, "%"
         
     def power_consumption_trend(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -226,6 +232,8 @@ class kpi_engine:
         if isinstance(previous_total_power_consumption, ValueError):
             return previous_total_power_consumption, "-"
         
+        if previous_total_power_consumption == 0:
+            return "Error: tried to divide by zero", "-"
         return (current_total_power_consumption - previous_total_power_consumption) / previous_total_power_consumption, "%"
 
     def machine_utilization_rate(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -266,6 +274,8 @@ class kpi_engine:
         if isinstance(total_offline_time, ValueError):
             return total_offline_time, "-"
 
+        if (total_working_time + total_idle_time + total_offline_time) == 0:
+            return "Error: tried to divide by zero", "-"
         return total_working_time / (total_working_time + total_idle_time + total_offline_time), "%"
 
 
@@ -281,6 +291,8 @@ class kpi_engine:
         if isinstance(previous_average_working_time, ValueError):
             return previous_average_working_time, "-"
         
+        if previous_average_working_time == 0:
+            return "Error: tried to divide by zero", "-"
         return (current_average_working_time - previous_average_working_time) / previous_average_working_time
 
 
@@ -329,6 +341,8 @@ class kpi_engine:
         if isinstance(downtime, ValueError):
             return downtime, "-"
         
+        if (uptime + downtime) == 0:
+            return "Error: tried to divide by zero", "-"
         return uptime / (uptime + downtime), "%"
 
     def performance(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -365,6 +379,8 @@ class kpi_engine:
         if isinstance(total_productive_time, ValueError):
             return total_productive_time, "-"
         
+        if total_productive_time == 0:
+            return "Error: tried to divide by zero", "-"
         return total_output / total_productive_time, "%"
 
     def throughput(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -402,6 +418,8 @@ class kpi_engine:
         if isinstance(time_employed, ValueError):
             return time_employed, "-"
 
+        if time_employed == 0:
+            return "Error: tried to divide by zero", "-"
         return items_produced / time_employed, "items/s"
 
     def quality(df, machine_id, machine_type, start_period, end_period, start_previous_period, end_previous_period):
@@ -439,6 +457,9 @@ class kpi_engine:
             return bad_work, "-"
         
         total_work = good_work + bad_work
+
+        if total_work == 0:
+            return "Error: tried to divide by zero", "-"
         return good_work / total_work, "%"
 
     def yield_fft(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
@@ -469,6 +490,8 @@ class kpi_engine:
         if isinstance(total_output, ValueError):
             return total_output, "-"
         
+        if total_output == 0:
+            return "Error: tried to divide by zero", "-"
         return (total_output - defective_output) / total_output, "%"
 
     '''

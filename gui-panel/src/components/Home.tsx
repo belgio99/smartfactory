@@ -96,7 +96,7 @@ const SmartFactory: React.FC<UserProps> = ({userId, username, token, role, site,
                 <Header
                     path={location.pathname}
                     userAvatar={userAvatar || '/default-avatar.png'}
-                    userName={DataManager.getInstance().userName}
+                    userName={username}
                     userId={userId}
                     role={role}
                     logoutHook={onLogout}

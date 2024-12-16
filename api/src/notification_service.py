@@ -228,13 +228,17 @@ def retrieve_email(role):
         cursor.close()
         connection.close()
 
-def retrieve_alerts(userId):
+def retrieve_alerts(userId, all):
     """
     Retrieve alerts for a specific user from the database.
+    
     Args:
         userId (str): The ID of the user for whom to retrieve alerts.
+        all (bool): Flag to determine whether to retrieve all alerts or only unread alerts.
+        
     Returns:
         list: A list of dictionaries, each representing an alert.
+        
     Raises:
         Exception: If there is an error retrieving alerts from the database.
     """
@@ -244,6 +248,9 @@ def retrieve_alerts(userId):
     JOIN Users u ON ar.UserID = u.UserID
     WHERE u.userID = %s
     """
+    
+    if not all:
+        query += " AND ar.Read = FALSE"
 
     try:
         connection, cursor = get_db_connection()
@@ -266,6 +273,15 @@ def retrieve_alerts(userId):
                 severity=row[7]
             )
             alerts.append(alert.to_dict())
+
+        # Update all alerts to mark them as read
+        update_query = """
+        UPDATE AlertRecipients
+        SET Read = TRUE
+        WHERE UserID = %s
+        """
+        cursor.execute(update_query, (userId,))
+        connection.commit()
 
         return alerts
     except Exception as e:
