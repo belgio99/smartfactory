@@ -1,5 +1,7 @@
 import axios from 'axios';
+
 import {DashboardFolder, ForecastDataEx, KPI, Machine} from './DataStructures';
+import {Schedule} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -612,11 +614,18 @@ export const instantReport = async (userId: string, params: ScheduleParams): Pro
  * @param period number - The scheduling frequency (e.g., in seconds).
  * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
  */
-export const scheduleReport = async (requestData: ScheduleRequest): Promise<any> => {
+export const scheduleReport = async (requestData: Record<string, any>, user_id: string): Promise<any> => {
     try {
+        const payload = {
+            userId: user_id,
+            params: requestData
+        };
+        //
+        console.log('Sending schedule report request to:', `${BASE_URL}/smartfactory/reports/schedule`);
+        console.log('Payload:', payload);
         const response = await axios.post(
             `${BASE_URL}/smartfactory/reports/schedule`,
-            requestData,
+            payload,
             {
                 headers: {
                     "Content-Type": "application/json",
@@ -693,3 +702,31 @@ export const dummyCheck = async (): Promise<void> => {
         throw new Error(error.response?.data?.message || 'Failed to check dummy');
     }
 }
+
+/**
+ * API GET used to retrieve the scheduled reports
+ * @param userId string - The user ID
+ * @returns Promise<ScheduleParams[]> - The list of scheduled reports
+ */
+export const retrieveSchedule = async (userId: string): Promise<Schedule[]> => {
+    try {
+        const response = await axios.get<{ data: Record<string, any>[] }>(
+            `${BASE_URL}/smartfactory/reports/schedule?userId=${userId}`,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+        
+        console.log("Retrieve Schedule API response:", response.data);
+        console.log("Retrieve Schedule API response.data.data:", response.data.data);
+        // MAP the response data to the Schedule class
+        const schedules = response.data.data.map(Schedule.decode);
+        return schedules;
+    } catch (error: any) {
+        console.error("Retrieve Schedule API error:", error);
+        throw new Error(error.response?.data?.message || "Failed to retrieve schedule");
+    }
+};

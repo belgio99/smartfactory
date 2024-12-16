@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from "react";
 import {Schedule} from "../../api/DataStructures";
 import ScheduleModal from "./ScheduleModal";
-import PersistentDataManager, {loadFromLocal} from "../../api/DataManager";
-import {scheduleReport} from "../../api/ApiService";
+import PersistentDataManager, {loadFromApi, loadFromLocal} from "../../api/DataManager";
+
+// API
+import { retrieveSchedule, scheduleReport } from "../../api/ApiService";
 
 interface SchedulesListProps {
     schedules: Schedule[];
@@ -66,7 +68,9 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const loadedSchedules = await loadFromLocal("/mockData/schedules.json", Schedule.decode);
+            //const loadedSchedules = await loadFromLocal("/mockData/schedules.json", Schedule.decode);
+            const loadedSchedules = await retrieveSchedule(userId);
+            console.log("Loaded schedules:", loadedSchedules);
             setSchedules(loadedSchedules);
         };
         fetchData();
@@ -75,12 +79,11 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
     const handleSaveSchedule = async (schedule: Partial<Schedule>) => {
         if (editingSchedule) {
             setSchedules((prev) =>
-                prev.map((s) => (s.id === editingSchedule.id ? {...s, ...schedule} : s))
+                prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...schedule } : s))
             );
         } else {
             const newId = schedules.length ? Math.max(...schedules.map((s) => s.id)) + 1 : 1;
-
-            // Crea un nuovo oggetto Schedule
+    
             const newSchedule: Schedule = new Schedule(
                 newId,
                 schedule.name || "Unnamed Schedule",
@@ -91,38 +94,35 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                 schedule.kpis || [],
                 schedule.machines || []
             );
-
-            // Aggiungi " 00:00:00" alla data (formato richiesto dal server)
+    
+            // Data format "YYYY-MM-DD 00:00:00"
             newSchedule.startDate = newSchedule.startDate + " 00:00:00";
-
+    
             try {
-                // Prepara il payload per l'API
+                // Params for the API request
                 const requestData = {
-                    userId: userId,
-                    params: {
-                        id: newId,
-                        status: newSchedule.status === "Active",
-                        name: newSchedule.name,
-                        recurrence: newSchedule.recurrence,
-                        startDate: newSchedule.startDate, // Es. "2024-12-10 00:00:00"
-                        email: newSchedule.email,
-                        kpis: newSchedule.kpis.filter((kpi) => kpi && kpi.trim().length > 0),
-                        machines: newSchedule.machines,
-                    }
+                    id: newId,
+                    status: newSchedule.status === "Active",
+                    name: newSchedule.name,
+                    recurrence: newSchedule.recurrence,
+                    startDate: newSchedule.startDate,
+                    email: newSchedule.email,
+                    kpis: newSchedule.kpis.filter((kpi) => kpi && kpi.trim().length > 0),
+                    machines: newSchedule.machines,
                 };
-
+    
                 console.log("Saving schedule with requestData:", requestData);
-
+    
                 setSchedules((prev) => [...prev, newSchedule]);
-
-                //Call the API to save the schedule
-                await scheduleReport(requestData);
-
+    
+                // Call the API to save the schedule
+                await scheduleReport(requestData, userId.toString());
+    
                 console.log("Schedule saved successfully!");
             } catch (error) {
                 console.error("Failed to save schedule:", error);
             }
-
+    
             setIsModalOpen(false);
         }
     };
