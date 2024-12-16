@@ -5,8 +5,8 @@ export const formatTimeFrame = (timestamp: string, timeUnit?: string): string =>
     const date = new Date(timestamp);
 
     switch (timeUnit) {
-        case 'hour':
-            return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`; // HH:mm
+        //case 'hour':
+        //    return `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`; // HH:mm
         case 'day':
             return `${String(date.getDate()).padStart(2, '0')}`; // DD (day of the month plus month name)
         case 'week':

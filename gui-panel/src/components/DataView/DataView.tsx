@@ -1,14 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import Chart from '../Chart/Chart';
 import {KPI} from "../../api/DataStructures";
 import {fetchData} from "../../api/DataFetcher";
 import FilterOptions, {Filter} from "../Selectors/FilterOptions";
 import {TimeFrame} from "../Selectors/TimeSelect"
 import PersistentDataManager from "../../api/DataManager";
+import DataManager from "../../api/DataManager";
 import KpiSelect from "../Selectors/KpiSelect";
 import GraphTypeSelector from "../Selectors/GraphTypeSelector";
 import AdvancedTimeSelect from "../Selectors/AdvancedTimeSelect";
-import DataManager from "../../api/DataManager";
 
 
 const KpiSelector: React.FC<{
@@ -34,9 +34,6 @@ const KpiSelector: React.FC<{
           onGenerate,
           dataManager
       }) => {
-    useEffect(() => {
-        onGenerate();
-    }, [kpi, timeFrame, graphType, filters]); // Dependencies to listen for changes
     return (
         <section className="p-6 mx-auto space-y-10 bg-white shadow-md rounded-lg">
             {/* KPI, Time Frame and Graph Type Selectors in one line */}
@@ -52,7 +49,6 @@ const KpiSelector: React.FC<{
 
                 {/* Time Frame Selector */}
                 <AdvancedTimeSelect timeFrame={timeFrame} setTimeFrame={setTimeFrame}/>
-
 
                 {/* Graph Type Selector */}
                 <div className="flex items-center justify-center">

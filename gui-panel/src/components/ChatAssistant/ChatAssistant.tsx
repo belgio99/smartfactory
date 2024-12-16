@@ -4,6 +4,7 @@ import {interactWithAgent} from '../../api/ApiService';
 import ChatInput from './ChatInput';
 import MessageBubble, {XAISources} from "./ChatComponents";
 import XAIEX from "../../api/mockData/XAIEX";
+import DataManager from "../../api/DataManager";
 
 export interface Message {
     id: number;
@@ -60,6 +61,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
         function handleCommand(userMessage: Message) {
             if (userMessage.content === '/clear') {
                 setMessages([]);
+                return true;
             }
             if (userMessage.content === '/dashboard') {
                 setMessages((prev) => [
@@ -79,6 +81,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                         }
                     },
                 ]);
+                return true;
             }
             if (userMessage.content === '/report') {
                 setMessages((prev) => [
@@ -96,15 +99,14 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                         },
                     },
                 ]);
+                return true;
             }
+            return false;
         }
 
         //if the message is a command, handle it
-        if (newMessage.startsWith('/')) {
-            handleCommand(userMessage);
-        } else {
+        if (!(newMessage.startsWith('/') && handleCommand(userMessage))) {
 
-            // Simulate assistant response
             setIsTyping(true);
             interactWithAgent(userId, userMessage.content)
                 .then((response) => {
@@ -142,12 +144,17 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                                 };
                                 response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
                                 break;
+                            case 'new_kpi':
+                                DataManager.getInstance().refreshKPI();
+                                extraData = {
+                                    explanation: explanation,
+                                };
+                                break;
                             default:
                                 extraData = {
                                     explanation: explanation,
                                 };
                         }
-
                     }
 
                     const assistantMessage: Message = {
