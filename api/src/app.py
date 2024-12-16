@@ -214,8 +214,8 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
     """
     try:
         connection, cursor = get_db_connection()
-        key = b'Yc\xe5\xe0\xe9\xb8\x00q\xa4\xac\xa4\xfeG)\xd9\xc4#;-0\xa1:J<5\xc0yBJa\xec\x11'
         query = "SELECT * FROM Users WHERE " + ("Email" if body.isEmail else "Username") + "=%s"
+        key = bytes.fromhex(os.getenv("AES_KEY").strip())
         response = query_db_with_params(cursor, connection, query, (encrypt_data(body.user, key),))
 
         if not response or (body.password != response[0][4]):
@@ -295,7 +295,7 @@ def register(body: Register, api_key: str = Depends(get_verify_api_key(["gui"]))
         connection, cursor = get_db_connection()
         # Check if user already exists
         query = "SELECT * FROM Users WHERE Username = %s OR Email = %s"
-        key = b'Yc\xe5\xe0\xe9\xb8\x00q\xa4\xac\xa4\xfeG)\xd9\xc4#;-0\xa1:J<5\xc0yBJa\xec\x11'
+        key = bytes.fromhex(os.getenv("AES_KEY").strip())
         enc_username, enc_email = encrypt_data(body.username, key), encrypt_data(body.email, key)
         response = query_db_with_params(cursor, connection, query, (enc_username, enc_email))
         user_exists = response

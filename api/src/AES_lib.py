@@ -6,7 +6,8 @@ import base64
 def encrypt_data(data:str, key:bytes):
     '''
     Function to encrypt sensible data. 
-    It uses ECB mode because we need the same output for the same encryption key (for db)
+    It uses ECB mode because we need the same output for the same encryption key (for db).
+    
     Args: 
         data (str): string to encrypt
         key (bytes): AES encryption key
@@ -20,7 +21,8 @@ def encrypt_data(data:str, key:bytes):
 def decrypt_data(data:str, key:bytes):
     '''
     Function to decrypt sensible data. 
-    It uses ECB mode because we need the same output for the same encryption key (for db)
+    It uses ECB mode because we need the same output for the same encryption key (for db).
+
     Args: 
         data (str): string to encrypt
         key (bytes): AES encryption key
