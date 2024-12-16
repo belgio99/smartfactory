@@ -1,5 +1,6 @@
 import axios from 'axios';
 import {KPI, Machine, ForecastDataEx} from './DataStructures';
+import {Schedule} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -631,7 +632,7 @@ export const instantReport = async (userId: string, params: ScheduleParams): Pro
  * @param period number - The scheduling frequency (e.g., in seconds).
  * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
  */
-export const scheduleReport = async (requestData: ScheduleRequest): Promise<any> => {
+export const scheduleReport = async (requestData: Record<string, any>): Promise<any> => {
     try {
         const response = await axios.post(
             `${BASE_URL}/smartfactory/reports/schedule`,

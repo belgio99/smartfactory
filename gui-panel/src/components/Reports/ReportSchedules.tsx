@@ -119,8 +119,12 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
 
                 setSchedules((prev) => [...prev, newSchedule]);
 
+                // Encode the schedule object to JSON
+                const newScheduleEncoded = Schedule.encode(newSchedule);
+                // Console
+                console.log("Encoded schedule:", newScheduleEncoded);
                 //Call the API to save the schedule
-                await scheduleReport(requestData);
+                await scheduleReport(newScheduleEncoded);
 
                 console.log("Schedule saved successfully!");
             } catch (error) {
