@@ -79,12 +79,11 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
     const handleSaveSchedule = async (schedule: Partial<Schedule>) => {
         if (editingSchedule) {
             setSchedules((prev) =>
-                prev.map((s) => (s.id === editingSchedule.id ? {...s, ...schedule} : s))
+                prev.map((s) => (s.id === editingSchedule.id ? { ...s, ...schedule } : s))
             );
         } else {
             const newId = schedules.length ? Math.max(...schedules.map((s) => s.id)) + 1 : 1;
-
-            // Create a new Schedule object
+    
             const newSchedule: Schedule = new Schedule(
                 newId,
                 schedule.name || "Unnamed Schedule",
@@ -95,42 +94,35 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
                 schedule.kpis || [],
                 schedule.machines || []
             );
-
-            // Add "00:00:00"
+    
+            // Data format "YYYY-MM-DD 00:00:00"
             newSchedule.startDate = newSchedule.startDate + " 00:00:00";
-
+    
             try {
-                // Prepere the payload for the API
+                // Params for the API request
                 const requestData = {
-                    userId: userId,
-                    params: {
-                        id: newId,
-                        status: newSchedule.status === "Active",
-                        name: newSchedule.name,
-                        recurrence: newSchedule.recurrence,
-                        startDate: newSchedule.startDate, // Es. "2024-12-10 00:00:00"
-                        email: newSchedule.email,
-                        kpis: newSchedule.kpis.filter((kpi) => kpi && kpi.trim().length > 0),
-                        machines: newSchedule.machines,
-                    }
+                    id: newId,
+                    status: newSchedule.status === "Active",
+                    name: newSchedule.name,
+                    recurrence: newSchedule.recurrence,
+                    startDate: newSchedule.startDate,
+                    email: newSchedule.email,
+                    kpis: newSchedule.kpis.filter((kpi) => kpi && kpi.trim().length > 0),
+                    machines: newSchedule.machines,
                 };
-
+    
                 console.log("Saving schedule with requestData:", requestData);
-
+    
                 setSchedules((prev) => [...prev, newSchedule]);
-
-                // Encode the schedule object to JSON
-                const newScheduleEncoded = Schedule.encode(newSchedule);
-                // Console
-                console.log("Encoded schedule:", newScheduleEncoded);
-                //Call the API to save the schedule
-                await scheduleReport(newScheduleEncoded);
-
+    
+                // Call the API to save the schedule
+                await scheduleReport(requestData, userId.toString());
+    
                 console.log("Schedule saved successfully!");
             } catch (error) {
                 console.error("Failed to save schedule:", error);
             }
-
+    
             setIsModalOpen(false);
         }
     };

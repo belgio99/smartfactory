@@ -632,11 +632,18 @@ export const instantReport = async (userId: string, params: ScheduleParams): Pro
  * @param period number - The scheduling frequency (e.g., in seconds).
  * @returns Promise<void> - No specific return value, just a confirmation of scheduling.
  */
-export const scheduleReport = async (requestData: Record<string, any>): Promise<any> => {
+export const scheduleReport = async (requestData: Record<string, any>, user_id: string): Promise<any> => {
     try {
+        const payload = {
+            userId: user_id,
+            params: requestData
+        };
+        //
+        console.log('Sending schedule report request to:', `${BASE_URL}/smartfactory/reports/schedule`);
+        console.log('Payload:', payload);
         const response = await axios.post(
             `${BASE_URL}/smartfactory/reports/schedule`,
-            requestData,
+            payload,
             {
                 headers: {
                     "Content-Type": "application/json",
