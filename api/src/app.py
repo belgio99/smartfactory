@@ -903,26 +903,26 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
         question = Question(userInput=userInput, userId=userId)
         response = call_ai_agent(question)
         answer = response.json()
-        if answer.label == 'new_kpi':
+        if answer["label"] == 'new_kpi':
             # add new kpi
             try:
-                logging.info("Inserting new KPI: %s", answer.data)
-                insert_kpi(answer.data, os.getenv("API_KEY"))
+                logging.info("Inserting new KPI: %s", answer["data"])
+                insert_kpi(answer["data"], os.getenv("API_KEY"))
             except Exception as e:
                 logging.error("Exception: %s", str(e))
                 raise HTTPException(status_code=500, detail=str(e))
 
-        elif answer.label == 'report':
+        elif answer ["label"] == 'report':
             # generate report
             # name is based on the current datetime
             report_name = "report_" + str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
             tmp_path = "/tmp/" + report_name + ".pdf"
             try:
-                logging.info("Generating report: %s", answer.data)
+                logging.info("Generating report: %s", answer["data"])
                 report_id = create_report_pdf(answer, userId, tmp_path, report_name)
                 # replace the data with the report id
-                answer.data = str(report_id)
-                answer.textResponse = report_name
+                answer["data"] = str(report_id)
+                answer["textResponse"] = report_name
                 logging.info("Agent answer: %s", answer)
             except Exception as e:
                 logging.error("Exception: %s", str(e))
