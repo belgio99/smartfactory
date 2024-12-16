@@ -98,16 +98,6 @@ export interface Alert {
 }
 
 /**
- * Interface AIResponse
- * @param textResponse string - The text response of the AI
- * @param data string (optional) - The data of the AI
- */
-interface AIResponse {
-    textResponse: string;
-    data?: string;
-}
-
-/**
  * Interface KPIRequest, used by the calculateKPIValue API
  *
  * @param KPI_Name string - The KPI ID
