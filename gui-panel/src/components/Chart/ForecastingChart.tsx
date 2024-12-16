@@ -43,13 +43,13 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
                         color: entry.stroke, // Match the line's color
                     }}
                 >
-                    {`${entry.name}: ${entry.value.toFixed(2)} ${kpi?.unit || ''}`}
+                    {`${entry.name}: ${entry.value > 1 ? entry.value.toFixed(2) : entry.value.toExponential(2)} ${kpi?.unit || ''}`}
                 </p>;
             })}
 
             {/* Show the confidence value only once */}
             {confidence && <div style={{marginTop: '10px', fontStyle: 'italic', color: '#666'}}>
-                <p>{`Confidence: ${confidence.toFixed(2)}%`}</p>
+                <p>{`Interval confidence: ${confidence.toFixed(2)}%`}</p>
             </div>}
         </div>;
     }
@@ -91,11 +91,19 @@ const ForeChart: React.FC<ForeChartProps> = ({
 
     const machineKey = futureDataEx?.machineName || "Machine";
     pastData = transformPastData(pastData, machineKey);
+    if (pastData.length > 0) {
+        // add a lower and upper bound to the last element of the past data so the line chart connects
+        pastData[pastData.length - 1] = {
+            ...pastData[pastData.length - 1],
+            lowerBound: pastData[pastData.length - 1].value,
+            upperBound: pastData[pastData.length - 1].value,
+        };
+    }
     const data = [...pastData, ...futureData];
 
     if (!data || data.length === 0) {
         return <p style={{textAlign: "center", marginTop: "20px", color: "#555"}}>
-            No data available. Please select options and click "Generate Chart".
+            Something went wrong with the prediction, try again or change selections.
         </p>;
     }
 
@@ -133,7 +141,7 @@ const ForeChart: React.FC<ForeChartProps> = ({
                 <YAxis tick={{fill: "#666"}}/>
                 <Tooltip content={<ForecastTooltip kpi={kpi}/>} trigger={"hover"}/>
                 {data.length > 0 && <ReferenceLine
-                    x={data[breakpoint-1].timestamp}
+                    x={data[breakpoint - 1].timestamp}
                     stroke="red"
                     label="Today"
                 />}
@@ -186,11 +194,11 @@ const ForeChart: React.FC<ForeChartProps> = ({
                         <CartesianGrid strokeDasharray="3 3"/>
                         <XAxis
                             type="number"
-                            tick={{fill: "#666"}}
+                            tick={false}
                             domain={[-maxAbsValue * 1.1, maxAbsValue * 1.1]} // Adds 10% padding
+
                         />
                         <ReferenceLine x={0} stroke="#000"/>
-
                         <YAxis
                             type="category"
                             dataKey="feature"
@@ -207,6 +215,11 @@ const ForeChart: React.FC<ForeChartProps> = ({
                         />
                     </BarChart>
                 </ResponsiveContainer>
+                <span className="text-sm text-gray-600">
+                    This graph shows how the values from specific dates affected the prediction.<br/>
+                    Bars to the right helped increase it, while bars to the left lowered it.<br/>
+                    Longer bars mean a bigger impact.
+                </span>
             </div>
             :
             <div>
