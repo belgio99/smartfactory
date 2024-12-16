@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {KPI, Machine, ForecastDataEx} from './DataStructures';
+import {ForecastDataEx, KPI, Machine} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -535,7 +535,7 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
     try {
         console.log('Sending calculate KPI value request to:', `${BASE_URL}/smartfactory/calculate`);
         console.log('Payload:', {requests});
-        const response = await axios.post<KPICalculation[]>(
+        const response = await axios.post(
             `${BASE_URL}/smartfactory/calculate`,
             requests,
             {
@@ -544,9 +544,9 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
                     "x-api-key": API_KEY,
                 },
             },
-        );
+        )
         console.log('Calculate KPI Value response:', response.data);
-        return response.data;
+        return response.data as KPICalculation[];
     } catch (error: any) {
         console.error('Calculate KPI Value API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to calculate KPI value');
@@ -559,9 +559,9 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
  * @param settings DashboardData - The dashboard settings
  * @returns Promise will return void
  */
-export const postDashboardSettings = async (userId: string, settings: DashboardData): Promise<void> => {
+export const postDashboardSettings = async (userId: string, settings: DashboardData): Promise<any> => {
     try {
-        await axios.post(
+        const response = await axios.post(
             `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
             settings,
             {
@@ -571,6 +571,7 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
                 },
             }
         );
+        console.log('Post Dashboard Settings response:', response.data);
     } catch (error: any) {
         console.error('Post Dashboard Settings API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to post dashboard settings');

@@ -5,7 +5,8 @@ import EventEmitter from "events";
 // API
 import {
     dummyCheck,
-    getUserSettings, postDashboardSettings,
+    getUserSettings,
+    postDashboardSettings,
     retrieveDashboardSettings,
     retrieveKPIs,
     retrieveMachines,
@@ -304,7 +305,7 @@ class DataManager {
      * @param dashboard DashboardLayout - The dashboard to add.
      * @param dashboardFolder DashboardFolder - The folder to add the dashboard to.
      */
-    addDashboard(dashboard: DashboardLayout, dashboardFolder: DashboardFolder): void {
+    async addDashboard(dashboard: DashboardLayout, dashboardFolder: DashboardFolder): Promise<void> {
         // locate the folder
         const folder = this.dashboards.find((d) => d.id === dashboardFolder.id);
 
@@ -323,7 +324,7 @@ class DataManager {
         const json = DashboardFolder.encodeTree(this.dashboards);
         // If the user is logged in, save the dashboard to the server
         if (this.userId) {
-            postDashboardSettings(this.userId, json);
+            await postDashboardSettings(this.userId, json);
         }
         this.events.emit('change');
     }

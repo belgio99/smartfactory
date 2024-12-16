@@ -109,11 +109,23 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
             interactWithAgent(userId, userMessage.content)
                 .then((response) => {
                     let extraData = {};
+                    console.log(response);
+                    let explanation: XAISources[];
+
+                    try {
+                        //try decoding the explanation string
+                        const decodedExplanation: Record<string, any>[] = JSON.parse(response.textExplanation);
+                        explanation = decodedExplanation.map(XAISources.decode);
+                    } catch (e) {
+                        console.error("Error decoding explanation: ", e);
+                        explanation = [];
+                    }
+
                     if (response.label) {
                         switch (response.label) {
                             case 'dashboard':
                                 extraData = {
-                                    explanation: XAIEX, //TODO: decode explanation string
+                                    explanation: explanation,
                                     dashboardData: {
                                         target: '/dashboard/new',
                                         metadata: response.data,
@@ -122,21 +134,27 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                                 break;
                             case 'report':
                                 extraData = {
-                                    explanation: XAIEX, //TODO: decode explanation string
+                                    explanation: explanation,
                                     report: {
                                         userId: userId,
                                         reportId: response.data,
                                     },
                                 };
                                 response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
+                                break;
+                            default:
+                                extraData = {
+                                    explanation: explanation,
+                                };
                         }
+
                     }
 
                     const assistantMessage: Message = {
                         id: messages.length + 2,
                         sender: 'assistant',
                         content: response.textResponse,
-                        extraData: extraData, //TODO: decode extra data in the right way
+                        extraData: extraData,
                     };
                     setMessages((prev) => [...prev, assistantMessage]);
                 })
