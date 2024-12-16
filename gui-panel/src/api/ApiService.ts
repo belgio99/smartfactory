@@ -1,5 +1,6 @@
 import axios from 'axios';
-import {KPI, Machine, ForecastDataEx} from './DataStructures';
+
+import {DashboardFolder, ForecastDataEx, KPI, Machine} from './DataStructures';
 import {Schedule} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
@@ -65,15 +66,6 @@ export interface ForecastRequest {
 }
 
 /**
- * Interface DashboardData
- * @param any [key: string] any - The key of the dashboard data
- */
-export interface DashboardData {
-    // json object
-    [key: string]: any;
-}
-
-/**
  * Interface UserSettings
  * @param any [key: string] string | number | boolean - The key of the user settings
  */
@@ -105,16 +97,6 @@ export interface Alert {
     isEmail: boolean;
     recipients: string[];
     severity: string;
-}
-
-/**
- * Interface AIResponse
- * @param textResponse string - The text response of the AI
- * @param data string (optional) - The data of the AI
- */
-interface AIResponse {
-    textResponse: string;
-    data?: string;
 }
 
 /**
@@ -353,7 +335,7 @@ export const getHistoricalData = async (query: HistoricalDataRequest): Promise<H
  */
 export const getForecastData = async (request: ForecastRequest): Promise<ForecastDataEx> => {
     try {
-        const toSend = {value:[request]};
+        const toSend = {value: [request]};
         console.log('Sending to Forecast ', toSend);
         const response = await axios.post(
             `${BASE_URL}/smartfactory/predict`,
@@ -560,7 +542,7 @@ export const calculateKPIValue = async (requests: KPIRequest[]): Promise<KPICalc
  * @param settings DashboardData - The dashboard settings
  * @returns Promise will return void
  */
-export const postDashboardSettings = async (userId: string, settings: DashboardData): Promise<any> => {
+export const postDashboardSettings = async (userId: string, settings: Record<string, any>): Promise<string> => {
     try {
         const response = await axios.post(
             `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
@@ -572,7 +554,7 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
                 },
             }
         );
-        console.log('Post Dashboard Settings response:', response.data);
+        return response.data;
     } catch (error: any) {
         console.error('Post Dashboard Settings API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to post dashboard settings');
@@ -584,9 +566,9 @@ export const postDashboardSettings = async (userId: string, settings: DashboardD
  * @param userId string - The user ID
  * @returns Promise will return the dashboard settings
  */
-export const retrieveDashboardSettings = async (userId: string): Promise<DashboardData> => {
+export const retrieveDashboardSettings = async (userId: string): Promise<DashboardFolder> => {
     try {
-        const response = await axios.get<DashboardData>(
+        const response = await axios.get<Record<string, any>>(
             `${BASE_URL}/smartfactory/dashboardSettings/${userId}`,
             {
                 headers: {
@@ -595,7 +577,7 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
                 },
             }
         );
-        return response.data;
+        return DashboardFolder.decode(response.data);
     } catch (error: any) {
         console.error('Retrieve Dashboard Settings API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to retrieve dashboard settings');

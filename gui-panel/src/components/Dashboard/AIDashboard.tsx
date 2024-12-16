@@ -157,7 +157,7 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
             >
                 <option value="new">Create New Folder</option>
                 {dataManager.getDashboardFolders().map((folder) => (
-                    <option key={folder.id} value={folder.id}>
+                    <option key={folder.id} value={folder.name}>
                         {folder.name}
                     </option>
                 ))}

@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import {Link} from "react-router-dom";
 import { logout } from '../../api/ApiService';
+import dataManager from "../../api/DataManager";
 
 const formatPath = (path: string): string => {
     return path
@@ -100,6 +101,7 @@ const Header: React.FC<HeaderProps> = ({path, userAvatar, userName, userId, role
                                                 className="block w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                                 onClick={() => {
                                                     logout(userId);
+                                                    dataManager.getInstance().invalidateCaches()
                                                     alert("Logging out...");
                                                     logoutHook?.();
                                                 }}
