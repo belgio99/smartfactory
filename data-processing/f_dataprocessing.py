@@ -376,24 +376,27 @@ def characterize_KPI(machine, kpi):
     }
     if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
       diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
-      diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
+      call_status, diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
       # data['Value'] = data_normalize_params(diff1_series['Value'])
-      stationarity_results = {
-        'Differencing': 1,
-        'Statistic': round(diff1_statistic, 3),
-        'P-value': f'{diff1_p_value:.2E}',
-        'Stationary': 1 if diff1_p_value < 0.05 else 0
-      }
-      if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
-          diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
-          diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
-          # data['Value'] = data_normalize_params(diff2_series['Value'])
-          stationarity_results = {
-            'Differencing': 2,
-            'Statistic': round(diff2_statistic, 3),
-            'P-value': f'{diff2_p_value:.2E}',
-            'Stationary': 1 if diff2_p_value < 0.05 else 0
-          }
+      if call_status == 0:
+        stationarity_results = {
+          'Differencing': 1,
+          'Statistic': round(diff1_statistic, 3),
+          'P-value': f'{diff1_p_value:.2E}',
+          'Stationary': 1 if diff1_p_value < 0.05 else 0
+        }
+        if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
+            diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
+            call_status, diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
+            # data['Value'] = data_normalize_params(diff2_series['Value'])
+            if call_status == 0:
+              stationarity_results = {
+                'Differencing': 2,
+                'Statistic': round(diff2_statistic, 3),
+                'P-value': f'{diff2_p_value:.2E}',
+                'Stationary': 1 if diff2_p_value < 0.05 else 0
+              }
+  if call_status == 0:
     # else:
     #   data['Value'] = data_normalize_params(data['Value'])
     a_dict['stationarity'] = stationarity_results
@@ -449,6 +452,7 @@ def characterize_KPI(machine, kpi):
     return 0
   else:
     return call_status
+
 
 
 ##############################
