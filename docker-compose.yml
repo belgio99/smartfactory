@@ -16,6 +16,7 @@ volumes:
   backrest_cache: {}
   target_volume: {}
   vault_data: {}
+  rag_models: {}
 
 services:
   postgres:
@@ -272,6 +273,7 @@ services:
       - rag/.env
     volumes:
       - kb:/docs/kb
+      - rag_models:/app/models
     ports: 
       - "10050:8000"
     profiles:
