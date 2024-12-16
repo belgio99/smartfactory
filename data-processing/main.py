@@ -19,13 +19,14 @@ async def task_scheduler():
     """Central scheduler running periodic tasks"""
     i = 0
     alertList = {
+        'Title': ['Outlier detected', 'Outlier detected', 'missing value', 'Zero streak','Zero streak'],
         'Machine': ["Large Capacity Cutting Machine 1",
                     "Laser Welding Machine 1",
                     "Assembly Machine 2",
                     "Testing Machine 3",
                     "Testing Machine 3"],
         'Date': ["2024-04-09","2024-05-03","2024-10-19","2024-03-03","2024-03-20"],
-        'Description': ['Power is higher than expected',
+        'Description': ['Power for Large Capacity Cutting Machine 1 reaturned a value higher than expected',
                         "consumption for Laser Welding Machine 1 returned a value higher than expected",
                         "Assembly Machine 2 did not yield a new value for: average_cycle_time",
                         "working_time for Testing Machine 3 returned zeros for 3 days in a row",
@@ -40,7 +41,7 @@ async def task_scheduler():
     while True:
         await asyncio.sleep(15)
         alert_data = {
-        'title': alertList["Description"][i],
+        'title': alertList["Title"][i],
         'type': alertList["Type"][i],
         'description': alertList["Description"][i],
         'machine': alertList["Machine"][i],
