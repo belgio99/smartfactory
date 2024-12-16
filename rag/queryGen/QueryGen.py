@@ -47,8 +47,12 @@ class QueryGenerator:
 
             
     def _kb_update(self):
+        """
         temp = datetime.now()
         self.TODAY = datetime(year=temp.year,month=temp.month,day=temp.day)
+        """
+        #demo
+        self.TODAY = datetime(year= 2024,month=10,day=17)
         kpi_query= """
         PREFIX ontology: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
         SELECT ?id WHERE {
@@ -123,6 +127,7 @@ class QueryGenerator:
             if label == "kpi_calc":
                 return self._last_next_days(self.TODAY,"last",30)
             else:
+                # predictions
                 return self._last_next_days(self.TODAY,"next",30)
         # absolute time window
         if "->" in date:
@@ -220,7 +225,8 @@ class QueryGenerator:
         query= f"""
             USER QUERY: {input}
 
-            INSTRUCTIONS: 
+            INSTRUCTIONS:
+            TODAY is {self.TODAY}.
             Extract information from the USER QUERY based on the following rules and output it in the EXAMPLE OUTPUT specified format.
             All dates in the USER QUERY are in the format DD/MM/YYYY. When providing your OUTPUT, always convert all dates to the format YYYY-MM-DD. If a date range is given, maintain the range format (e.g., "01/12/2024 -> 10/12/2024" should become "2024-12-01 -> 2024-12-10").
 
