@@ -520,6 +520,8 @@ class kpi_engine:
         print(response)
         if response.get("atomic") == True:
             formula = response.get("id")
+            aggregator = formula[-3:]
+            print(aggregator)
         else:
             formula = response.get("atomic_formula")
         unit_of_measure = response.get("unit_measure")
@@ -527,7 +529,7 @@ class kpi_engine:
         try:
             expr = parse_expr(formula)
         except Exception as e:
-            return "Error: the specified KPI was not found in the Knowledge Base", "-"
+            return "Error: the specified KPI was not found in the Knowledge Base", "-", "-"
 
         # data extraction and symbol substitution
         substitutions = {}
@@ -542,4 +544,4 @@ class kpi_engine:
 
         # formula evaluation
         eval_result = result.evalf()
-        return float(eval_result), unit_of_measure
+        return float(eval_result), unit_of_measure, aggregator
