@@ -61,7 +61,6 @@ export async function loadFromLocal<T>(filePath: string, decoder: (json: Record<
 
 type DataManagerChangeCallback = () => void;
 
-// DataManager.ts
 class DataManager {
 
     private static instance: DataManager | null = null;
@@ -122,7 +121,7 @@ class DataManager {
                     console.log("User logged in: retrieving user dashboards from server...");
                     try {
                         const serverData = await retrieveDashboardSettings(this.userId);
-                        const serverDashboards = serverData.dashboards || [];
+                        const serverDashboards = serverData.children || [];
 
                         // Merge local and server dashboards
                         const mergedDashboards = mergeDashboards(localDashboards, serverDashboards);
@@ -143,7 +142,6 @@ class DataManager {
                     this.dashboards = localDashboards;
                 }
             } else {
-
                 this.kpiList = await loadFromLocal('/mockData/kpis.json', KPI.decodeGroups).then(
                     kpiToUnwrap => kpiToUnwrap[0] || [],
                     error => {
@@ -151,7 +149,6 @@ class DataManager {
                         return [];
                     }
                 );
-
                 this.machineList = await loadFromLocal('/mockData/machines.json', Machine.decodeGroups).then(
                     kpiToUnwrap => kpiToUnwrap[0] || [],
                     error => {
@@ -160,7 +157,6 @@ class DataManager {
                     }
                 );
             }
-
         } catch (error) {
             console.error("Error during initialization:", error);
             throw error;
@@ -179,6 +175,17 @@ class DataManager {
 
     getDashboards(): (DashboardFolder | DashboardLayout)[] {
         return this.dashboards;
+    }
+
+    refreshKPI(): void {
+        // reload KPIs from the API
+        retrieveKPIs().then(
+            (kpiList) => {
+                this.kpiList = kpiList;
+                this.events.emit('change');
+            },
+            (error) => console.error("Error refreshing KPIs:", error)
+        );
     }
 
     subscribe(callback: DataManagerChangeCallback) {
@@ -238,7 +245,6 @@ class DataManager {
      * @returns {DashboardLayout} - The found dashboard layout or a new empty dashboard layout if not found.
      */
     findDashboardById(dashboardId: string, folderId?: string): DashboardLayout {
-
         console.log("Finding dashboard with id: ", dashboardId, "Folder: ", folderId);
         /*
         If folderId is provided and not equal to 'undefined', iterate through the Dashboards array.
@@ -283,7 +289,7 @@ class DataManager {
      * @param name string - The name of the new folder.
      * @note The new folder is added to the root level of the dashboard tree.
      */
-    addDashboardFolder(name: string): void {
+    async addDashboardFolder(name: string): Promise<void> {
         // Create a new folder
         const newFolder = new DashboardFolder(this.getUniqueDashboardId(name), name, []);
         // Add the folder to the root level
@@ -295,7 +301,10 @@ class DataManager {
         const json = DashboardFolder.encodeTree(this.dashboards);
         // If the user is logged in, save the dashboard to the server
         if (this.userId) {
-            postDashboardSettings(this.userId, json);
+            await postDashboardSettings(this.userId, json).then(
+                (response) => console.log("Dashboard saved to server:", response),
+                (error) => console.error("Error saving dashboard to server:", error)
+            );
         }
         this.events.emit('change');
     }
@@ -317,22 +326,19 @@ class DataManager {
             dashboardFolder.children.push(dashboard);
             this.dashboards.push(dashboardFolder);
         }
-
-        console.log("Dashboard added: ", dashboard, dashboardFolder);
         console.log("New dashboard tree: ", this.dashboards);
         // API call to save the new dashboard
         const json = DashboardFolder.encodeTree(this.dashboards);
         // If the user is logged in, save the dashboard to the server
         if (this.userId) {
-            await postDashboardSettings(this.userId, json);
+            await postDashboardSettings(this.userId, json).then(
+                (response) => console.log("Dashboard saved to server:", response),
+                (error) => console.error("Error saving dashboard to server:", error)
+            );
         }
         this.events.emit('change');
+        console.log("Dashboard added: ", dashboard, dashboardFolder);
     }
-
-    get userName(): string {
-        return this._userSettings?.name || 'MissingName' as string;
-    }
-
     async waitUntilInitialized() {
         while (!this.initialized) {
             await new Promise(resolve => setTimeout(resolve, 100)); // Poll every 100ms
