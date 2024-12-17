@@ -64,6 +64,7 @@ jobs:
             # Trasforma la lista in array JSON
             services_json=$(echo "$changed_services" | tr ' ' '\n' | jq -R . | jq -s 'map({service: .})')
             echo "matrix={\"include\":$services_json}" >> $GITHUB_OUTPUT
+          fi
 
   build-db-init:
     needs: detect-changes
