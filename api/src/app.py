@@ -837,12 +837,15 @@ def insert_kpi(kpi: Kpi, _: str = Depends(get_verify_api_key(["gui"]))):
     logging.info("Inserting KPI: %s", kpi)
 
     # kpi is already a dict when it comes from the RAG
-    kpi_data = json.dumps(kpi) if (isinstance(kpi, dict) or isinstance(kpi, Kpi)) else json.dumps(kpi.to_dict())
+    
+    # kpi = kpi.dict()
 
-    response = requests.post(url, data=kpi_data, headers=headers)
+    # kpi = json.dumps(kpi)
+
+    response = requests.post(url, data=kpi, headers=headers)
     response_data = response.json()
     if response_data['Status'] == 0:
-        return JSONResponse(content=kpi.id, status_code=200)
+        return JSONResponse(content=kpi["id"], status_code=200)
     else:
         return JSONResponse(content=response_data, status_code=400)
 
