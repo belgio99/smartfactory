@@ -88,10 +88,10 @@ graph = create_graph(os.environ['KB_FILE_PATH'] + os.environ['KB_FILE_NAME'])
 graph.load_schema()
 
 # Set up the file system observer
-event_handler = FileUpdateHandler()
+"""event_handler = FileUpdateHandler()
 observer = Observer()
 observer.schedule(event_handler, os.environ['KB_FILE_PATH'], recursive=True)
-observer.start()
+observer.start()"""
 
 # Initialize the LLM model
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
