@@ -35,9 +35,8 @@ export interface UserInfo {
  */
 export interface Report {
     id: string;
-    title: string;
-    description: string;
-    createdAt: string;
+    name: string;
+    type: string;
 }
 
 export interface HistoricalDataRequest {
