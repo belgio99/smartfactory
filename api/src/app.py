@@ -3,7 +3,7 @@ import json
 import logging
 import sys
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta, timezone
 from io import BytesIO
 from pathlib import Path
 from typing import Annotated, List
@@ -19,6 +19,7 @@ from fpdf import FPDF
 from jose import jwt
 from langchain_core.prompts import PromptTemplate
 
+from AES_lib import encrypt_data, decrypt_data
 from api_auth.api_auth import ACCESS_TOKEN_EXPIRE_MINUTES, get_verify_api_key, SECRET_KEY, ALGORITHM
 from constants import *
 from database.connection import get_db_connection, query_db_with_params, close_connection
@@ -37,7 +38,6 @@ from model.user import *
 from notification_service import send_notification, retrieve_alerts, send_report
 from user_settings_service import persist_user_settings, retrieve_user_settings, persist_dashboard_settings, \
     load_dashboard_settings
-from AES_lib import encrypt_data, decrypt_data
 
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
@@ -47,6 +47,7 @@ logging.basicConfig(level=logging.INFO)
 tasks: dict[str, Task] = dict()
 tasks_lock = asyncio.Lock()
 last_task_id = 0
+
 
 async def task_scheduler():
     """Central scheduler that runs periodic tasks."""
@@ -233,7 +234,8 @@ def login(body: Login, api_key: str = Depends(get_verify_api_key(["gui"]))):
             algorithm=ALGORITHM
         )
         logging.info(result)
-        dec_username, dec_email, dec_site = decrypt_data(result[1],key), decrypt_data(result[2],key), decrypt_data(result[5],key)
+        dec_username, dec_email, dec_site = decrypt_data(result[1], key), decrypt_data(result[2], key), decrypt_data(
+            result[5], key)
         user = UserInfo(userId=result[0], username=dec_username, email=dec_email, role=result[3],
                         access_token=access_token, site=dec_site)
         return JSONResponse(content=user.to_dict(), status_code=200)
@@ -523,7 +525,11 @@ def create_report_pdf(answer: Answer, userId: str, tmp_path: str, obj_name: str,
     """
     connection, cursor = get_db_connection()
     obj_path = "/reports/" + userId + "/" + obj_name + ".pdf"
-    create_pdf(answer.data, answer.textExplanation, tmp_path)
+    # if answer is a dict, access the data via ['data']
+    if isinstance(answer, dict):
+        create_pdf(answer["data"], answer["textExplanation"], tmp_path)
+    else:
+        create_pdf(answer.data, answer.textExplanation, tmp_path)
     minio = get_minio_connection()
     upload_object(minio, "reports", userId + "/" + obj_name + ".pdf", tmp_path, "application/pdf")
     query_insert = "INSERT INTO Reports (Name, Type, OwnerId, GeneratedAt, FilePath, SiteName) VALUES (%s, %s, %s, %s, %s, %s) RETURNING ReportID, Name, Type;"
@@ -906,7 +912,7 @@ def ai_agent_interaction(userInput: Annotated[str, Body(embed=True)], userId: st
                 logging.error("Exception: %s", str(e))
                 raise HTTPException(status_code=500, detail=str(e))
 
-        elif answer ["label"] == 'report':
+        elif answer["label"] == 'report':
             # generate report
             # name is based on the current datetime
             report_name = "report_" + str(datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
