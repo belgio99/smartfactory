@@ -149,6 +149,28 @@ interface ScheduleParams {
 
 /**
  * Interface ScheduleRequest
+ * @param userId string - The ID of the user scheduling the report
+ * @param params ScheduleParams - Additional parameters for the report
+ * @param period number - The scheduling frequency
+ * @param startDate string - The start date of the report
+ * @param email string - The email of the report
+ * @param kpis string[] - The KPIs of the report
+ * @param machines string[] - The machines of the report
+ */
+interface ReportParams {
+    id: number;
+    name: string;
+    period: string;  // es: "Daily", "Weekly", ecc.
+    email: string;
+    type:string;
+    kpis: string[];
+    machines: string[];
+}
+
+
+
+/**
+ * Interface ScheduleRequest
  * @param user_id string - The ID of the user scheduling the report
  * @param params ScheduleParams - Additional parameters for the report
  */
@@ -583,7 +605,7 @@ export const retrieveDashboardSettings = async (userId: string): Promise<Dashboa
     }
 };
 
-export const instantReport = async (userId: string, params: ScheduleParams): Promise<string> => {
+export const instantReport = async (userId: string, params: ReportParams): Promise<string> => {
     try {
         const response = await axios.post(
             `${BASE_URL}/smartfactory/reports/generate`,
