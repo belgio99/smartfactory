@@ -25,14 +25,17 @@ Context format:
   - Date_finish: End date for aggregated KPI values, or NULL if not aggregated.
   - Aggregator: The aggregation function used (min, max, avg...), or NULL if no aggregation applies.
   - Forecast: Always false for computed KPIs.
-- Forecasted KPI:
-  - Machine_name: The name of the machine analyzed.
-  - KPI_name: The unique identifier for the forecasted KPI.
-  - Predicted_value: The forecasted value or an error message if parameters are invalid.
-  - Measure_unit: The KPI's unit of measurement.
-  - Date_prediction: Date of the KPI prediction (DD/MM/YYYY).
-  - Forecast: Always true for forecasted KPIs.
-  - Input Variables:
+- Forecasted KPI:  
+   - Machine_Name: Name of the machine for which the KPI prediction is reported.  
+   - KPI_Name: Unique identifier for the forecasted KPI.  
+   - Predicted_value: Forecasted KPI value or a list of value if forecasting refers to more then one day
+   - Lower_bound: Minimum predicted value within the confidence interval for the KPI.
+   - Upper_bound: Maximum predicted value within the confidence interval for the KPI.
+   - Confidence_score: Numerical value (0-1) indicating the confidence level of the prediction (e.g., 0.95 for 95% confidence).
+   - Measure_unit: Unit of measurement for the KPI (e.g., percentage, seconds, units).  
+   - Date_prediction: Date of the KPI prediction (DD/MM/YYYY) or a list of date if forecasting refers to more then one day.  
+   - Forecast: Always true for forecasted KPIs.  
+   - Error_message: an error message in case something goes wrong 
 
 OUTPUT REPORT FORMAT: 
 
@@ -44,8 +47,8 @@ Description: [DESCRIPTION]
 
 Computed KPIs:
 
-KPI Name 1: Mean: [mean_kpi_1], Max: [max_kpi_1], Min: [min_kpi_1]
-KPI Name 2: Mean: [mean_kpi_2], Max: [max_kpi_2], Min: [min_kpi_2]
+KPI Name 1: [Aggregator_1]: [kpi_1_value_on_aggregator_1], [Aggregator_2]: [kpi_1_value_on_aggregator_2], ... 
+KPI Name 2: [Aggregator_1]: [kpi_2_value_on_aggregator_1], [Aggregator_2]: [kpi_2_value_on_aggregator_2], ... 
 Other KPIs...
 
 Forecasted KPIs:
@@ -58,8 +61,8 @@ Other KPIs...
 
 Computed KPIs:
 
-KPI Name 1: Mean: [mean_kpi_1], Max: [max_kpi_1], Min: [min_kpi_1]
-KPI Name 2: Mean: [mean_kpi_2], Max: [max_kpi_2], Min: [min_kpi_2]
+KPI Name 1: [Aggregator_1]: [kpi_1_value_on_aggregator_1], [Aggregator_2]: [kpi_1_value_on_aggregator_2], ... 
+KPI Name 2: [Aggregator_1]: [kpi_2_value_on_aggregator_1], [Aggregator_2]: [kpi_2_value_on_aggregator_2], ... 
 Other KPIs...
 
 Forecasted KPIs:
@@ -86,6 +89,8 @@ REQUIREMENTS:
 - Use the input JSON to compute summaries accurately; if data is missing, explicitly state its absence.
 - Respond strictly in the requested report format.
 - For a machine reports only the forecasted KPIs, if there are no forecasted values, please don't put in the report the "Forecasted KPIs" section for the machines with no forecasted values
+- If Error_message is not empty in forecasted KPI report the error
+- If Value in computed KPI contains an Error message report the error
 
 CONTEXT: 
 {_CONTEXT_}

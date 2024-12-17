@@ -14,7 +14,6 @@ from schemas.models import Question, Answer
 from schemas.XAI_rag import RagExplainer
 from queryGen.QueryGen import QueryGenerator
 
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.graphs import RdfGraph
 from langchain.prompts import PromptTemplate,FewShotPromptTemplate
 
@@ -34,7 +33,7 @@ from watchdog.events import FileSystemEventHandler
 # agent header for authenticatication with other modules communication
 HEADER = {"x-api-key":"06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7"}
 # History length parameter
-HISTORY_LEN = 3
+HISTORY_LEN = 1
 
 # Load environment variables
 load_dotenv()
@@ -172,52 +171,25 @@ async def ask_kpi_engine(json_body):
     """
     kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
 
-    """
-    kpi_engine_url = "https://kpi.engine.com/api"  
-    mock_response = httpx.Response(
-      status_code=200,
-
-                            
-      json=[{
-        "Date_Start": "2024-12-02",
-        "Date_Finish": "2024-12-08",
-        "Machine_Name": "Assembly Machine 1",
-        "KPI_Name": "offline_time_max",
-        "Aggregator": "avg",
-        "Measure_Unit": "s",
-        "Value" : 7000
-        },
-        {
-        "Date_Start": "2024-12-02",
-        "Date_Finish": "2024-12-08",
-        "Machine_Name": "Assembly Machine 2",
-        "KPI_Name": "offline_time_max",
-        "Aggregator": "avg",
-        "Measure_Unit": "s",
-        "Value" : 5000
-        },
-        {
-        "Date_Start": "2024-12-02",
-        "Date_Finish": "2024-12-08",
-        "Machine_Name": "Assembly Machine 3",
-        "KPI_Name": "offline_time_max",
-        "Aggregator": "avg",
-        "Measure_Unit": "s",
-        "Value" : 6500
-        }
-        ])
-    
-    with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
-        async with httpx.AsyncClient() as client:
-            response = await client.get("url")
-    """
     async with httpx.AsyncClient() as client:
-        response = await client.post(kpi_engine_url,json=json_body,headers=HEADER)
-    
+        try:
+            response = await client.post(kpi_engine_url,json=json_body,headers=HEADER)
+        except Exception as e:
+            return {
+                    "success": False,
+                    "data": [
+                        {"Value": "Error: KPI engine is not available"}
+                    ]
+                }
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
     else:
-        return {"success": False, "error": response.text}  
+        return {
+                    "success": False,
+                    "data": [
+                        {"Value": "Error: KPI engine is not available"}
+                    ]
+                }
 
 async def ask_predictor_engine(json_body):
     """
@@ -235,38 +207,31 @@ async def ask_predictor_engine(json_body):
             Otherwise, the error message will be in the 'error' field.
     """
     predictor_engine_url = "http://data-processing:8000/data-processing/predict" 
-    """
-    predictor_engine_url = "https://predictor.engine.com/api"  
-    mock_response = httpx.Response(
-      status_code=200,
-      json = [{
-        "Machine_name": "Riveting Machine",
-        "Predicted": True,
-        "KPI_name": "working_time",
-        "Date": "26/11/2024",
-        "avg": 112
-      },
-      {
-        "Machine_name": "Welding Machine",
-        "Predicted": True,
-        "KPI_name": "working_time",
-        "Date": "26/11/2024",
-        "avg": 65
-      }
-    ])
     
-    
-    with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-    """
     async with httpx.AsyncClient() as client:
-        response = await client.post(url=predictor_engine_url,json=json_body,headers=HEADER)
+        try:
+            response = await client.post(url=predictor_engine_url,json=json_body,headers=HEADER)
+        except Exception as e:
+            return {
+                    "success": False,
+                    "data": {
+                        "value": [
+                            {"Error_message": "Predictor engine is not available"}
+                        ]
+                    }
+                }
     
     if response.status_code == 200:
         return {"success": True, "data": response.json()}  
     else:
-        return {"success": False, "error": response.text}  
+        return {
+                    "success": False,
+                    "data": {
+                        "value": [
+                            {"Error_message": "Predictor engine is not available"}
+                        ]
+                    }
+                }
 
 async def handle_predictions(json_body):
     """
@@ -282,7 +247,16 @@ async def handle_predictions(json_body):
         str: A string representing the prediction data formatted for the response.
     """
     response = await ask_predictor_engine(json_body)
-    response = ",".join(json.dumps(obj) for obj in response['data'])
+
+    if response['success'] == True:
+        for item in response['data']['value']:
+            if 'Lime_explaination' in item:
+                del item['Lime_explaination']
+
+        response = ",".join(json.dumps(obj) for obj in response['data']['value'])
+    else:
+        response = json.dumps(response['data'])
+
     return response
 
 async def handle_new_kpi(question: Question, llm, graph, history):
@@ -318,9 +292,25 @@ async def handle_report(json_objs):
         str: A formatted report string containing both KPI and prediction data.
     """
     predictor_response = await ask_predictor_engine(json_objs[1])
+
+    if predictor_response['success'] == True:
+        for item in predictor_response['data']['value']:
+            if 'Lime_explaination' in item:
+                del item['Lime_explaination']
+
+        predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data']['value'])
+    else:
+        predictor_response = json.dumps(predictor_response['data'])
+
     kpi_response = await ask_kpi_engine(json_objs[0])
-    predictor_response = ",".join(json.dumps(obj) for obj in predictor_response['data'])
-    kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
+
+    if kpi_response['success'] == True:
+        kpi_response = ",".join(json.dumps(obj) for obj in kpi_response['data'])
+    else:
+        kpi_response = json.dumps(kpi_response['data'])
+        
+    print("report context:","PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response)
+
     return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
 
 async def handle_dashboard(question: Question, llm, graph, history):
@@ -361,7 +351,13 @@ async def handle_kpi_calc(json_body):
         str: A string containing the KPI calculation data in a formatted form.
     """
     response = await ask_kpi_engine(json_body)
-    response = ",".join(json.dumps(obj) for obj in response['data'])
+
+    if response['success'] == True:
+        response = ",".join(json.dumps(obj) for obj in response['data'])
+    else:
+        response = json.dumps(response['data'])
+    
+    print(response)
     return response
 
 async def handle_kb_q(question: Question, llm, graph, history):
@@ -535,8 +531,8 @@ async def ask_question(question: Question): # to add or modify the services allo
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 
                 if question_language.lower() != "english":
-                    llm_result = await translate_answer(question, question_language, response_cleaned)
                     history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    llm_result = await translate_answer(question, question_language, response_cleaned)
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
                     textResponse = textResponse.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 else:
