@@ -11,7 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       changed-services: ${{ steps.parse-changes.outputs.changed }}
-      matrix: ${{ steps.create_matrix.outputs.matrix }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -45,25 +44,16 @@ jobs:
               fi
             done
           fi
-          changed_services=$(echo "$changed_services" | xargs)
           echo "Changed services: $changed_services"
           echo "::set-output name=changed::$changed_services"
 
+  print-changed-containers:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    steps:
       - name: Print changed containers
         run: |
-          echo "Containers to be rebuilt: ${{ steps.parse-changes.outputs.changed }}"
-
-      - name: Create dynamic matrix
-        id: create_matrix
-        run: |
-          changed_services="${{ steps.parse-changes.outputs.changed }}"
-          if [ -z "$changed_services" ]; then
-            # Nessun servizio modificato
-            echo "matrix={\"include\":[]}" >> $GITHUB_OUTPUT
-          else
-            # Trasforma la lista in array JSON
-            services_json=$(echo "$changed_services" | tr ' ' '\n' | jq -R . | jq -s 'map({service: .})')
-            echo "matrix={\"include\":$services_json}" >> $GITHUB_OUTPUT
+          echo "Containers to be rebuilt: ${{ needs.detect-changes.outputs.changed-services }}"
 
   build-db-init:
     needs: detect-changes
@@ -111,7 +101,8 @@ jobs:
       group: build-containers-${{ matrix.service }}
       cancel-in-progress: false
     strategy:
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      matrix:
+        service: [kb, data-processing, api, rag, gui-panel, kpi-engine]
 
     steps:
       - name: Checkout code
@@ -132,6 +123,7 @@ jobs:
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
+        if: contains(needs.detect-changes.outputs.changed-services, matrix.service)
         uses: docker/build-push-action@v3
         with:
           context: ./${{ matrix.service }}
