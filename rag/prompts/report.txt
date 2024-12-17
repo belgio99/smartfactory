@@ -76,12 +76,17 @@ Other machines...
 -- SUMMARY --
 
 Machine Comparisons: 
+
 [Comparison insights across machines for computed KPIs.]
 
+
 Predicted Values Insights: 
+
 [Key insights and expected trends.]
 
+
 Suggestions:
+
 [Key suggestions based on KPI values and expected trends.]
 
 REQUIREMENTS:
