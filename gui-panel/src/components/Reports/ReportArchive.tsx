@@ -5,7 +5,8 @@ import ReportModal from "./InstantModal";
 
 type Report = {
     id: string;
-    title: string;
+    name: string;
+    type: string;
 };
 
 interface ReportArchiveProps {
@@ -21,7 +22,7 @@ interface ReportArchiveProps {
  * This method downloads and create a new tab for the report
  * @param reportId string - reportID of the report to download
  */
-const handleView = async (reportId: string) => {
+export const handleView = async (reportId: string) => {
     try {
         const blob = await downloadReport(reportId);
         const fileURL = URL.createObjectURL(blob);
@@ -40,7 +41,7 @@ const handleView = async (reportId: string) => {
  * @param reportId string - reportID of the report to download
  * @param title string - title of the report to download
  */
-const handleDownload = async (reportId: string, title: string) => {
+export const handleDownload = async (reportId: string, title: string) => {
     try {
         const blob = await downloadReport(reportId); // Usa la tua API già implementata
         const fileName = `${title}.pdf`;
@@ -96,13 +97,14 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                 status: true,
                 startDate: new Date().toISOString().split("T")[0],
             };
-            const reportId = await instantReport(userId, reportData);
 
-            console.log("Report generated successfully with ID:", reportId);
-            // TODO: Handle the generated report ID appropriately (e.g., show success message)
-            await handleView(reportId); // Open the generated report in a new tab
-
-            // Close modal after successful save
+            try {
+                const reportId = await instantReport(userId, reportData);
+                console.log("Report generated successfully with ID:", reportId);
+                await handleView(reportId); // Open the generated report in a new tab
+            } catch (error) {
+                console.error("Failed to request report:", error);
+            }
         } catch (error) {
             console.error("Failed to request report:", error);
             // Handle error appropriately (e.g., show error message)
@@ -118,21 +120,12 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
     useEffect(() => {
         getReports(userId).then((reports) => {
             setReports(reports);
-            setIsLoading(false);
-        });
+        }).catch((error: any) => {
+            console.error("Failed to get reports:", error);
+        }).finally(
+            () => setIsLoading(false)
+        );
     }, [userId]);
-
-    // If no reports are available, show mock data
-    if (reports.length === 0) {
-        const getReportList = (): Report[] => [
-            {id: "1", title: "Monthly Report Q1"},
-            {id: "2", title: "Quarterly Report Q2"},
-            {id: "3", title: "Annual Report 2023"},
-            {id: "4", title: "Monthly Report Q3"},
-            {id: "5", title: "Annual Report 2022"},
-        ];
-        setReports(getReportList());
-    }
 
     const [expanded, setExpanded] = useState<number | null>(null);
     const [filter, setFilter] = useState<string>(""); // For filtering reports by title
@@ -150,16 +143,17 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
     // Filtering and sorting the reports
     const filteredReports = reports
         .filter((report) =>
-            report.title.toLowerCase().includes(filter.toLowerCase())
+            report.name.toLowerCase().includes(filter.toLowerCase())
         )
         .sort((a, b) => {
             if (sortOrder === "asc") {
-                return a.title.localeCompare(b.title);
+                return a.name.localeCompare(b.name);
             } else {
-                return b.title.localeCompare(a.title);
+                return b.name.localeCompare(a.name);
             }
         });
 
+    console.log("Reports:", filteredReports);
     return (
         <div className="ReportArchive max-w-6xl mx-auto p-6 bg-gray-25 rounded-lg shadow-lg">
             <h1 className="text-2xl font-bold mb-4 text-gray-800">Report Manager</h1>
@@ -247,7 +241,7 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                     >
 
                         <div className="p-4 border-t border-gray-200">
-                            <p className="text-gray-600 mb-4 font-normal text-start ">{report.title}</p>
+                            <p className="text-gray-600 mb-4 font-normal text-start ">{report.name}</p>
                             <div className="flex space-x-4">
                                 <button
                                     className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
@@ -256,7 +250,7 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                                 </button>
                                 <button
                                     className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
-                                    onClick={() => handleDownload(report.id, report.title)}>
+                                    onClick={() => handleDownload(report.id, report.name)}>
                                     Download
                                 </button>
                             </div>

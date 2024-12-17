@@ -12,7 +12,7 @@ export interface Message {
     extraData?: {
         explanation?: XAISources[];
         dashboardData?: { target: string; metadata: any };
-        report?: { userId: string; reportId: string };
+        report?: string;
     };
 }
 
@@ -88,10 +88,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                         case 'report':
                             extraData = {
                                 explanation: explanation,
-                                report: {
-                                    userId: userId,
-                                    reportId: response.data,
-                                },
+                                report: response.data,
                             };
                             response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
                             break;
