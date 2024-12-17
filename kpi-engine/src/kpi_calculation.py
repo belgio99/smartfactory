@@ -183,18 +183,18 @@ class kpi_engine:
             - total_power_consumption is the total power consumed during the same period, derived 
                 from the `consumption` KPI.
         """
-        fd = df
-        total_working_time = kpi_dataframe_data_extraction.sum_kpi(kpi='working_time', df=fd, machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
-        total_power_consumption = kpi_dataframe_data_extraction.sum_kpi(df=fd, machine_type=machine_type, kpi='consumption', machine_id=machine_id, start_period=start_period, end_period=end_period)
-        
+        fd = df 
+        consumption_working_sum = kpi_dataframe_data_extraction.sum_kpi(kpi='consumption_working', df=fd,  machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
+        consumption_sum = kpi_dataframe_data_extraction.sum_kpi(kpi='consumption', df=fd,  machine_type=machine_type, machine_id=machine_id, start_period=start_period, end_period=end_period)
+
         if isinstance(total_working_time, ValueError):
             return total_working_time, "-"
         if isinstance(total_power_consumption, ValueError):
             return total_power_consumption, "-"
 
-        if total_power_consumption == 0:
+        if consumption_sum == 0:
             return "Error: tried to divide by zero", "-"
-        return total_working_time / total_power_consumption, "%"
+        return consumption_working_sum / consumption_sum, "%"
         
     def power_consumption_trend(df, machine_id, machine_type, start_previous_period, end_previous_period, start_period, end_period):
         """
@@ -520,6 +520,8 @@ class kpi_engine:
         print(response)
         if response.get("atomic") == True:
             formula = response.get("id")
+            aggregator = formula[-3:]
+            print(aggregator)
         else:
             formula = response.get("atomic_formula")
         unit_of_measure = response.get("unit_measure")
@@ -527,7 +529,7 @@ class kpi_engine:
         try:
             expr = parse_expr(formula)
         except Exception as e:
-            return "Error: the specified KPI was not found in the Knowledge Base", "-"
+            return "Error: the specified KPI was not found in the Knowledge Base", "-", "-"
 
         # data extraction and symbol substitution
         substitutions = {}
@@ -542,4 +544,4 @@ class kpi_engine:
 
         # formula evaluation
         eval_result = result.evalf()
-        return float(eval_result), unit_of_measure
+        return float(eval_result), unit_of_measure, aggregator
