@@ -181,7 +181,7 @@ const DashboardSidebar: React.FC = () => {
                 : (
                 <SidebarSection title="Dashboard" items={dashboardsItems}/>)}
 
-            {!isFormVisible && (
+            {isFormVisible && (
                 <div className="w-full flex justify-center mt-4">
                     <button
                         onClick={() => setFormVisible(true)}

@@ -15,3 +15,30 @@ code {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes jump {
+  0%, 80% {
+    transform: translateY(0); /* Start and end position */
+  }
+  40% {
+    transform: translateY(-8px); /* Move up */
+  }
+}
+
+.jumping-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 4px;
+  background-color: #6b7280; /* Tailwind Gray-500 */
+  border-radius: 50%;
+  animation: jump 1.4s infinite ease-in-out;
+}
+
+.jumping-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.jumping-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
