@@ -114,7 +114,7 @@ const ExtraDataButtons: React.FC<ExtraDataProps> = ({extraData, onNavigate}) => 
             }
 
             {/* Explanation Button */}
-            {extraData.explanation && (
+            {extraData.explanation && extraData.explanation.length > 0 && (
                 <div>
                     <button
                         onClick={toggleExplanation}
