@@ -4104,10 +4104,10 @@
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_2"/>
         <sa-ontology:isProducedBy rdf:resource="http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#testing_machine_3"/>
         <sa-ontology:atomic rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:atomic>
-        <sa-ontology:atomic_formula>working_time_sum/consumption_sum</sa-ontology:atomic_formula>
+        <sa-ontology:atomic_formula>consumption_working_sum/consumption_sum</sa-ontology:atomic_formula>
         <sa-ontology:description>This indicator calculates the energy efficiency of a specific machine in a given time interval.</sa-ontology:description>
         <sa-ontology:forecastable rdf:datatype="http://www.w3.org/2001/XMLSchema#boolean">false</sa-ontology:forecastable>
-        <sa-ontology:formula>working_time_sum/consumption_sum</sa-ontology:formula>
+        <sa-ontology:formula>consumption_working_sum/consumption_sum</sa-ontology:formula>
         <sa-ontology:id>power_consumption_efficiency</sa-ontology:id>
         <sa-ontology:unit_measure>%</sa-ontology:unit_measure>
     </owl:NamedIndividual>
