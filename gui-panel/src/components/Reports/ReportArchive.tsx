@@ -91,11 +91,10 @@ const ReportArchive: React.FC<ReportArchiveProps> = ({userId, username, token, r
                 id: new Date().getTime(),
                 name: partialReportData.name || "Unnamed Report",
                 email: partialReportData.email || "",
-                recurrence: partialReportData.period || "Daily",
+                period: partialReportData.period || "Daily",
                 kpis: partialReportData.kpis || [],
                 machines: partialReportData.machines || [],
-                status: true,
-                startDate: new Date().toISOString().split("T")[0],
+                type: "Instant",
             };
 
             try {
