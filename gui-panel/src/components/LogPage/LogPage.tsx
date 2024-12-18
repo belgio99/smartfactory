@@ -64,7 +64,7 @@ const LogPage: React.FC = () => {
 
     return (
         <div className="bg-white flex-col rounded-lg shadow-lg w-auto max-w-5xl mx-auto px-6 pt-3">
-            <h1 className={styles.title}>Log Notifications</h1>
+            <h1 className={styles.title}>Notifications Log</h1>
 
             <div className="mb-4 flex space-x-4 font-semibold">
                 <div>
