@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-import {DashboardFolder, ForecastDataEx, KPI, Machine} from './DataStructures';
-import {Schedule} from './DataStructures';
+import {DashboardFolder, ForecastDataEx, KPI, Machine, Schedule} from './DataStructures';
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -437,7 +436,7 @@ export const getUserSettings = async (userId: string): Promise<UserSettings> => 
  */
 export const getAlerts = async (userId: string): Promise<Alert[]> => {
     try {
-        const response = await axios.get<{ data: Alert[] }>(
+        const response = await axios.get<{ alerts: Alert[] }>(
             `${BASE_URL}/smartfactory/alerts/${userId}`,
             {
                 headers: {
@@ -446,7 +445,8 @@ export const getAlerts = async (userId: string): Promise<Alert[]> => {
                 },
             }
         );
-        return response.data.data;
+        console.log('Get Alerts API response:', response.data);
+        return response.data.alerts;
     } catch (error: any) {
         console.error('Get Alerts API error:', error);
         throw new Error(error.response?.data?.message || 'Failed to retrieve alerts');
