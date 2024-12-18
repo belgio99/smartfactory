@@ -686,14 +686,15 @@ def make_prediction(machine, kpi, length):
 
     results = XAI_PRED(avg_values1,Last_date, loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
     
+    #convert numpy(float) to float
     x = [r.item() for r in results['Predicted_value']]
     y = [r.item() for r in results['Lower_bound']]
     z = [r.item() for r in results['Upper_bound']]
-    k = [r.item() for r in results['Confidence_score']]
+    # k = [r.item() for r in results['Confidence_score']] this is no longer numpy float
     results['Predicted_value'] = x
     results['Lower_bound'] = y
     results['Upper_bound'] = z
-    results['Confidence_score'] = k
+    # results['Confidence_score'] = k
     
     return results
 
