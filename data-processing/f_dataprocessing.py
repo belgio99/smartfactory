@@ -65,6 +65,13 @@ def execute_druid_query(body):
         return None
 
 def data_load(machine,kpi):
+  """
+  Loads time-series data for a specific machine and KPI.
+
+  :param machine: The machine ID to filter data.
+  :param kpi: The KPI name to filter data.
+  :return: Tuple of time and average values as lists.
+  """
   # Controlla gli ultimi tre caratteri
   # Tipi di aggregazione validi
   kpi_types = {"sum", "min", "max", "avg"}
@@ -88,21 +95,14 @@ def data_load(machine,kpi):
     avg_r.append(r[data_type])
     avg_t.append(r['__time'])
   return avg_t,avg_r
-# def data_load(machine,kpi):
-#   # Controlla gli ultimi tre caratteri
-#   # Tipi di aggregazione validi
-#   query_body = {
-#         "query": f"SELECT * FROM \"timeseries\" where name = '{machine}' AND kpi = '{kpi}'"
-#   } # Execute the query
-#   response = execute_druid_query(query_body)
-#   avg_r = []
-#   avg_t = []
-#   for r in response:
-#     avg_r.append(r['avg'])
-#     avg_t.append(r['__time'])
-#   return avg_t,avg_r
 
 def data_extract_trends(ts):
+  """
+  trend extraction from any time series
+
+  :param ts the time series to extract parameters from
+  :return: the dictionary of the parameters detected
+  """
   trends = {
       'max': np.max(ts),
       'min': np.min(ts),
@@ -113,7 +113,10 @@ def data_extract_trends(ts):
 
 def perform_adfuller(series):
     """
-    Perform ADF test and return test statistic and p-value
+    Perform ADF test for stationarity and return test statistic and p-value
+
+    :param series: any time series
+    :return: the test statistic and p-value
     """
     try:
       result = adfuller(series, regression='ct')
@@ -126,6 +129,12 @@ def perform_adfuller(series):
           return -2,None, None
 
 def data_clean_missing_values(data):
+  """
+  interpolate null values
+
+  :param data: the time series to be cleaned
+  :return: the cleaned time series
+  """
   # remove null values, furhter studies are needed to evaluate the zeros
   cleaned_data = data
   if data['Value'].isna().sum()!=0:
@@ -136,6 +145,12 @@ def data_clean_missing_values(data):
 
 # normalize the time series to a common scale
 def data_normalize_params(data):
+  """
+  normalize the time series to a common scale
+
+  :param data: the time series to be normalized
+  :return: the normalized time series
+  """
   scaler = StandardScaler()
   array_value = data.values.reshape(-1,1)
   array_scaled = scaler.fit_transform(array_value)
@@ -143,6 +158,11 @@ def data_normalize_params(data):
   return normalized_data
 
 def create_model_data():
+  """
+  Initializes a dictionary with default model metadata for the specified machine and KPI.
+
+  :return: Initialized dictionary with default model metadata.
+  """
   a_dict = {}
   a_dict['trends'] = {
       'max': 0,
@@ -184,7 +204,14 @@ def create_model_data():
 
 
 def save_model_data(machine, kpi, n_dict):
-  
+  """
+  Saves the model metadata to a JSON file in the DB.
+
+  :param machine: The machine ID.
+  :param kpi: The KPI name.
+  :param n_dict: Dictionary containing the model's metadata.
+  :return: None
+  """
   file_name = f'{machine}_{kpi}.json'
 
   insert_model_to_storage("models", file_name, n_dict, kpi, machine)
@@ -194,7 +221,13 @@ def save_model_data(machine, kpi, n_dict):
   #   json.dump(n_dict, outfile)
 
 def load_model(machine, kpi): #handle loading with a query
+  """
+  Loads the model metadata from a JSON file in the DB or creates a new one if not found.
 
+  :param machine: The machine ID.
+  :param kpi: The KPI name.
+  :return: Dictionary containing the model's metadata.
+  """
   dct = retrieve_model_from_storage(kpi,machine)  
   if dct != None:
      return dct
@@ -210,25 +243,33 @@ def load_model(machine, kpi): #handle loading with a query
   #   return dct
 
 def check_model_exists(machine, kpi):
+  """
+    Confirms the existence of a model
 
+    :param machine: the machine id
+    :param kpi: the kpi name
+
+    :returns bool: True or false if the machine exists or not
+
+  """
   dct = retrieve_model_from_storage(kpi,machine)
   if dct == None:
      return False
   else:
      return True
-  # final_path = os.path.join(models_path, f'{machine}_{kpi}.json')
-  
 
-  # if os.path.isfile(final_path):
-  #    a_dict = load_model(machine,kpi)
-  #    if a_dict["model"]["name"] != "":
-  #       return True
-  # return False
 
    
 
 def optimize_ARIMA(endog, order_list, d):
+  """
+  Select the best ARIMA parameters based on the AIC score.
 
+  :param endog: The dependent variable (time series)
+  :param order_list: List of ARIMA (p, q) combinations to try
+  :param d: Degree of differencing for ARIMA
+  :return: DataFrame containing the best parameter combinations and AIC scores
+  """
   results = []
   for order in tqdm_notebook(order_list):
       try:
@@ -243,6 +284,13 @@ def optimize_ARIMA(endog, order_list, d):
   return optimize_ARIMA_results
 
 def xgboost_parameter_select(X_train,y_train):
+  """
+  Perform hyperparameter tuning for XGBoost.
+
+  :param X_train: Training features
+  :param y_train: Training labels
+  :return: The best XGBoost model
+  """
   # Define the XGBoost regressor
   xgb_model = XGBRegressor(objective="reg:squarederror", random_state=42)
 
@@ -314,7 +362,14 @@ def xgboost_parameter_select(X_train,y_train):
 
 
 def custom_tts(data, labels, window_size = 20):
+  """
+  Create custom train-test splits for time-series data.
 
+  :param data: The time-series features
+  :param labels: Corresponding labels
+  :param window_size: Size of the window for time-series input
+  :return: Train-test splits for features and labels
+  """
   X_train = []
   y_train = []
   total_points = len(data)
@@ -344,6 +399,13 @@ def custom_tts(data, labels, window_size = 20):
 #########################
 
 def characterize_KPI(machine, kpi):
+  """
+  Characterizes a specific KPI for a given machine by performing data loading,
+  trend extraction, missing value handling, stationarity checks, and model training.
+
+  :param machine: The machine ID
+  :param kpi: The KPI name
+  """
   # DATA LOADING
   a_dict = load_model(machine, kpi)
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
@@ -466,6 +528,18 @@ def characterize_KPI(machine, kpi):
 #########################
 
 def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q: int, d: int) -> list:
+    """
+    Generates rolling ARIMA forecasts for a given dataset.
+
+    :param data: Time-series data as a Pandas Series or list.
+    :param train_len: Length of the initial training set.
+    :param horizon: Number of steps to forecast into the future.
+    :param window: Forecasting window size.
+    :param p: ARIMA order parameter p (AR terms).
+    :param q: ARIMA order parameter q (MA terms).
+    :param d: ARIMA order parameter d (degree of differencing).
+    :return: List of predicted values for the specified horizon.
+    """
     total_len = train_len + horizon
     pred_ARIMA = []
 
@@ -485,7 +559,17 @@ def rolling_forecast(data, train_len: int, horizon: int, window: int, p: int , q
     return pred_ARIMA[:horizon]
 
 def XAI_PRED(data,Last_date, model, total_points, seq_length = 10, n_predictions = 30):
-  # Seed
+  """
+  Explains predictions using XGBoost and interpretable machine learning techniques.
+
+  :param data: Time-series data as a NumPy array or list.
+  :param Last_date: the starting date from which perform the predictions 
+  :param model: Trained XGBoost model.
+  :param total_points: Total number of data points in the series.
+  :param seq_length: Length of the input sequence for prediction.
+  :param n_predictions: Number of future points to predict.
+  :return: None. Displays explanations and prediction results.
+  """
   np.random.seed(42)
 
   # Prepare training data for XGBoost: predict next value from last seq_length values
@@ -523,7 +607,15 @@ def XAI_PRED(data,Last_date, model, total_points, seq_length = 10, n_predictions
   return results
 
 def make_prediction(machine, kpi, length):
+  """
+  Forecasts KPI values using a trained model (ARIMA or XGBoost).
 
+  :param machine: str, machine identifier.
+  :param kpi: str, KPI to be predicted.
+  :param length: int, number of steps to forecast.
+
+  :return: None (prints evaluation metrics and forecasts).
+  """
   a_dict = load_model(machine, kpi)
 
   kpi_data_Time, kpi_data_Avg = data_load(machine, kpi) # load a single time series
@@ -606,6 +698,14 @@ def make_prediction(machine, kpi, length):
     return results
 
 def kpi_exists(machine, KPI, api_key):
+  """
+  Checks if a specific KPI exists for a machine by querying a knowledge base API.
+
+  :param machine: The machine ID.
+  :param KPI: The KPI name.
+  :param api_key: the authentication key for fastAPI.
+  :return: Response from the knowledge base API.
+  """
   machine = machine.replace(" ", "_")
   print(f"looking for {machine}, {KPI}")
   headers = {
@@ -634,6 +734,18 @@ def kpi_exists(machine, KPI, api_key):
 class DDM: # Drift Detection Modelworks by keeping track of the error rate in a stream of predictions.
            # It raises a warning or signals a drift if it detects significant deviations based on
            # statistical analysis of the error rate.
+  """
+  Drift Detection Model (DDM) for monitoring prediction accuracy and detecting concept drift.
+
+  Attributes:
+  - warning_level: float, threshold for raising a warning.
+  - drift_level: float, threshold for detecting drift.
+  - state_file: str, path to save/load model state.
+  - num_instances: int, number of processed instances.
+  - p_min, s_min: float, minimum error statistics.
+  - p_mean, s_mean: float, running mean and standard deviation of errors.
+  """  
+  
   def __init__(self,state_json, warning_level=2.0, drift_level=3.0):
     """
     - warning_level: float, threshold for raising a warning.
@@ -719,7 +831,12 @@ class DDM: # Drift Detection Modelworks by keeping track of the error rate in a 
     self.s_mean = self.state_json['drift']["s_mean"]
 
 def missingdata_check(current_value):
-  
+  """
+  Checks if the current KPI value is missing or zero.
+
+  :param current_value: float, current KPI value.
+  :return: int, -1 if missing, 0 if zero, 1 if valid.
+  """
   if isnan(current_value):
     return -1
   elif current_value == 0:
@@ -728,6 +845,13 @@ def missingdata_check(current_value):
     return 1
 
 def outlier_check(new_value, data):
+    """
+    Detects if a value is an outlier based on the historical data.
+
+    :param new_value: float, value to check.
+    :param data: list, recent historical values.
+    :return: bool, True if outlier, False otherwise.
+    """
     multiplier = 3
     mean = sum(data)/len(data)
     variance = sum((x - mean) ** 2 for x in data)/len(data)
@@ -738,7 +862,14 @@ def outlier_check(new_value, data):
 
 
 def send_Alert(url, data, api_key):
+  """
+  Sends an alert to another microservice using an HTTP POST request.
 
+  :param url: URL of the target microservice.
+  :param data: Dictionary containing alert data.
+  :param api_key: security key
+  :return: None
+  """
   headers = {
       "x-api-key": api_key
   }
@@ -765,13 +896,12 @@ def send_Alert(url, data, api_key):
        
 def elaborate_new_datapoint(machine, kpi):
   """
-      daily check of new data point to update the models. 
+  Processes new KPI data point, detects drift, and generates alerts.
 
-      Args:
-      machine: machine ID of the requested machine
-      kpi: KPI ID of the requested machine
+  :param machine: str, machine identifier.
+  :param kpi: str, key performance indicator name.
 
-      Returns:      
+  :return: None (updates model, triggers alerts, and saves state).
   """
   ##################################
   ### 1. Initial data processing ###

@@ -83,14 +83,6 @@ app.add_middleware(
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# @app.get("/data-processing/load_model")
-# def test():
-#     return f_dataprocessing.load_model('Large Capacity Cutting Machine 1','consumption')
-
-# @app.get("/data-processing/test_model_save")
-# def test():
-#     return f_dataprocessing.characterize_KPI('Large Capacity Cutting Machine 1','consumption')
-
 # TEST CONNECTIONS
 @app.get("/data-processing/_public")
 def hello_world():
@@ -103,7 +95,7 @@ def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer
 @app.get("/data-processing/retrieve_models")
 def retrieve_models(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
     """
-    print and return the list of the existing forecasst models
+    print and return the list of the existing forecast models
     """
     availableModels = retrieve_all_models_from_storage()
     print("The following models have already been created:")
@@ -114,7 +106,7 @@ def retrieve_models(api_key: str = Depends(get_verify_api_key(["ai-agent","api-l
 @app.post("/data-processing/train_models")
 def train_selected_models(JSONS: Json_in,api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
     """
-    Creates and train the forecast model for the requested machines/KPIs
+    Creates and trains the forecast model for the requested machines/KPIs
 
     args:
     JSONS: the list of machine/kpi the user wishes to use
@@ -265,6 +257,9 @@ def new_data_polling():
 
 
 def send_dummy_alert(alert_data):
+    """
+        send the specified alert for test purpose
+    """
     url_alert = f"http://api:8000/smartfactory/postAlert"
     API_key = os.getenv('my_key')
     f_dataprocessing.send_Alert(url_alert,alert_data,API_key)
