@@ -142,7 +142,7 @@ def data_normalize_params(data):
   normalized_data = pd.Series(array_scaled.flatten(),index=data.index,name='Timestamp')
   return normalized_data
 
-def create_model_data(): #TODO: instead of path we need to save the model on the DB
+def create_model_data():
   a_dict = {}
   a_dict['trends'] = {
       'max': 0,
@@ -575,12 +575,6 @@ def make_prediction(machine, kpi, length):
         print(f"No test data available for evaluation for {machine} - {kpi}")
 
   elif a_dict['model']['name'] == 'xgboost':
-    # TODO: perform differentiation here
-    # X_train, y_train = custom_tts(avg_values1,kpi_data_Time)
-    # X_test = [avg_values1[-11:-1]]
-
-    # print(f'testlen: {len(X_test)}')
-
     # Decode the Base64 string back to raw bytes
     encoded_model = a_dict['model']['xgb_bytes']
     raw_model_bytes = bytearray(base64.b64decode(encoded_model))
