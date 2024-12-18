@@ -10,8 +10,8 @@ const TimeFrameSelector: React.FC<TimeFrameSelectorProps> = ({timeFrame, setTime
         const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
 
         if (diffInDays > 90) return 'month';
-        if (diffInDays > 30) return 'day';
-        return 'hour';
+        if (diffInDays > 30) return 'week';
+        return 'day';
     };
 
     const isValidDate = (dateString: string): boolean => {

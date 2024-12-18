@@ -44,11 +44,12 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
     const dataManager = PersistentDataManager.getInstance();
     const [dashboardData, setDashboardData] = useState<TemporaryLayout>(new TemporaryLayout([]));
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [chartData, setChartData] = useState<any[][]>([]);
     const kpiList = dataManager.getKpiList(); // Cache KPI list once
     const [filters, setFilters] = useState(new Filter("All", []));
     const [timeFrame, setTimeFrame] = useState<TimeFrame>({
-        from: new Date(2024, 9, 10),
+        from: new Date(2024, 9, 16),
         to: new Date(2024, 9, 19),
         aggregation: 'day'
     });
@@ -117,9 +118,15 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                 let timeframe = handleTimeAdjustments(timeFrame, isRollbackTime);
                 return await fetchData(kpi, timeframe, entry.graph_type, filters); // Add appropriate filters
             });
-
-            const resolvedChartData = await Promise.all(chartDataPromises);
-            setChartData(resolvedChartData);
+            setRefreshing(true);
+            try {
+                const resolvedChartData = await Promise.all(chartDataPromises);
+                setChartData(resolvedChartData);
+            } catch (error) {
+                console.error("Error fetching chart data:", error);
+            } finally {
+                setRefreshing(false);
+            }
         };
 
         // Avoid fetching during initial loading
@@ -225,6 +232,16 @@ const AIDashboard: React.FC<{ userId: string }> = ({userId}) => {
                 />
             </div>
         </div>
+        {/* Refreshing indicator */}
+        {refreshing && (
+            <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+                <div className="flex flex-col items-center bg-white p-8 rounded-lg shadow-lg">
+                    <div className="text-lg text-gray-800 mb-4">Updating Charts...</div>
+                    <div
+                        className="flex justify-center items-center animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-500"></div>
+                </div>
+            </div>
+        )}
         {/* Grid Layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center w-f">
             {dashboardData.charts.map((entry: DashboardEntry, index: number) => {

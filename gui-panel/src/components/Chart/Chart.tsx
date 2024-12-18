@@ -295,7 +295,7 @@ const Chart: React.FC<ChartProps> = ({data, graphType, kpi, timeUnit = 'day'}) =
                             type="number"
                             tick={{fill: '#666'}}
                             domain={['dataMin', 'dataMax']}
-                            tickFormatter={(value) => value.toFixed(2)} // Precision limited to 2 decimal places
+                            tickFormatter={(value) =>  value >= 1 ? value.toFixed(2) : value.toExponential(2)} // Precision limited to 2 decimal places
                         />
                         <Tooltip content={<ScatterTooltip kpi={kpi}/>}/>
                         <Legend

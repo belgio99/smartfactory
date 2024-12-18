@@ -12,7 +12,7 @@ export interface Message {
     extraData?: {
         explanation?: XAISources[];
         dashboardData?: { target: string; metadata: any };
-        report?: { userId: string; reportId: string };
+        report?: string;
     };
 }
 
@@ -88,10 +88,7 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                         case 'report':
                             extraData = {
                                 explanation: explanation,
-                                report: {
-                                    userId: userId,
-                                    reportId: response.data,
-                                },
+                                report: response.data,
                             };
                             response.textResponse = 'The report ' + response.textResponse + ' is ready for review.';
                             break;
@@ -142,8 +139,6 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
         }, 60);
 
     }
-
-
     return (
         <div className="fixed bottom-1.5 right-2 z-50">
             {!isChatOpen && (
@@ -195,6 +190,18 @@ const ChatAssistant: React.FC<ChatAssistantProps> = ({username, userId}) => {
                             />
                             </div>
                         ))}
+                        {/* Typing indicator bubble */}
+                        {isTyping && (
+                            <div className="flex justify-start">
+                                <div className="bg-gray-200 px-3 py-2 rounded-lg text-sm">
+                                    <div className="jumping-dots flex space-x-1">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                     {/* Input Section */}
                     <div className="p-2 border-t bg-gray-50 flex items-center">
