@@ -19,7 +19,7 @@ export const DrillDownTooltip = ({active, payload, label, kpi}: any) => {
                     color: payload.fill,
                     margin: 0,
                     fontWeight: 'normal'
-                }}>{`${name}: ${typeof payload[0].value === 'number' ? (payload[0].value >= 1 ? payload[0].value.toFixed(2) : payload[0].value.toExponential(2)) : 'N/A'} ${kpi?.unit || ''}`}</p>
+                }}>{`${name}: ${typeof payload[0].value === 'number' ? (payload[0].value >= 0.1 ? payload[0].value.toFixed(2) : payload[0].value.toExponential(2)) : 'N/A'} ${kpi?.unit || ''}`}</p>
             </div>
         );
     }
@@ -46,7 +46,7 @@ export const ScatterTooltip = ({active, payload, kpi}: any) => {
                         margin: 0,
                     }}
                 >
-                    {`${dataPoint.machineId}: ${typeof dataPoint.y === 'number' ? dataPoint.y >= 1 ? dataPoint.y.toFixed(2) : dataPoint.y.toExponential(2) : 'N/A'} ${
+                    {`${dataPoint.machineId}: ${typeof dataPoint.y === 'number' ? dataPoint.y >= 0.1 ? dataPoint.y.toFixed(2) : dataPoint.y.toExponential(2) : 'N/A'} ${
                         kpi?.unit || ''
                     }`}
                 </p>
@@ -77,7 +77,7 @@ export const LineTooltip = ({active, payload, label, kpi}: any) => {
                             color: entry.stroke, // Match the line's color
                         }}
                     >
-                        {`${entry.name}: ${typeof entry.value === 'number' ? (entry.value >= 1 ? entry.value.toFixed(2) : entry.value.toExponential(2)) : 'N/A'} ${kpi?.unit || ''}`}
+                        {`${entry.name}: ${typeof entry.value === 'number' ? (entry.value >= 0.1 ? entry.value.toFixed(2) : entry.value.toExponential(2)) : 'N/A'} ${kpi?.unit || ''}`}
                     </p>
                 ))}
             </div>
