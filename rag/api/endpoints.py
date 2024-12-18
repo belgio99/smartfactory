@@ -2,12 +2,12 @@ import httpx
 import json
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
+import nltk
 
-from unittest.mock import AsyncMock, patch
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from schemas.promptmanager import PromptManager
 from chains.ontology_rag import DashboardGenerationChain, GeneralQAChain, KPIGenerationChain
 from schemas.models import Question, Answer
@@ -18,8 +18,6 @@ from langchain_community.graphs import RdfGraph
 from langchain.prompts import PromptTemplate,FewShotPromptTemplate
 
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.globals import set_llm_cache
-from langchain_core.caches import InMemoryCache
 from collections import deque
 from dotenv import load_dotenv
 #from .api_auth.api_auth import get_verify_api_key
@@ -32,14 +30,14 @@ from watchdog.events import FileSystemEventHandler
 
 # agent header for authenticatication with other modules communication
 HEADER = {"x-api-key":"06e9b31c-e8d4-4a6a-afe5-fc7b0cc045a7"}
+
 # History length parameter
 HISTORY_LEN = 1
 
 # Load environment variables
 load_dotenv()
-import nltk
-nltk.download('punkt_tab')
 
+nltk.download('punkt_tab')
 
 def create_graph(source_file):
     """
@@ -95,7 +93,6 @@ observer.start()"""
 
 # Initialize the LLM model
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash")
-#set_llm_cache(InMemoryCache())
 
 # Initialize the conversation history deque
 history = {}
@@ -121,7 +118,7 @@ def prompt_classifier(input: Question):
         tuple: A tuple containing the label and the extracted json_obj from the input (if applicable) and an error log.
     """
 
-    esempi = [
+    examples = [
         {"text": "Predict for the next month the cost_working_avg for Large Capacity Cutting Machine 2 based on last three months data", "label": "predictions"},
         {"text": "Generate a new kpi named machine_total_consumption which use some consumption kpis to be calculated", "label": "new_kpi"},
         {"text": "Compute the Maintenance Cost for the Riveting Machine 1 for yesterday", "label": "kpi_calc"},
@@ -130,14 +127,14 @@ def prompt_classifier(input: Question):
         {"text": "Create a dashboard to compare performances for different type of machines", "label": "dashboard"},
     ]
 
-    esempio_template = PromptTemplate(
+    example_prompt = PromptTemplate(
         input_variables=["text", "label"],
         template="Text: {text}\nLabel: {label}\n"
     )
 
     few_shot_prompt = FewShotPromptTemplate(
-        examples=esempi,
-        example_prompt=esempio_template,
+        examples=examples,
+        example_prompt=example_prompt,
         prefix= "FEW-SHOT EXAMPLES:",
         suffix="Task: Classify with one of the labels ['predictions', 'new_kpi', 'report', 'kb_q', 'dashboard','kpi_calc'] the following prompt:\nText: {text_input}\nLabel:",
         input_variables=["text_input"]
@@ -145,7 +142,9 @@ def prompt_classifier(input: Question):
 
     prompt = few_shot_prompt.format(text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
+
     print(f"user input request label = {label}")
+
     # If the label is kps_calc, report or predictions, it requires the query generator to generate a json_request from the user input
     json_request=""
     all_kpis=0
@@ -158,16 +157,13 @@ async def ask_kpi_engine(json_body):
     """
     Function to query the KPI engine for machine data.
 
-    This function mocks a response from an external KPI engine API using httpx
-    and returns the data about machine power consumption.
-
     Args:
         json_body (str): the json used to communicate the request to the KPI engine API.
 
     Returns:
         dict: A dictionary containing the success status and the KPI data.
             If the request is successful, the data will be in the 'data' field.
-            Otherwise, the error message will be in the 'error' field.
+            Otherwise, it will return an error message.
     """
     kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
 
@@ -195,8 +191,6 @@ async def ask_predictor_engine(json_body):
     """
     Function to query the predictor engine for machine prediction data.
 
-    This function mocks a response from an external predictor engine API 
-    and returns predicted values related to machine operation.
 
     Args:
         json_body (str): the json used to communicate the request to the predictor engine API.
@@ -204,7 +198,7 @@ async def ask_predictor_engine(json_body):
     Returns:
         dict: A dictionary containing the success status and the prediction data.
             If the request is successful, the data will be in the 'data' field.
-            Otherwise, the error message will be in the 'error' field.
+            Otherwise, it will return an error message.
     """
     predictor_engine_url = "http://data-processing:8000/data-processing/predict" 
     
@@ -309,8 +303,6 @@ async def handle_report(json_objs):
     else:
         kpi_response = json.dumps(kpi_response['data'])
         
-    print("report context:","PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response)
-
     return "PRED_CONTEXT:" + predictor_response + "\nENG_CONTEXT:" + kpi_response
 
 async def handle_dashboard(question: Question, llm, graph, history):
@@ -357,7 +349,6 @@ async def handle_kpi_calc(json_body):
     else:
         response = json.dumps(response['data'])
     
-    print(response)
     return response
 
 async def handle_kb_q(question: Question, llm, graph, history):
@@ -426,6 +417,7 @@ async def ask_question(question: Question): # to add or modify the services allo
 
         # Classify the question
         label, json_body,all_kpis = prompt_classifier(question)
+
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(json_body),
@@ -450,7 +442,7 @@ async def ask_question(question: Question): # to add or modify the services allo
             if question_language.lower() != "english":
                 llm_result = await translate_answer(question, question_language, llm_result.content)
                 
-            return Answer(textResponse=llm_result.content, textExplanation='', data='', label='kb_q') # da rivedere
+            return Answer(textResponse=llm_result.content, textExplanation='', data='', label='kb_q') 
 
         # Execute the handler
         context = await handlers[label]()
@@ -483,32 +475,50 @@ async def ask_question(question: Question): # to add or modify the services allo
                 _CONTEXT_=context
             )
             
+            # Initialize a thread pool executor for asynchronous task execution
             executor = ThreadPoolExecutor()
+
+            # Submit a task to the executor: calling `llm.invoke` with the `prompt`
             future = executor.submit(llm.invoke, prompt)
-            
+
+            # Check the label type and perform operations accordingly
             if label == 'predictions':
-                explainer.add_to_context([("Predictor", "["+context+"]")])
+                # Add the context to the explainer for predictions under the "Predictor" key
+                explainer.add_to_context([("Predictor", "[" + context + "]")])
 
             if label == 'kpi_calc':
-                explainer.add_to_context([("KPI Engine", "["+context+"]")])
+                # Add the context to the explainer for KPI calculations under the "KPI Engine" key
+                explainer.add_to_context([("KPI Engine", "[" + context + "]")])
 
             if label == 'new_kpi':
+                # Clean up the context and unnecessary JSON labels
                 context_cleaned = context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
+                # Add the cleaned context to the explainer under the "Knowledge Base" key
                 explainer.add_to_context([("Knowledge Base", context_cleaned)])
 
             if label == 'report':
+                # Split the context into prediction and KPI engine parts using known prefixes
                 pred_context, eng_context = context.removeprefix("PRED_CONTEXT:").split("ENG_CONTEXT:")
-                pred_context = "["+pred_context+"]"
-                eng_context = "["+eng_context+"]"
+                # Format the prediction and KPI engine contexts with square brackets
+                pred_context = "[" + pred_context + "]"
+                eng_context = "[" + eng_context + "]"
+                # Add both parts to the explainer under their respective keys
                 explainer.add_to_context([("Predictor", pred_context), ("KPI Engine", eng_context)])
 
             if label == 'dashboard':
+                # Split the context into knowledge base and GUI elements parts using known prefixes
                 kb_context, gui_context = context.removeprefix("KB_CONTEXT:").split("GUI_CONTEXT:")
+                # Clean up the knowledge base context by removing code formatting and JSON labels
                 kb_context = kb_context.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                gui_context = "["+gui_context+"]"
+                # Format the GUI context with square brackets
+                gui_context = "[" + gui_context + "]"
+                # Add both parts to the explainer under their respective keys
                 explainer.add_to_context([("Knowledge Base", kb_context), ("GUI Elements", gui_context)])
-            
+
+            # Wait for the asynchronous task result (llm.invoke) to complete and store the result
             llm_result = future.result()
+
+            # Shutdown the executor without waiting for all threads to complete (graceful exit)
             executor.shutdown(wait=False)
             
             if label in ['predictions', 'report', 'kpi_calc']:
@@ -519,30 +529,57 @@ async def ask_question(question: Question): # to add or modify the services allo
                 if question_language.lower() != "english":
                     llm_result = await translate_answer(question, question_language, llm_result.content)
 
+            # Handle the 'predictions' label
             if label == 'predictions':
+                # Attribute the LLM result content to the context using the explainer
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                # Return the formatted response as an Answer object
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data='', label=label)
 
+            # Handle the 'kpi_calc' label
             if label == 'kpi_calc':
+                # Attribute the LLM result content to the context using the explainer
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                # Return the formatted response as an Answer object
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data="", label=label)
 
-            if label == 'new_kpi':                
+            # Handle the 'new_kpi' label
+            if label == 'new_kpi':
+                # Clean up the LLM result content by removing unnecessary formatting like code blocks and JSON tags
                 response_cleaned = llm_result.content.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
-                
+
+                # Check if the question language is not English
                 if question_language.lower() != "english":
-                    history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    # Save the user question and LLM result content to the history for this user
+                    history[userId].append({
+                        'question': question.userInput.replace('{', '{{').replace('}', '}}'),
+                        'answer': llm_result.content.replace('{', '{{').replace('}', '}}')
+                    })
+                    # Translate the LLM result to the target language
                     llm_result = await translate_answer(question, question_language, response_cleaned)
+                    # Attribute the translated response to the context using the explainer
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                    # Clean up the response text again
                     textResponse = textResponse.replace("```", "").replace("json\n", "").replace("json", "").replace("```", "")
                 else:
-                    history[userId].append({'question': question.userInput.replace('{','{{').replace('}','}}'), 'answer': llm_result.content.replace('{','{{').replace('}','}}')})
+                    # If the language is English, save the user question and LLM result content to the history
+                    history[userId].append({
+                        'question': question.userInput.replace('{', '{{').replace('}', '}}'),
+                        'answer': llm_result.content.replace('{', '{{').replace('}', '}}')
+                    })
+                    # Attribute the cleaned response to the context using the explainer
                     textResponse, textExplanation, _ = explainer.attribute_response_to_context(response_cleaned)
-                textResponse = textResponse.replace('{', '').replace('}', '').replace('\n\n', '')                
-                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label) 
 
+                # Remove unnecessary brackets and formatting from the response text
+                textResponse = textResponse.replace('{', '').replace('}', '').replace('\n\n', '')
+                # Return the cleaned response as an Answer object
+                return Answer(textResponse=textResponse, textExplanation=textExplanation, data=response_cleaned, label=label)
+
+            # Handle the 'report' label
             if label == 'report':
+                # Attribute the LLM result content to the context using the explainer
                 textResponse, textExplanation, _ = explainer.attribute_response_to_context(llm_result.content)
+                # Return an Answer object with explanation and the response text as data
                 return Answer(textResponse="", textExplanation=textExplanation, data=textResponse, label=label)
 
             if label == 'dashboard':
@@ -562,5 +599,4 @@ async def ask_question(question: Question): # to add or modify the services allo
                 data = json.dumps(response_json["bindings"], indent=2)
                 return Answer(textResponse=textResponse, textExplanation=textExplanation, data=data, label=label)
     except Exception as e:
-        print(e)
         return Answer(textResponse="Something gone wrong, I'm not able to answer your question", textExplanation="", data="", label="Error")

@@ -4,40 +4,30 @@ This project provides an API endpoint to answer questions based using Retrieval-
 
 ## Table of Contents
 - [Requirements](#requirements)
-- [Setup](#setup)
+- [Local Setup](#local-setup)
 - [Environment Variables](#environment-variables)
-- [Project Structure](#project-structure)
 - [Running the Application](#running-the-application)
 - [Usage](#usage)
+- [Docker Setup](#docker-setup)
 
 ## Requirements
 
 - Python 3.8+
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [LangChain](https://langchain.com/)
-- [Chroma](https://docs.trychroma.com/)
-- [dotenv](https://pypi.org/project/python-dotenv/)
-- [socket](https://docs.python.org/3/library/socket.html)
+- pip
+- Docker (if using Docker setup)
 
-## Setup
+## Local Setup
 
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/belgio99/smartfactory.git
-   cd smartfactory
-   git checkout RAG
-   cd RAG
+   cd smartfactory/rag
    ```
 
 2. **Install dependencies**:
    ```bash
    pip install -r requirements.txt
    ```
-
-3. **Install Llama 3.2 (1B Parameters) Locally**:
-	To set up the Llama 3.2 model with 1 billion parameters on your local machine, follow these steps: 
-	- Download and install [Ollama](https://ollama.com/download), a platform that facilitates running language models locally. 
-	- Once installed, you can execute the following command to run the Llama 3.2 (1B) model: ```ollama run llama3.2:1b```
 
 3. **Create `.env` file**:
    Define necessary environment variables in a `.env` file in the root directory. 
@@ -51,13 +41,13 @@ Define the following in your `.env` file:
 - `LANGCHAIN_TRACING_V2`: Enables or disables LangChain’s tracing feature, which logs detailed traces of requests and responses. Setting this to `false` disables tracing to improve performance and privacy.
 -  `LANGCHAIN_ENDPOINT`: Specifies the URL endpoint for LangChain’s API. This is the base URL that LangChain’s services use to communicate with the application. Example: `https://api.smith.langchain.com`.
 - `LANGCHAIN_PROJECT`: Defines the project name for LangChain services, useful for organizing and tracking API requests and logs within LangChain’s dashboard or project management tools.
-
-## Project Structure
-
-- `main.py`: Application entry point.
-- `routers`: Directory containing API routers.
-- `schemas`: Directory containing Pydantic models for request and response validation.
-- `docs/filtered_dataset.csv`: The dataset used for document embeddings.
+- `POSTGRES_USER`: PostgreSQL username used to connect to the API authentication database.
+- `POSTGRES_DB`: Name of the PostgreSQL database used for API authentication.
+- `POSTGRES_PASSWORD`: Password for the PostgreSQL user to connect to the API authentication database.
+- `POSTGRES_HOST`: Host address (IP or domain) of the PostgreSQL server for API authentication.
+- `POSTGRES_PORT`: Port on which the PostgreSQL server listens for connections to the API authentication database.
+- `KB_FILE_PATH`: (Default: ../docs/kb/) Path to the directory containing the knowledge base files.
+- `KB_FILE_NAME`: (Default: sa_ontology.rdf) Name of the knowledge base file to be used.
 
 ## Running the Application
 
@@ -70,13 +60,14 @@ Define the following in your `.env` file:
 
 ## Usage
 
-Send a POST request to the `/ask` endpoint with a question as input.
+Send a POST request to the `/agent/chat` endpoint with a question as input.
 
 ### Example Request
 
 ```json
 {
-  "text": "What is the average working time for machine X?"
+  "userInput": "How many machines are in the factory?",
+  "userId": "corvus"
 }
 ```
 
@@ -84,6 +75,27 @@ Send a POST request to the `/ask` endpoint with a question as input.
 
 ```json
 {
-  "text": "The average working time for machine X is 120 minutes."
+  "text": "There are 16 machines.",
+  "textExplanation": "...",
+  "data": "...",
+  "label": "kb_q"
 }
+```
+
+## Docker Setup
+
+### 1. Build the Docker Image  
+
+Run the following command to build the Docker image:  
+
+```bash
+docker build -t rag.
+```
+
+### 2. Run the Docker Container
+
+Start the container and map port 8000 (container) to 8000 (host):
+
+```bash
+docker run -p 8000:8000 --name rag-container rag
 ```

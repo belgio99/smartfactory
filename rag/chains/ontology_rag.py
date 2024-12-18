@@ -90,10 +90,3 @@ class DashboardGenerationChain:
     self.chain = GraphSparqlQAChain.from_llm(
         self._llm, graph=self._graph, verbose=False, allow_dangerous_requests=True, sparql_select_prompt=dashboard_generation_prompt_select, qa_prompt=qa_dashboard_generation_prompt
     )
-
-
-# TESTING
-# The following section can be used for interactive testing, where the user can enter queries to test the KPI generation functionality.
-# while(True):
-#     response = kpi_generation_chain.invoke(input("Enter your query: "))
-#     print(response['result'])
