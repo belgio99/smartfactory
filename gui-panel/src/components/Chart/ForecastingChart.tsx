@@ -49,7 +49,7 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
 
             {/* Show the confidence value only once */}
             {confidence && <div style={{marginTop: '10px', fontStyle: 'italic', color: '#666'}}>
-                <p>{`Interval confidence: ${confidence.toFixed(2)}%`}</p>
+                <p>{`Within Bounds Probability* : ${confidence.toFixed(2)}%`}</p>
             </div>}
         </div>;
     }
@@ -179,6 +179,10 @@ const ForeChart: React.FC<ForeChartProps> = ({
                     name={`Lower Bound`}
                 /> </LineChart>
         </ResponsiveContainer>
+        {/* Explanation of confidence */}
+        <span className="text-sm text-gray-600">
+            * The likelihood that the true value lies within the upper bound and the lower bound
+        </span>
         {/* Explanation Chart */}
         {selectedExplanationData && selectedPoint !== null ? <div className="mt-4">
                 <h3 className="text-lg font-semibold mb-2 text-gray-800">
