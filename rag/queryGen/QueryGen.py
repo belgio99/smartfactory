@@ -320,9 +320,10 @@ class QueryGenerator:
             machines=elem[0]+"]"
             # transform the string containing the array of machines in an array of string
             machines = self._string_to_array(machines,"machines")
+            # machines == ["ALL"] and label == "predictions" => machines -: != ["ALL"/"NULL"]
             if machines == ["ALL"] and label == "predictions":
                 machines = self.machine_res
-            # machines == ["NULL/ALL"] => no usage of the Machine_Name key if label == "kpi_calc" only for ["NULL"] otherwise
+            # (machines != ["NULL"/"ALL"]) => complete json generation (standard behaviour)
             if  machines != ["NULL"] and machines != ["ALL"]:                
                 for machine, kpi in product(machines,kpis):
                     new_dict=obj.copy()
@@ -330,7 +331,7 @@ class QueryGenerator:
                     new_dict["KPI_Name"] = kpi
                     json_out.append(new_dict)
             else:
-                # only kpis names are added to json obj
+                # (machines == ["ALL"/"NULL"] and label == "kpi_calc") or (machines == ["NULL"] and label == "predictions") 
                 for kpi in kpis:
                     new_dict=obj.copy()
                     new_dict["KPI_Name"] = kpi
