@@ -43,7 +43,7 @@ const ForecastTooltip = ({active, payload, label, kpi}: any) => {
                         color: entry.stroke, // Match the line's color
                     }}
                 >
-                    {`${entry.name}: ${typeof entry.value === 'number' ? entry.value > 1 ? entry.value.toFixed(2) : entry.value.toExponential(2) : 'N/A'} ${kpi?.unit || ''}`}
+                    {`${entry.name}: ${typeof entry.value === 'number' ? entry.value >= 0.1 ? entry.value.toFixed(2) : entry.value.toExponential(2) : 'N/A'} ${kpi?.unit || ''}`}
                 </p>;
             })}
 
