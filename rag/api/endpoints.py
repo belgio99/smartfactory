@@ -171,7 +171,7 @@ async def ask_kpi_engine(json_body):
     """
     kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         try:
             response = await client.post(kpi_engine_url,json=json_body,headers=HEADER)
         except Exception as e:
@@ -208,7 +208,7 @@ async def ask_predictor_engine(json_body):
     """
     predictor_engine_url = "http://data-processing:8000/data-processing/predict" 
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
         try:
             response = await client.post(url=predictor_engine_url,json=json_body,headers=HEADER)
         except Exception as e:
