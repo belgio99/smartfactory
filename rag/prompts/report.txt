@@ -43,33 +43,47 @@ OUTPUT REPORT FORMAT:
 
 Description: [DESCRIPTION]
 
+
 -- MACHINE: [MACHINE_NAME] --
 
 Computed KPIs:
 
-KPI Name 1: [Aggregator_1]: [kpi_1_value_on_aggregator_1], [Aggregator_2]: [kpi_1_value_on_aggregator_2], ... 
-KPI Name 2: [Aggregator_1]: [kpi_2_value_on_aggregator_1], [Aggregator_2]: [kpi_2_value_on_aggregator_2], ... 
-Other KPIs...
+  KPI Name 1: [value_kpi_1]
+  KPI Name 2: [value_kpi_2]
+  Other KPIs...
 
 Forecasted KPIs:
+  KPI Name 1: 
+    - Value: [value_1_kpi_1] - Date: [prediction_date_1] 
+    - Value: [value_2_kpi_1] - Date: [prediction_date_2]
+    - other days predictions...
 
-KPI Name 1: Value: [value_kpi_1], Date: [PREDICTION_DATE]
-KPI Name 2: Value: [value_kpi_2], Date: [PREDICTION_DATE]
-Other KPIs...
+  KPI Name 2: 
+    - Value: [value_1_kpi_2] - Date: [prediction_date_1] 
+    - Value: [value_2_kpi_2] - Date: [prediction_date_2]
+    - other days predictions...
+  Other KPIs...
 
 -- MACHINE: [MACHINE_NAME] -- 
 
 Computed KPIs:
 
-KPI Name 1: [Aggregator_1]: [kpi_1_value_on_aggregator_1], [Aggregator_2]: [kpi_1_value_on_aggregator_2], ... 
-KPI Name 2: [Aggregator_1]: [kpi_2_value_on_aggregator_1], [Aggregator_2]: [kpi_2_value_on_aggregator_2], ... 
-Other KPIs...
+  KPI Name 1: [value_kpi_1]
+  KPI Name 2: [value_kpi_2]
+  Other KPIs...
 
 Forecasted KPIs:
 
-KPI Name 1: Value: [value_kpi_1], Date: [PREDICTION_DATE]
-KPI Name 2: Value: [value_kpi_2], Date: [PREDICTION_DATE]
-Other KPIs...
+  KPI Name 1: 
+    - Value: [value_1_kpi_1] - Date: [prediction_date_1] 
+    - Value: [value_2_kpi_1] - Date: [prediction_date_2]
+    - other days predictions...
+
+  KPI Name 2: 
+    - Value: [value_1_kpi_2] - Date: [prediction_date_1] 
+    - Value: [value_2_kpi_2] - Date: [prediction_date_2]
+    - other days predictions...
+  Other KPIs...
 
 Other machines...
 
@@ -99,5 +113,3 @@ REQUIREMENTS:
 
 CONTEXT: 
 {_CONTEXT_}
-
-
