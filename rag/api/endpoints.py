@@ -425,7 +425,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
 
         # Classify the question
-        label, json_body,all_kpis = prompt_classifier(question, userId)
+        label, json_body,all_kpis = prompt_classifier(question)
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(json_body),
