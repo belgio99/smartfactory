@@ -110,9 +110,9 @@ prompt_manager = PromptManager('prompts/')
 query_gen = QueryGenerator(llm)
 
 
-def prompt_classifier(input: Question, userId: str):
+def prompt_classifier(input: Question):
     """
-    Classifies an input prompt into a predefined category and generates the associated URL if needed.
+    Classifies an input prompt into a predefined category and generate if needed a json query to make requests to kpi engine and predictor.
     
     Args:
         input (Question): The user input question to be classified.
