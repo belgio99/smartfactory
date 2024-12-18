@@ -153,11 +153,7 @@ class ForecastExplainer:
         lower_bound = np.percentile(predictions, ((1 - confidence) / 2) * 100)
         upper_bound = np.percentile(predictions, (confidence + (1 - confidence) / 2) * 100)
 
-        # Compute the fraction of predictions within the interval
-        within_interval = np.sum((predictions >= lower_bound) & (predictions <= upper_bound))
-        probability_in_interval = within_interval / len(predictions)
-
-        return mean_pred, lower_bound, upper_bound, probability_in_interval
+        return mean_pred, lower_bound, upper_bound, confidence
 
     def explain_prediction(
         self,
