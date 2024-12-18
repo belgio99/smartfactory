@@ -1,11 +1,13 @@
+import os
+
 from dateutil.relativedelta import relativedelta
 from itertools import product
 from dotenv import load_dotenv
-import os
 from rdflib import Graph
+from datetime import datetime, timedelta
+
 # Load environment variables
 load_dotenv()
-from datetime import datetime, timedelta
 
 class QueryGenerator:
     """
