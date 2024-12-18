@@ -118,7 +118,7 @@ def prompt_classifier(input: Question):
         input (Question): The user input question to be classified.
     
     Returns:
-        tuple: A tuple containing the label and the extracted json_obj from the input (if applicable).
+        tuple: A tuple containing the label and the extracted json_obj from the input (if applicable) and an error log.
     """
 
     esempi = [
@@ -146,7 +146,7 @@ def prompt_classifier(input: Question):
     prompt = few_shot_prompt.format(text_input=input.userInput)
     label = llm.invoke(prompt).content.strip("\n")
     print(f"user input request label = {label}")
-    # If the label requires is kps_calc, report or predictions, it requires the query generator to generate a json_request from the query
+    # If the label is kps_calc, report or predictions, it requires the query generator to generate a json_request from the user input
     json_request=""
     all_kpis=0
     if label == "predictions" or label == "kpi_calc" or label == "report":
