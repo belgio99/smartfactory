@@ -84,15 +84,18 @@ const DataView: React.FC = () => {
     const [filters, setFilters] = useState<Filter>(new Filter('All', []));
     const [chartData, setChartData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
+    // Used to store the last used chart type and not sync the chart to the selected one before the new data is fetched
+    const [usedChartType, setUsedChartType] = useState('pie');
     // Function to fetch chart data with applied filters
 
     const fetchChartData = async () => {
         try {
             setLoading(true);
-
+            //sync the chart type with the last used one
+            setGraphType(usedChartType);
             // if one of the parameters is not set, return
             if (kpi && timeFrame && graphType && DataManager.getInstance().getMachineList()) {
-                const data = await fetchData(kpi, timeFrame, graphType, filters);
+                const data = await fetchData(kpi, timeFrame, usedChartType, filters);
                 setChartData(data);
             }
         } catch (e) {
@@ -109,8 +112,8 @@ const DataView: React.FC = () => {
                 setKpi={setKpi}
                 timeFrame={timeFrame}
                 setTimeFrame={setTimeFrame}
-                graphType={graphType}
-                setGraphType={setGraphType}
+                graphType={usedChartType}
+                setGraphType={setUsedChartType}
                 filters={filters}
                 setFilters={setFilters}
                 onGenerate={fetchChartData} // Fetch chart data when "Generate" button is clicked
