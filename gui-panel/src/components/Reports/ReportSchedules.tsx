@@ -73,7 +73,10 @@ const ReportSchedules: React.FC<ScheduleProps> = ({userId, username}) => {
             console.log("Loaded schedules:", loadedSchedules);
             setSchedules(loadedSchedules);
         };
-        fetchData();
+        fetchData().catch((error) => {
+            console.error("Failed to load schedules:", error);
+            setSchedules([]);
+        });
     }, []);
 
     const handleSaveSchedule = async (schedule: Partial<Schedule>) => {

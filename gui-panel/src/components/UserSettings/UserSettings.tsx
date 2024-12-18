@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { changePassword } from '../../api/ApiService';
-import { hashPassword } from '../../api/security/securityService';
+import React, {useState} from 'react';
+import {changePassword} from '../../api/ApiService';
+import {hashPassword} from '../../api/security/securityService';
 
 interface UserSettingsProps {
   userId: string;
@@ -19,8 +19,8 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
   const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const [firstName, setFirstName] = useState("John");
-  const [lastName, setLastName] = useState("Doe");
+  const [firstName, setFirstName] = useState(" ");
+  const [lastName, setLastName] = useState(" ");
 
   const handleSubmit = () => {
     // Send data to API
@@ -64,7 +64,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
       const hashedNewPassword = await hashPassword(newPassword);
       await changePassword(userId, hashedOldPassword, hashedNewPassword);
       console.log(userId, hashedOldPassword, hashedNewPassword);
-      //await changePassword(userId, username, token, role, site, await hashPassword(oldPassword), await hashPassword(newPassword));
+      await changePassword(userId, await hashPassword(oldPassword), await hashPassword(newPassword));
       setPasswordChangeSuccess(true);
       // Dopo un breve delay, chiudiamo il dialog
       setTimeout(() => {
@@ -129,6 +129,7 @@ const UserSettings: React.FC<UserSettingsProps> = ({ userId, username, token, ro
                 id="email"
                 className="w-fit p-3 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 defaultValue={email}
+                readOnly={true}
             />
           </div>
 

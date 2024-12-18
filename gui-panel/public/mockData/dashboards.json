@@ -1,87 +1,120 @@
-{"id": "root",
+{
+  "id": "root",
   "name": "",
-  "children":[
-  {
-    "id": "overview",
-    "name": "Overview Dashboard",
-    "views": [
-      {
-        "kpi": "consumption_avg",
-        "graph_type": "line"
-      },
-      {
-        "kpi": "bad_cycles_sum",
-        "graph_type": "barv"
-      },
-      {
-        "kpi": "offline_time_avg",
-        "graph_type": "donut"
-      },
-      {
-        "kpi": "good_cycles_avg",
-        "graph_type": "pie"
-      },
-      {
-        "kpi": "consumption_min",
-        "graph_type": "stacked_bar"
-      }
-    ]
-  },
-  {
-    "id": "testing",
-    "name": "Testing Dashboards",
-    "children": [
-      {
-        "id": "1",
-        "name": "Testboard #1",
-        "views": [
-          {
-            "kpi": "energy_cost_per_unit",
-            "graph_type": "hist"
-          },
-          {
-            "kpi": "consumption_max",
-            "graph_type": "scatter"
-          },
-          {
-            "kpi": "cost_max",
-            "graph_type": "area"
-          }
-        ]
-      },
-      {
-        "id": "pies",
-        "name": "Testboard #2",
-        "views": [
-          {
-            "kpi": "idle_time_avg",
-            "graph_type": "pie"
-          },
-          {
-            "kpi": "working_time_sum",
-            "graph_type": "donut"
-          }
-        ]
-      },
-      {
-        "id": "bars",
-        "name": "Testboard #3",
-        "views": [
-          {
-            "kpi": "machine_utilization_rate",
-            "graph_type": "barh"
-          },
-          {
-            "kpi": "consumption_min",
-            "graph_type": "stacked_bar"
-          },
-          {
-            "kpi": "cost_avg",
-            "graph_type": "barv"
-          }
-        ]
-      }
-    ]
-  }
-]
+  "children": [
+    {
+      "id": "overview",
+      "name": "Overview Dashboard",
+      "views": [
+        {
+          "kpi": "consumption_avg",
+          "graph_type": "line"
+        },
+        {
+          "kpi": "bad_cycles_sum",
+          "graph_type": "barv"
+        },
+        {
+          "kpi": "offline_time_avg",
+          "graph_type": "donut"
+        },
+        {
+          "kpi": "good_cycles_avg",
+          "graph_type": "pie"
+        },
+        {
+          "kpi": "consumption_min",
+          "graph_type": "stacked_bar"
+        }
+      ]
+    },
+    {
+      "id": "demo",
+      "name": "Demo Dashboards",
+      "children": [
+        {
+          "id": "machine_usage",
+          "name": "Machine Usage Dashboard",
+          "views": [
+            {
+              "kpi": "machine_utilization_rate",
+              "graph_type": "donut"
+            },
+            {
+              "kpi": "idle_time_sum",
+              "graph_type": "barh"
+            },
+            {
+              "kpi": "working_time_avg",
+              "graph_type": "line"
+            },
+            {
+              "kpi": "working_time_sum",
+              "graph_type": "area"
+            },
+            {
+              "kpi": "idle_time_avg",
+              "graph_type": "pie"
+            }
+          ]
+        },
+        {
+          "id": "energy_efficiency",
+          "name": "Energy Efficiency Dashboard",
+          "views": [
+            {
+              "kpi": "consumption_sum",
+              "graph_type": "line"
+            },
+            {
+              "kpi": "consumption_avg",
+              "graph_type": "line"
+            },
+            {
+              "kpi": "cost_sum",
+              "graph_type": "barv"
+            },
+            {
+              "kpi": "consumption_idle_avg",
+              "graph_type": "area"
+            },
+            {
+              "kpi": "energy_cost_per_unit",
+              "graph_type": "hist"
+            },
+            {
+              "kpi": "consumption_working_max",
+              "graph_type": "stacked_bar"
+            }
+          ]
+        },
+        {
+          "id": "production_performance",
+          "name": "Production Performance Dashboard",
+          "views": [
+            {
+              "kpi": "oee",
+              "graph_type": "donut"
+            },
+            {
+              "kpi": "throughput",
+              "graph_type": "line"
+            },
+            {
+              "kpi": "good_cycles_sum",
+              "graph_type": "barv"
+            },
+            {
+              "kpi": "bad_cycles_sum",
+              "graph_type": "barh"
+            },
+            {
+              "kpi": "availability",
+              "graph_type": "pie"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
