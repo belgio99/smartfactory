@@ -12,7 +12,7 @@ class Json_in_el(BaseModel):
     """
     Machine_Name: str
     KPI_Name: str
-    Date_prediction: int
+    Date_prediction: Optional[int] = None
 
 class Json_in(BaseModel):
     value: List[Json_in_el]

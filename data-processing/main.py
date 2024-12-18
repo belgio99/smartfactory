@@ -13,6 +13,7 @@ from api_auth.api_auth import get_verify_api_key
 from model import Json_out, Json_in, Json_out_el, LimeExplainationItem, Severity
 from dotenv import load_dotenv
 from pathlib import Path
+from typing import List
 
 
 async def task_scheduler():
@@ -53,10 +54,8 @@ async def task_scheduler():
         }
         send_dummy_alert(alert_data)
         i+=1
-        await asyncio.sleep(15)
+            
         # new_data_polling()
-        
-        # #send here a bunch of alerts
         # await asyncio.sleep(86400)
         
         # await asyncio.sleep(10)
@@ -84,23 +83,43 @@ app.add_middleware(
 env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
-# @app.get("/data-processing/load_model")
-# def test():
-#     return f_dataprocessing.load_model('Large Capacity Cutting Machine 1','consumption')
-
-# @app.get("/data-processing/test_model_save")
-# def test():
-#     return f_dataprocessing.characterize_KPI('Large Capacity Cutting Machine 1','consumption')
-
 # TEST CONNECTIONS
 @app.get("/data-processing/_public")
 def hello_world():
-    return retrieve_all_models_from_storage()
-    # return 'Hello public World :)'
+    return 'Hello public World :)'
 
 @app.get("/data-processing/_private")
 def hello_world(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
     return 'Hello private World :)'
+
+@app.get("/data-processing/retrieve_models")
+def retrieve_models(api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
+    """
+    print and return the list of the existing forecast models
+    """
+    availableModels = retrieve_all_models_from_storage()
+    print("The following models have already been created:")
+    for m in availableModels:
+        print(f"model for {m['MachineName']}, {m['KPI']}")
+    return availableModels
+
+@app.post("/data-processing/train_models")
+def train_selected_models(JSONS: Json_in,api_key: str = Depends(get_verify_api_key(["ai-agent","api-layer"]))):
+    """
+    Creates and trains the forecast model for the requested machines/KPIs
+
+    args:
+    JSONS: the list of machine/kpi the user wishes to use
+    """
+    n_models = len(JSONS.value)
+
+    print(f"Starting training for the {n_models} requested models. this may take a while...")
+    curr_model = 1
+    for json_in in JSONS.value:
+        f_dataprocessing.characterize_KPI(json_in.Machine_Name,json_in.KPI_Name )
+        print(f"{curr_model} model created of {n_models}")
+        curr_model+=1
+    print("all models created succesfully")
 
 # ACTUAL PREDICTIONS
 @app.post("/data-processing/predict", response_model = Json_out)
@@ -133,6 +152,7 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
     if len(JSONS.value) != 0:
         print(f"received a list of {len(JSONS.value)} KPIs to predict")
         for json_in in JSONS.value:
+            
             machine = json_in.Machine_Name#['Machine_Name'] #direttamente valore DB
             KPI_Name = json_in.KPI_Name#['KPI_Name']
             json_out_el = Json_out_el(
@@ -148,50 +168,54 @@ def predict(JSONS: Json_in, api_key: str = Depends(get_verify_api_key(["ai-agent
                 Error_message="",
                 Forecast=True
             )
-            API_key = os.getenv('my_key')
-            KPI_data = f_dataprocessing.kpi_exists(machine,KPI_Name, API_key)
-            if KPI_data['Status'] == 0:
-                print('the KPI exists')
-                if KPI_data['forecastable'] == True:
-                    print('the KPI is forecastable')
-                    horizon = json_in.Date_prediction#['Date_prediction']
-                    # today = datetime.datetime.now().date()
-                    # delta = req_date - today
-                    # horizon = delta.days() 
-                    if horizon > 0:
-                        
-                        status = 0
-                        if not f_dataprocessing.check_model_exists(machine,KPI_Name):
-                            print(f"Creating model for {machine},{KPI_Name}")
-                            status = f_dataprocessing.characterize_KPI(machine,KPI_Name)
-                        if status == 0:
-                            result = f_dataprocessing.make_prediction(machine, KPI_Name, horizon)
-                            print(f"the output data is: {result['Predicted_value']}")
+            if json_in.Date_prediction is not None:
 
-                            json_out_el.Predicted_value = result['Predicted_value']
-                            json_out_el.Lower_bound = result['Lower_bound']
-                            json_out_el.Upper_bound = result['Upper_bound']
-                            json_out_el.Measure_unit = KPI_data["unit_measure"]
-                            json_out_el.Confidence_score = result['Confidence_score']
+                API_key = os.getenv('my_key')
+                KPI_data = f_dataprocessing.kpi_exists(machine,KPI_Name, API_key)
+                if KPI_data['Status'] == 0:
+                    print('the KPI exists')
+                    if KPI_data['forecastable'] == True:
+                        print('the KPI is forecastable')
+                        horizon = json_in.Date_prediction#['Date_prediction']
+                        # today = datetime.datetime.now().date()
+                        # delta = req_date - today
+                        # horizon = delta.days() 
+                        if horizon > 0:
+                            
+                            status = 0
+                            if not f_dataprocessing.check_model_exists(machine,KPI_Name):
+                                print(f"Creating model for {machine},{KPI_Name}")
+                                status = f_dataprocessing.characterize_KPI(machine,KPI_Name)
+                            if status == 0:
+                                result = f_dataprocessing.make_prediction(machine, KPI_Name, horizon)
+                                print(f"the output data is: {result['Predicted_value']}")
 
-                            Lime_exp = []
-                            for exp in result['Lime_explaination']:
-                                Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
-                            json_out_el.Lime_explaination = Lime_exp
-                            json_out_el.Date_prediction = result['Date_prediction']  
-                        else:
-                            if status == -1:
-                                json_out_el.Error_message = 'Error: the time-series is constant, forecast is meaningless'
+                                json_out_el.Predicted_value = result['Predicted_value']
+                                json_out_el.Lower_bound = result['Lower_bound']
+                                json_out_el.Upper_bound = result['Upper_bound']
+                                json_out_el.Measure_unit = KPI_data["unit_measure"]
+                                json_out_el.Confidence_score = result['Confidence_score']
+
+                                Lime_exp = []
+                                for exp in result['Lime_explaination']:
+                                    Lime_exp.append([LimeExplainationItem(date_info=item[0], value=item[1]) for item in exp])
+                                json_out_el.Lime_explaination = Lime_exp
+                                json_out_el.Date_prediction = result['Date_prediction']  
                             else:
-                                json_out_el.Error_message = 'Error: could not preprocess the data'
+                                if status == -1:
+                                    json_out_el.Error_message = 'Error: the time-series is constant, forecast is meaningless'
+                                else:
+                                    json_out_el.Error_message = 'Error: could not preprocess the data'
 
+                        else:
+                            json_out_el.Error_message = 'Error: invalid selected date for forecast'
                     else:
-                        json_out_el.Error_message = 'Error: invalid selected date for forecast'
+                        json_out_el.Error_message = f'Error:, the KPI {KPI_Name} of {machine} is not forecastable' 
                 else:
-                   json_out_el.Error_message = f'Error:, the KPI {KPI_Name} of {machine} is not forecastable' 
+                    json_out_el.Error_message = f'Error:, the KPI {KPI_Name} does not exist for {machine}'
+                out_dicts.append(json_out_el)
             else:
-                json_out_el.Error_message = f'Error:, the KPI {KPI_Name} does not exist for {machine}'
-            out_dicts.append(json_out_el)
+                json_out_el.Error_message = f'Error:, no date received for the prediction'
         json_out = Json_out(
         value=out_dicts
         )
@@ -227,18 +251,15 @@ def new_data_polling():
 
         Returns:
     """
-    # query_body = {
-    #     "query": f"SELECT * FROM JSONS" #TODO make sure that it retrieves all jsons
-    # }
-    # response = f_dataprocessing.execute_druid_query(query_body)
-    # #TODO: link response to available models
-    # availableModels = []
-    availableModels = []
+    availableModels = retrieve_all_models_from_storage()
     for m in availableModels:
         f_dataprocessing.elaborate_new_datapoint(m['Machine_Name'], m['KPI_Name'])
-    print(datetime.datetime.today())
+
 
 def send_dummy_alert(alert_data):
+    """
+        send the specified alert for test purpose
+    """
     url_alert = f"http://api:8000/smartfactory/postAlert"
     API_key = os.getenv('my_key')
     f_dataprocessing.send_Alert(url_alert,alert_data,API_key)
