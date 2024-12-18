@@ -6,18 +6,58 @@ from rdflib import Graph
 # Load environment variables
 load_dotenv()
 from datetime import datetime, timedelta
-# the class is accessible only following the route of classified label == "kpi_calc" or label =="predictions", except for the query generation which also may be called with label == "report"
+
 class QueryGenerator:
+    """
+    A class to generate from the user input, queries to interact with other modules.
+
+    Every 'private' class method is called only with label == "kpi_calc" or label =="predictions".
+
+    Attributes:
+        ERROR_NO_KPIS (int): Error code indicating no KPIs were provided in a user request.
+        ERROR_ALL_KPIS (int): Error code indicating all KPIs were requested in a user request.
+        llm (object): Language model instance for processing user inputs.
+        TODAY (datetime): Reference date.
+
+    Methods:
+        _string_to_array(string, type): Parses a string into an array based on KB definitions.
+        _check_absolute_time_window(dates, label): Validates a time window and its consistency with the label.
+        _kb_update(): Updates the internal state of the KB with machine and KPI data.
+        _last_next_days(data, time, days): Calculates the date range for a given number of days.
+        _last_next_weeks(data, time, weeks): Calculates the date range for a given number of weeks.
+        _last_next_months(data, time, months): Calculates the date range for a given number of months.
+        _date_parser(date, label): Parses and validates a date or time window.
+        _json_parser(data, label): Converts processed data into a JSON-formatted structure.
+        query_generation(input, label): Generates a query based on user input and predefined rules.
+    """
     ERROR_NO_KPIS = 2
     ERROR_ALL_KPIS = 1
+
     def __init__(self, llm):
+        """
+        Initializes the QueryGenerator instance.
+
+        Args:
+            llm (object): Language model instance for processing user inputs.
+        """
         self.llm=llm
 
     def _string_to_array(self,string ,type):
-        # there are specific cases where llm may return kpis or machines which does not belong to the KB
-        # Example: Assembly machine 6 even tough is not in KB may be returned because 
-        # llm think it may be a typo but can't disambiguate between the Assembly machines actually in the KB
-        # this function doesn't returns the kpis/machines not in kb
+        """
+        Parses a string into an array of valid KPIs, machines or the special tokens ['ALL'] and ['NULL'].
+
+        There are specific cases where the llm may return kpis or machines which do not belong to the KB.
+        Example: 'Assembly machine 6' is not in KB but it may be returned as a match because llm 
+        may see it as a typo but because they are equally similar, the model can't disambiguate
+        between the different Assembly machines actually in the KB.
+
+        Args:
+            string (str): Input string to parse.
+            type (str): Type of entities to extract ("machines" or "kpis").
+
+        Returns:
+            list: Valid entities from the KB or the special values ['ALL'] or ['NULL'].
+        """
         string = string.strip("[]").split(", ")
         array = []
         for x in string:
@@ -26,7 +66,18 @@ class QueryGenerator:
                 array.append(x)
         return array
     
-    def _check_absolute_time_window(self,dates:datetime,label):
+    def _check_absolute_time_window(self, dates, label):
+        """
+        Validates with the respect to the userInput classification label, 
+        an absolute time window (exact dates, not relative to the current day) for consistency.
+
+        Args:
+            dates (list): the array of the two dates of the time window to be checked
+            label (str): Classification label ("kpi_calc" or "predictions").
+
+        Returns:
+            bool: True if the time window is valid, False otherwise.
+        """
         # the time window is 'dates[0] -> dates[1]', check if dates[0] < dates[1] and for some formatting error
         try: 
             start = datetime.strptime(dates[0], "%Y-%m-%d")
@@ -35,24 +86,34 @@ class QueryGenerator:
             return False
         if (end -start).days < 0:
             return False
-        # there are two delta due to a the following user case:
-        # TODAY is somewhere in the middle of april and the input is "predict/calculate X for the month of April 2024"
-        # rag has to calculate for only a fraction of the month
+        """
+        Due to the following user case the two delta variables are needed:
+        Example: "predict/calculate X for the month of April 2024"
+        If TODAY is somewhere in the middle of april, the query generator has to create a query
+        which calculate only a fraction of the month.
+        """
         delta_p = (end - self.TODAY).days
         delta_k = (start - self.TODAY).days
         if (delta_p > 0 and label == "predictions") or (delta_k < 0 and label == "kpi_calc"):
             return True
-        # time window not consistent with label or attempt to calculate/predict for Today
+        # time window not consistent with label or attempt to calculate/predict for TODAY
         return False
 
             
     def _kb_update(self):
         """
+        Updates the queryGen instance variables by checkin the current day and querying KB for available machines and KPIs.
+
+        Queries the knowledge base file specified in the environment variables and updates the 'TODAY',
+        `machine_res` and `kpi_res` instance variables with valid machine and KPI IDs.
+        """
+        # actual TODAY
+        """
         temp = datetime.now()
         self.TODAY = datetime(year=temp.year,month=temp.month,day=temp.day)
         """
-        #demo
-        self.TODAY = datetime(year= 2024,month=10,day=17)
+        # demo TODAY
+        self.TODAY = datetime(year= 2024,month=10,day=19)
         kpi_query= """
         PREFIX ontology: <http://www.semanticweb.org/raffi/ontologies/2024/10/sa-ontology#>
         SELECT ?id WHERE {
@@ -80,32 +141,82 @@ class QueryGenerator:
         for row in res:
             self.machine_res.append(str(row["id"]))
 
-    def _last_next_days(self,data,time,days):
+    def _last_next_days(self,date: datetime,time,days):
+        """
+        Calculates a time window based on the `time` parameter:
+        - If `time` is "last", it returns a time window starting from the ('days')-th day before 'date' to the day before 'date'.
+        - If `time` is "next", it returns a time window expressed as the number of days which occurs from the day after 'date' to the ('days')-th day after 'date'.
+
+        Args:
+            date (datetime): The reference date.
+            time (str): Specifies "last"(kpi engine) for past days or "next"(predictor) for future days.
+            days (int): The number of days that have passed/to pass from 'date' to the start/end of the time window.
+
+        Returns:
+            tuple: A tuple containing start and end dates as strings if time == "last",
+            the integer 'days' if time == "next" or an error message.
+        """
         if time == "last":
-            start = data - timedelta(days=days)
-            end = data - timedelta(days= 1)
+            start = date - timedelta(days=days)
+            end = date - timedelta(days= 1)
             return start.strftime('%Y-%m-%d'),end.strftime('%Y-%m-%d')
-        # time == next    
+        # time == 'next'   
         elif time == "next": 
             return days
         else: 
             return "INVALID DATE"
         
-    def _last_next_weeks(self,data,time,weeks):
+    def _last_next_weeks(self,date: datetime,time,weeks):
+        """
+        Calculates a time window based on the `time` parameter:
+        - If `time` is "last", it returns a time window starting from the first day of the ('weeks')-th past week (with the respect to the week containing 'date')
+        to the day before the one containing 'date'.
+        - If `time` is "next", it returns a time window expressed as the number of days which occurs from the day after 'date' 
+        to the last day of the ('weeks')-th week following the one containing date.
+
+        Args:
+            date (datetime): The reference date.
+            time (str): Specifies "last"(kpi engine) for past weeks or "next"(predictor) for future weeks.
+            weeks (int): The number of weeks that have passed/to pass from 'date' to the start/end of the time window.
+
+        Returns:
+            tuple: A tuple containing start and end dates as strings if time == "last",
+            the integer which express the number of days which occurs from the day after 'date'
+            to the last day of the ('weeks')-th week following the one containing date or
+            an error message.
+        """
         if time == "last":
-            # Calcola il giorno della settimana (0=Lunedì, 6=Domenica)
-            start = data - timedelta(days=(7 * weeks) +data.weekday())
-            end = data - timedelta(days= 1 +data.weekday())
+            # calculate the day of the week of 'date' (0=Lunedì, 6=Domenica)
+            start = date - timedelta(days=(7 * weeks) +date.weekday())
+            end = date - timedelta(days= 1 +date.weekday())
             return start.strftime('%Y-%m-%d'),end.strftime('%Y-%m-%d')
         # time == next    
         elif time == "next":
-            # 7 - data.weekday() -> monday of the following week
-            return (7 - data.weekday()) + 7 * weeks - 1
+            # 7 - date.weekday() -> monday of the following week
+            return (7 - date.weekday()) + 7 * weeks - 1
         else: 
             return "INVALID DATE"
         
-    def _last_next_months(self,data,time,months):
-        first_of_the_current_month= data - relativedelta(days= data.day-1)
+    def _last_next_months(self,date,time,months):
+        """
+        Calculates a time window based on the `time` parameter:
+        - If `time` is "last", it returns a time window starting from the first day of the ('months')-th past month (with the respect to the month containing 'date')
+        to the last day of the month before the one containing 'date'.
+        - If `time` is "next", it returns a time window expressed as the number of days which occurs from the day after 'date' 
+        to the last day of the ('months')-th month following the one containing date.
+
+        Args:
+            date (datetime): The reference date.
+            time (str): Specifies "last"(kpi engine) for past months or "next"(predictor) for future months.
+            months (int): The number of months that have passed/to pass from 'date' to the start/end of the time window.
+
+        Returns:
+            tuple: A tuple containing start and end dates as strings if time == "last",
+            the integer which express the number of days which occurs from the day after 'date' 
+            to the last day of the ('months')-th month following the one containing date or
+            an error message.
+        """
+        first_of_the_current_month= date - relativedelta(days= date.day-1)
         if time == "last":
             end_of_the_month = first_of_the_current_month - relativedelta(days=1)
             first_of_the_month = first_of_the_current_month - relativedelta(months= months)
@@ -114,14 +225,22 @@ class QueryGenerator:
         elif time == "next":
             first_of_the_month = first_of_the_current_month + relativedelta(months= 1)
             end_of_the_month = first_of_the_month + relativedelta(months= months) - relativedelta(days = 1)
-            return (end_of_the_month - data).days
+            return (end_of_the_month - date).days
         else: 
             return "INVALID DATE"   
         
     
-    # input: a time window outputted from the llm
-    # return: a time window in the required format
     def _date_parser(self,date,label):
+        """
+        Parses and validates a time window based on one retrieved from user input.
+
+        Args:
+            date (str): The user-specified time window (retrieved by the llm).
+            label (str): The user input classification label, either "kpi_calc" or "predictions".
+
+        Returns:
+            tuple or str: A valid time window or "INVALID DATE" if parsing fails.
+        """
         if date == "NULL": 
             # date not provided from the user => default action
             if label == "kpi_calc":
@@ -138,7 +257,7 @@ class QueryGenerator:
             if label == "predictions":
                 return delta
             if delta >= 0:
-                # the time window is only partially calculable because TODAY is within it
+                # the time window is only partially calculable because TODAY is contained in it
                 return temp[0], (self.TODAY- relativedelta(days=1)).strftime('%Y-%m-%d')
             return temp[0],temp[1]
         # relative time window
@@ -156,11 +275,16 @@ class QueryGenerator:
                 return self._last_next_months(self.TODAY,temp[0],temp[1])
         return "INVALID DATE"    
     
-    # input: 
-    #   data: output of llm invocation, in the format: OUTPUT: (query1), (query2), (query3)
-    #   label: classification label for the user input,
-    # output: json formatted string which will be sended to other modules, if all data is not valid the outbut will be {"value": []}
     def _json_parser(self, data, label):
+        """
+        Parses processed LLM output into JSON format to send it to kpi engine or predictor.
+
+        Args:
+            data (str): LLM output in the format: OUTPUT: (query1), (query2), (query3)
+            label (str): The user input classification label, either "kpi_calc" or "predictions".
+        Returns:
+            tuple: A JSON-compatible dictionary and an error code (if applicable).
+        """
         json_out= []
         all_kpis = 0
         data = data.replace("OUTPUT: ","")
@@ -168,12 +292,12 @@ class QueryGenerator:
         # for each elem in data, a dictionary (json obj) is created
         for elem in data:
             obj={}
-            # it is necessary to include ']' in the split because otherwise would also be included in the splitting, each element of the arrays
+            # it is necessary to include ']' to the split because otherwise it would also be included in the strings of the generated array
             elem = elem.split("], ")
             kpis=elem[1]+"]"
             kpis = self._string_to_array(kpis,"kpis")
             # a request is invalid if it misses the kpi field or if the user query mentions 'all' kpis to be calculate/predicted
-            # return also a log of the fact that the user cant' ask for all kpis
+            # return also an error log expressing the user inability to make a request asking for all kpis (or none)
             if kpis == ["ALL"]:
                 all_kpis = self.ERROR_ALL_KPIS
                 continue
@@ -196,9 +320,10 @@ class QueryGenerator:
             machines=elem[0]+"]"
             # transform the string containing the array of machines in an array of string
             machines = self._string_to_array(machines,"machines")
+            # machines == ["ALL"] and label == "predictions" => machines -: != ["ALL"/"NULL"]
             if machines == ["ALL"] and label == "predictions":
                 machines = self.machine_res
-            # machines == ["NULL/ALL"] => no usage of the Machine_Name key if label == "kpi_calc" only for ["NULL"] otherwise
+            # (machines != ["NULL"/"ALL"]) => complete json generation (standard behaviour)
             if  machines != ["NULL"] and machines != ["ALL"]:                
                 for machine, kpi in product(machines,kpis):
                     new_dict=obj.copy()
@@ -206,7 +331,7 @@ class QueryGenerator:
                     new_dict["KPI_Name"] = kpi
                     json_out.append(new_dict)
             else:
-                # only kpis names are added to json obj
+                # (machines == ["ALL"/"NULL"] and label == "kpi_calc") or (machines == ["NULL"] and label == "predictions") 
                 for kpi in kpis:
                     new_dict=obj.copy()
                     new_dict["KPI_Name"] = kpi
@@ -219,7 +344,22 @@ class QueryGenerator:
 
     def query_generation(self,input= "predict idle time max, cost wrking sum and good cycles min for last week for all the medium capacity cutting machine, predict the same kpis for Laser welding machines 2 for today. calculate the cnsumption_min for next 4 month and for Laser cutter the offline time sum for last 23 day. "
 , label="kpi_calc"):
+        """
+        Generates a json query for calculating and predicting KPIs for machines based on user input.
         
+        This method processes the user input: an llm matches machine and KPI identifiers from the KB and retrieve from the input
+        usefull data to generate a formatted query that can be used as a request to the predictor and kpi engine.
+
+        Arguments:
+            - input (str): The user input
+            - label (str): The user input classification label, either "kpi_calc" or "predictions" or "report".
+
+        Returns:
+            - A tuple containing two elements:
+                1. If the label is 'report', a list with two dictionaries representing the json parsed results based on the user input.
+                2. If the label is 'kpi_calc' or 'predictions', a single dictionary representing the json parsed result based on the user input.
+        """
+
         self._kb_update()
         YESTERDAY = f"{(self.TODAY-relativedelta(days=1)).strftime('%Y-%m-%d')} -> {(self.TODAY-relativedelta(days=1)).strftime('%Y-%m-%d')}"
         query= f"""
@@ -318,7 +458,7 @@ class QueryGenerator:
             data= data.strip("()").split("), (")
             # for each elem in data, a dictionary (json obj) is created
             for elem in data:
-                # it is necessary to include ']' in the split because otherwise would also be included in the splitting, each element of the arrays
+                # it is necessary to include ']' to the split because otherwise it would also be included in the strings of the generated array
                 elem = elem.split("], ")
                 kpis=elem[1]+"]"
                 machines=elem[0]+"]"

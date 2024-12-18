@@ -110,9 +110,9 @@ prompt_manager = PromptManager('prompts/')
 query_gen = QueryGenerator(llm)
 
 
-def prompt_classifier(input: Question, userId: str):
+def prompt_classifier(input: Question):
     """
-    Classifies an input prompt into a predefined category and generates the associated URL if needed.
+    Classifies an input prompt into a predefined category and generate if needed a json query to make requests to kpi engine and predictor.
     
     Args:
         input (Question): The user input question to be classified.
@@ -171,7 +171,7 @@ async def ask_kpi_engine(json_body):
     """
     kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         try:
             response = await client.post(kpi_engine_url,json=json_body,headers=HEADER)
         except Exception as e:
@@ -208,7 +208,7 @@ async def ask_predictor_engine(json_body):
     """
     predictor_engine_url = "http://data-processing:8000/data-processing/predict" 
     
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=httpx.Timeout(20.0)) as client:
         try:
             response = await client.post(url=predictor_engine_url,json=json_body,headers=HEADER)
         except Exception as e:
@@ -425,7 +425,7 @@ async def ask_question(question: Question): # to add or modify the services allo
         print(f"Question Language: {question_language} - Translated Question: {question.userInput}")
 
         # Classify the question
-        label, json_body,all_kpis = prompt_classifier(question, userId)
+        label, json_body,all_kpis = prompt_classifier(question)
         # Mapping of handlers
         handlers = {
             'predictions': lambda: handle_predictions(json_body),
