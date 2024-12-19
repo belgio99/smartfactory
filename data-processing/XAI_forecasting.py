@@ -207,7 +207,8 @@ class ForecastExplainer:
         exp = explainer.explain_instance(
             input_data_flat,
             predict_fn,
-            num_features=num_features
+            num_features=num_features,
+            num_samples=1000
         )
 
         explanation = exp.as_list()
