@@ -127,10 +127,10 @@ class ForecastExplainer:
 
         Returns:
             Tuple[float, float, float, float]: A tuple containing:
-                mean_pred (float): Mean of bootstrap predictions
-                lower_bound (float): Lower bound of the confidence interval
-                upper_bound (float): Upper bound of the confidence interval
-                probability_in_interval (float): Fraction of predictions within the confidence interval
+                mean_pred (float): Mean of bootstrap predictions.
+                lower_bound (float): Lower bound of the confidence interval.
+                upper_bound (float): Upper bound of the confidence interval.
+                confidence (float): The confidence level used for the interval.
         """
         # Scale noise with step to reflect increasing uncertainty
         bootstrap_noise_std = self.bootstrap_noise_std_base * (1 + step)
@@ -245,12 +245,12 @@ class ForecastExplainer:
 
         Returns:
             dict: A dictionary containing:
-                'Predicted_value' (List[float]): List of predicted values
-                'Lower_bound' (List[float]): List of lower bounds
-                'Upper_bound' (List[float]): List of upper bounds
-                'Confidence_score' (List[float]): List of probabilities within the interval
-                'Lime_explaination' (List[List[Tuple[str,float]]]): LIME explanations per step
-                'Date_prediction' (List[str]): Predicted date labels for each step
+                'Predicted_value' (List[float]): List of predicted values.
+                'Lower_bound' (List[float]): List of lower bounds.
+                'Upper_bound' (List[float]): List of upper bounds.
+                'Confidence_score' (List[float]): List of confidence levels used.
+                'Lime_explaination' (List[List[Tuple[str,float]]]): LIME explanations per step.
+                'Date_prediction' (List[str]): Predicted date labels for each step.
         """
         if isinstance(input_data, torch.Tensor):
             input_data = input_data.detach().cpu().numpy()
@@ -266,8 +266,8 @@ class ForecastExplainer:
         current_labels = input_labels.copy()
 
         for i in range(n_predictions):
-            # Compute uncertainties and probability in interval
-            mean_pred, lower_bound, upper_bound, probability_in_interval = self.predict_with_uncertainty(
+            # Compute uncertainties
+            mean_pred, lower_bound, upper_bound, confidence_level = self.predict_with_uncertainty(
                 current_input, n_samples=n_samples, confidence=confidence, step=i
             )
             # Compute raw prediction
@@ -281,7 +281,7 @@ class ForecastExplainer:
             predicted_values.append(final_pred)
             lower_bounds.append(lower_bound)
             upper_bounds.append(upper_bound)
-            confidence_scores.append(probability_in_interval)
+            confidence_scores.append(confidence_level)
             lime_explanations.append(explanation)
 
             # Update the input_data and labels for the next step
