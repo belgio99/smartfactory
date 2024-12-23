@@ -264,7 +264,7 @@ class ForecastExplainer:
         input_data: Union[np.ndarray, torch.Tensor],
         n_predictions: int,
         input_labels: List[str],
-        num_features: int = 10,
+        num_features: int = 5,
         confidence: float = 0.95,
         n_samples: int = 100,
         use_mean_pred: bool = False
