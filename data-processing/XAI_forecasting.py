@@ -14,7 +14,7 @@ class ForecastExplainer:
         self,
         model: Any,
         training_data: Union[np.ndarray, torch.Tensor],
-        training_outputs: Union[np.ndarray, torch.Tensor],
+        training_outputs: Union[np.ndarray, torch.Tensor] = None,  # Made optional with default None
         use_residuals: bool = False,
         device: torch.device = None
     ):
@@ -25,14 +25,18 @@ class ForecastExplainer:
             model (Any): A trained forecasting model (PyTorch nn.Module or sklearn/xgboost model).
             training_data (Union[np.ndarray, torch.Tensor]): Training data of shape (num_samples, seq_length).
                 Only used for LIME explanations and residuals mode.
-            training_outputs (Union[np.ndarray, torch.Tensor]): Training outputs of shape (num_samples,).
-                Only used for residuals mode.
+            training_outputs (Union[np.ndarray, torch.Tensor], optional): Training outputs of shape (num_samples,).
+                Required only when use_residuals is True. Defaults to None.
             use_residuals (bool): Whether to calculate bounds using residuals. Default is False.
             device (torch.device, optional): Device to run the model on (CPU or GPU). If None, it is auto-selected.
 
         Raises:
-            None
+            ValueError: If use_residuals is True but training_outputs is None.
         """
+        # Check if training_outputs is provided when use_residuals is True
+        if use_residuals and training_outputs is None:
+            raise ValueError("training_outputs must be provided when use_residuals is True")
+
         self.model = model
         self.device = device or (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
         self.use_residuals = use_residuals
@@ -40,7 +44,7 @@ class ForecastExplainer:
         # Convert training_data and training_outputs to numpy arrays if they're tensors
         if isinstance(training_data, torch.Tensor):
             training_data = training_data.detach().cpu().numpy()
-        if isinstance(training_outputs, torch.Tensor):
+        if isinstance(training_outputs, torch.Tensor) and training_outputs is not None:
             training_outputs = training_outputs.detach().cpu().numpy()
 
         self.training_data = training_data
