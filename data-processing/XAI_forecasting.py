@@ -14,44 +14,66 @@ class ForecastExplainer:
         self,
         model: Any,
         training_data: Union[np.ndarray, torch.Tensor],
+        training_outputs: Union[np.ndarray, torch.Tensor] = None,  # Made optional with default None
+        use_residuals: bool = False,
         device: torch.device = None
     ):
         """
         Initialize the ForecastExplainer.
 
-        This class handles both PyTorch (nn.Module) and sklearn/xgboost type models.
-        It provides methods to:
-        - Predict future values given a sequence.
-        - Estimate uncertainty via bootstrapping.
-        - Explain predictions using LIME.
-
         Args:
             model (Any): A trained forecasting model (PyTorch nn.Module or sklearn/xgboost model).
             training_data (Union[np.ndarray, torch.Tensor]): Training data of shape (num_samples, seq_length).
+                Only used for LIME explanations and residuals mode.
+            training_outputs (Union[np.ndarray, torch.Tensor], optional): Training outputs of shape (num_samples,).
+                Required only when use_residuals is True. Defaults to None.
+            use_residuals (bool): Whether to calculate bounds using residuals. Default is False.
             device (torch.device, optional): Device to run the model on (CPU or GPU). If None, it is auto-selected.
 
-        Globals:
-            None
-
         Raises:
-            None
-
-        Returns:
-            None
+            ValueError: If use_residuals is True but training_outputs is None.
         """
+        # Check if training_outputs is provided when use_residuals is True
+        if use_residuals and training_outputs is None:
+            raise ValueError("training_outputs must be provided when use_residuals is True")
+
         self.model = model
         self.device = device or (torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu'))
+        self.use_residuals = use_residuals
 
-        # Convert training_data to numpy array if it's a tensor
+        # Convert training_data and training_outputs to numpy arrays if they're tensors
         if isinstance(training_data, torch.Tensor):
             training_data = training_data.detach().cpu().numpy()
-        self.training_data = training_data
+        if isinstance(training_outputs, torch.Tensor) and training_outputs is not None:
+            training_outputs = training_outputs.detach().cpu().numpy()
 
+        self.training_data = training_data
+        self.training_outputs = training_outputs
         self.num_samples, self.seq_length = self.training_data.shape
 
-        # Compute baseline noise std from training data variability
-        data_std = np.std(self.training_data)
-        self.bootstrap_noise_std_base = 0.05 * data_std if data_std > 0 else 0.001
+        # Compute residuals if the residuals mode is selected
+        if self.use_residuals:
+            self.residuals = self.calculate_residuals()
+
+    def calculate_residuals(self) -> np.ndarray:
+        """
+        Calculate residuals between the model's predictions on the training data and the actual training outputs.
+        
+        Returns:
+            np.ndarray: Residuals of shape (num_samples,).
+        """
+        if isinstance(self.model, nn.Module):
+            # For PyTorch models, predict in batches
+            inputs_tensor = torch.from_numpy(self.training_data.reshape(self.num_samples, self.seq_length, 1)).float().to(self.device)
+            self.model.eval()
+            with torch.no_grad():
+                predictions = self.model(inputs_tensor).cpu().numpy().flatten()
+        else:
+            # For sklearn/xgboost models, predict directly on the entire dataset
+            predictions = self.model.predict(self.training_data).flatten()
+        
+        residuals = self.training_outputs - predictions
+        return residuals
 
     def predict(self, input_data: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
         """
@@ -105,55 +127,78 @@ class ForecastExplainer:
         step: int = 0
     ) -> Tuple[float, float, float, float]:
         """
-        Make a prediction with uncertainty estimation via bootstrapping.
+        Make a prediction with uncertainty estimation.
 
-        For PyTorch models:
-        - All perturbed samples are passed in a single batch through the model.
+        Two modes of operation:
+        1. Residuals mode (use_residuals=True):
+           - Uses historical residuals to compute standard deviation
+           - Applies z-scores based on confidence level
+           - Scales uncertainty with square root of horizon
 
-        For sklearn/xgboost models:
-        - The entire perturbed batch is predicted at once using model.predict.
+        2. Bootstrap mode (use_residuals=False):
+           - Uses only the current input sequence variability
+           - Generates perturbed versions of input data
+           - Runs model predictions on perturbed inputs
+           - Calculates bounds from distribution of predictions
 
         Args:
             input_data (np.ndarray): The input sequence of shape (seq_length,).
-            n_samples (int, optional): Number of bootstrap samples. Default is 100.
+            n_samples (int, optional): Number of bootstrap samples/perturbed inputs. Default is 100.
             confidence (float, optional): Confidence level for the interval (e.g. 0.95 for 95%). Default is 0.95.
-            step (int, optional): The step number in the autoregressive forecasting sequence. Default is 0.
-
-        Globals:
-            None
-
-        Raises:
-            None
+            step (int, optional): The step number in the autoregressive sequence, used for uncertainty scaling. Default is 0.
 
         Returns:
             Tuple[float, float, float, float]: A tuple containing:
-                mean_pred (float): Mean of bootstrap predictions.
+                mean_pred (float): Mean prediction (raw prediction in residuals mode, bootstrap mean in bootstrap mode).
                 lower_bound (float): Lower bound of the confidence interval.
                 upper_bound (float): Upper bound of the confidence interval.
-                confidence (float): The confidence level used for the interval.
+                confidence (float): Confidence level used for the interval.
         """
-        # Scale noise with step to reflect increasing uncertainty
-        bootstrap_noise_std = self.bootstrap_noise_std_base * (1 + step)
+        mean_pred = self.predict(input_data)[0]
 
-        perturbed_inputs = np.repeat(input_data.reshape(1, -1), n_samples, axis=0) 
-        perturbed_inputs += np.random.normal(0, bootstrap_noise_std, size=perturbed_inputs.shape)
+        # Scale uncertainty with prediction horizon ("Square Root of Time" rule in volatility scaling)
+        uncertainty_scale = np.sqrt(1 + step)  # Square root growth of uncertainty
 
-        if isinstance(self.model, nn.Module):
-            # PyTorch model: run batch through model
-            inputs_tensor = torch.from_numpy(perturbed_inputs.reshape(n_samples, self.seq_length, 1)).float().to(self.device)
-            self.model.eval()
-            with torch.no_grad():
-                predictions = self.model(inputs_tensor).cpu().numpy().flatten()
+        if self.use_residuals:
+            # Calculate statistics of residuals
+            residual_std = np.std(self.residuals)
+            
+            # Calculate z-score for the desired confidence interval
+            # For example, for 95% confidence, z_score ≈ 1.96
+            z_score = np.abs(np.percentile(np.random.standard_normal(10000), 
+                                         [((1-confidence)/2)*100, (1-(1-confidence)/2)*100]))
+            
+            # Calculate bounds
+            lower_bound = mean_pred - z_score[0] * residual_std * uncertainty_scale
+            upper_bound = mean_pred + z_score[1] * residual_std * uncertainty_scale
+
         else:
-            # sklearn/xgboost model: predict directly on batch
-            predictions = self.model.predict(perturbed_inputs)
+            # Compute noise std from current input sequence
+            bootstrap_noise_std_base = np.std(input_data)
 
-        predictions = np.array(predictions)
-        mean_pred = predictions.mean()
-        lower_bound = np.percentile(predictions, ((1 - confidence) / 2) * 100)
-        upper_bound = np.percentile(predictions, (confidence + (1 - confidence) / 2) * 100)
+            # Scale noise with step to reflect increasing uncertainty
+            bootstrap_noise_std = bootstrap_noise_std_base * uncertainty_scale
+
+            perturbed_inputs = np.repeat(input_data.reshape(1, -1), n_samples, axis=0) 
+            perturbed_inputs += np.random.normal(0, bootstrap_noise_std, size=perturbed_inputs.shape)
+
+            if isinstance(self.model, nn.Module):
+                # PyTorch model: run batch through model
+                inputs_tensor = torch.from_numpy(perturbed_inputs.reshape(n_samples, self.seq_length, 1)).float().to(self.device)
+                self.model.eval()
+                with torch.no_grad():
+                    predictions = self.model(inputs_tensor).cpu().numpy().flatten()
+            else:
+                # sklearn/xgboost model: predict directly on batch
+                predictions = self.model.predict(perturbed_inputs)
+
+            predictions = np.array(predictions)
+            lower_bound = np.percentile(predictions, ((1 - confidence) / 2) * 100)
+            upper_bound = np.percentile(predictions, (confidence + (1 - confidence) / 2) * 100)
+            mean_pred = np.mean(predictions)
 
         return mean_pred, lower_bound, upper_bound, confidence
+
 
     def explain_prediction(
         self,
@@ -219,7 +264,7 @@ class ForecastExplainer:
         input_data: Union[np.ndarray, torch.Tensor],
         n_predictions: int,
         input_labels: List[str],
-        num_features: int = 10,
+        num_features: int = 5,
         confidence: float = 0.95,
         n_samples: int = 100,
         use_mean_pred: bool = False
@@ -227,7 +272,13 @@ class ForecastExplainer:
         """
         Perform autoregressive prediction and explanation for n_predictions steps.
 
-        Each predicted step updates the input sequence and labels.
+        Uncertainty bounds are calculated differently based on use_residuals:
+        - If True: Uses residuals and z-scores with square root time scaling
+        - If False: Uses bootstrap sampling of perturbed inputs
+
+        The prediction used for the next step can be either:
+        - Bootstrap mean prediction if use_mean_pred=True (only affects bootstrap mode)
+        - Raw model prediction if use_mean_pred=False
 
         Args:
             input_data (Union[np.ndarray, torch.Tensor]): Initial input sequence of shape (seq_length,).
@@ -236,7 +287,9 @@ class ForecastExplainer:
             num_features (int, optional): Number of features for LIME explanation. Default is 10.
             confidence (float, optional): Confidence level for interval estimation. Default is 0.95.
             n_samples (int, optional): Number of bootstrap samples for uncertainty estimation. Must be >=100 for meaningful confidence. Default is 100.
-            use_mean_pred (bool, optional): If True, use mean of bootstrap predictions as final prediction; else use raw prediction. Default is False.
+            use_mean_pred (bool, optional): If True and in bootstrap mode, use mean of bootstrap 
+                                          predictions as final prediction; else use raw prediction. 
+                                          Has no effect in residuals mode. Default is False.
 
         Globals:
             None
@@ -314,15 +367,9 @@ def main():
     - Trains an XGBoost model for forecasting.
     - Instantiates ForecastExplainer (which internally creates a LimeTabularExplainer).
     - Uses the ForecastExplainer to predict and explain forecast steps.
-    - Plots the results.
+    - Plots the results for both bootstrap mode and residual-based bounds.
 
     Args:
-        None
-
-    Globals:
-        None
-
-    Raises:
         None
 
     Returns:
@@ -336,15 +383,15 @@ def main():
     # Generate a sine wave
     total_points = 300
     seq_length = 50
-    t = np.linspace(0, 10*np.pi, total_points)
+    t = np.linspace(0, 10 * np.pi, total_points)
     data = np.sin(t) + np.random.normal(0, 0.05, size=total_points)
 
     # Prepare training data for XGBoost: predict next value from last seq_length values
     X_train = []
     y_train = []
     for i in range(total_points - seq_length - 1):
-        X_train.append(data[i:i+seq_length])
-        y_train.append(data[i+seq_length])
+        X_train.append(data[i:i + seq_length])
+        y_train.append(data[i + seq_length])
 
     X_train = np.array(X_train)
     y_train = np.array(y_train)
@@ -361,12 +408,10 @@ def main():
     start_date = datetime(2020, 1, 1)
     input_labels = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(seq_length)]
 
-    start_time = time.time()
-    # Initialize the explainer
-    explainer = ForecastExplainer(model, X_train)
-
-    # Perform autoregressive predictions
-    results = explainer.predict_and_explain(
+    # Bootstrap mode
+    start_time_bootstrap = time.time()
+    explainer_bootstrap = ForecastExplainer(model, X_train, y_train, use_residuals=False)
+    results_bootstrap = explainer_bootstrap.predict_and_explain(
         input_data=input_data,
         n_predictions=n_predictions,
         input_labels=input_labels,
@@ -375,40 +420,54 @@ def main():
         n_samples=100,
         use_mean_pred=False
     )
+    end_time_bootstrap = time.time()
 
-    end_time = time.time()
+    # Residuals mode
+    start_time_residuals = time.time()
+    explainer_residuals = ForecastExplainer(model, X_train, y_train, use_residuals=True)
+    results_residuals = explainer_residuals.predict_and_explain(
+        input_data=input_data,
+        n_predictions=n_predictions,
+        input_labels=input_labels,
+        num_features=5,
+        confidence=0.95,
+        n_samples=100,
+        use_mean_pred=False
+    )
+    end_time_residuals = time.time()
 
-    print("Results:")
-    for key, val in results.items():
-        if key == 'Lime_explaination':
-            print(f"{key}:")
-            for step, expl in enumerate(val):
-                print(f"  Step {step+1}: {expl}")
-        else:
-            print(f"{key}: {val}")
-
-    # Plot the results as three separate lines
-    predicted_values = results['Predicted_value']
-    lower_bounds = results['Lower_bound']
-    upper_bounds = results['Upper_bound']
-
+    # Plot the results as subplots in the same figure
     time_indices = np.arange(len(input_data), len(input_data) + n_predictions)
+    
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
+    
+    # Bootstrap mode subplot
+    ax1.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
+    ax1.plot(time_indices, results_bootstrap['Predicted_value'], 'r-', label='Predicted value')
+    ax1.plot(time_indices, results_bootstrap['Lower_bound'], 'g--', label='Lower bound')
+    ax1.plot(time_indices, results_bootstrap['Upper_bound'], 'b--', label='Upper bound')
+    ax1.set_title("Forecasting with Bootstrap Mode")
+    ax1.set_xlabel("Time Steps")
+    ax1.set_ylabel("Value")
+    ax1.grid(True)
+    ax1.legend()
 
-    plt.figure(figsize=(10,6))
-    plt.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
-    plt.plot(time_indices, predicted_values, 'r-', label='Predicted value')
-    plt.plot(time_indices, lower_bounds, 'g--', label='Lower bound')
-    plt.plot(time_indices, upper_bounds, 'b--', label='Upper bound')
+    # Residuals mode subplot
+    ax2.plot(np.arange(len(input_data)), input_data, label='Input Data', marker='o')
+    ax2.plot(time_indices, results_residuals['Predicted_value'], 'r-', label='Predicted value')
+    ax2.plot(time_indices, results_residuals['Lower_bound'], 'g--', label='Lower bound')
+    ax2.plot(time_indices, results_residuals['Upper_bound'], 'b--', label='Upper bound')
+    ax2.set_title("Forecasting with Residuals Mode")
+    ax2.set_xlabel("Time Steps")
+    ax2.set_ylabel("Value")
+    ax2.grid(True)
+    ax2.legend()
 
-    plt.title("Forecasting with XGBoost and Empirical Probability in Interval")
-    plt.xlabel("Time Steps")
-    plt.ylabel("Value")
-    plt.grid(True)
-    plt.legend()
+    plt.tight_layout()  # Adjust spacing between subplots
     plt.show()
 
-    print(f"Time taken: {end_time - start_time:.2f} seconds")
-
+    print(f"Time taken (Bootstrap Mode): {end_time_bootstrap - start_time_bootstrap:.2f} seconds")
+    print(f"Time taken (Residuals Mode): {end_time_residuals - start_time_residuals:.2f} seconds")
 
 if __name__ == '__main__':
     main()
