@@ -24,7 +24,7 @@ class ForecastExplainer:
         Args:
             model (Any): A trained forecasting model (PyTorch nn.Module or sklearn/xgboost model).
             training_data (Union[np.ndarray, torch.Tensor]): Training data of shape (num_samples, seq_length).
-                Only used for LIME explanations and residuals mode.
+                Used for LIME explanations, residuals mode, and bootstrap noise estimation.
             training_outputs (Union[np.ndarray, torch.Tensor], optional): Training outputs of shape (num_samples,).
                 Required only when use_residuals is True. Defaults to None.
             use_residuals (bool): Whether to calculate bounds using residuals. Default is False.
@@ -51,9 +51,12 @@ class ForecastExplainer:
         self.training_outputs = training_outputs
         self.num_samples, self.seq_length = self.training_data.shape
 
-        # Compute residuals if the residuals mode is selected
+        # Calculate and store training data statistics based on the selected mode
         if self.use_residuals:
             self.residuals = self.calculate_residuals()
+        else:
+            # Pre-calculate training data std for bootstrap mode
+            self.training_std = np.std(self.training_data)
 
     def calculate_residuals(self) -> np.ndarray:
         """
@@ -136,7 +139,8 @@ class ForecastExplainer:
            - Scales uncertainty with square root of horizon
 
         2. Bootstrap mode (use_residuals=False):
-           - Uses only the current input sequence variability
+           - Uses pre-calculated training data standard deviation
+           - Scales noise with prediction horizon
            - Generates perturbed versions of input data
            - Runs model predictions on perturbed inputs
            - Calculates bounds from distribution of predictions
@@ -173,11 +177,8 @@ class ForecastExplainer:
             upper_bound = mean_pred + z_score[1] * residual_std * uncertainty_scale
 
         else:
-            # Compute noise std from current input sequence
-            bootstrap_noise_std_base = np.std(input_data)
-
-            # Scale noise with step to reflect increasing uncertainty
-            bootstrap_noise_std = bootstrap_noise_std_base * uncertainty_scale
+            # Use pre-calculated training data std and scale it with step
+            bootstrap_noise_std = self.training_std * uncertainty_scale
 
             perturbed_inputs = np.repeat(input_data.reshape(1, -1), n_samples, axis=0) 
             perturbed_inputs += np.random.normal(0, bootstrap_noise_std, size=perturbed_inputs.shape)
