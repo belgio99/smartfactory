@@ -1,10 +1,13 @@
 import random
 import time
-from datetime import datetime, timedelta
-#from kafka import KafkaProducer
-import argparse
+from datetime import datetime
+from kafka import KafkaProducer
 import json
 import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Mapping of machines to unique asset IDs
 machine_to_asset_id = {
@@ -45,11 +48,15 @@ def generate_kpi_values():
 # Function to generate logs
 def generate_logs(interval_seconds, kafka_topic):
     kafka_server = os.getenv('KAFKA_SERVER', 'localhost:9092')
+    kafka_topic = os.getenv('TOPIC', 'machine_logs')
+    interval_seconds = int(os.getenv('INTERVAL', 5))
 
-    #producer = KafkaProducer(
-    #    bootstrap_servers=kafka_server,
-    #    value_serializer=lambda v: json.dumps(v).encode('utf-8')
-    #)
+    producer = KafkaProducer(
+        bootstrap_servers=kafka_server,
+        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    )
+
+    print(f"Generating logs every {interval_seconds} seconds. Sending to Kafka topic '{kafka_topic}' using server '{kafka_server}'. Press Ctrl+C to stop.")
 
     while True:
         current_time = datetime.now()
@@ -67,21 +74,13 @@ def generate_logs(interval_seconds, kafka_topic):
                     "max": kpi_values['max']
                 }
                 print(log_entry)
-                #producer.send(kafka_topic, log_entry)
+                producer.send(kafka_topic, log_entry)
 
         time.sleep(interval_seconds)
 
-# Example usage
+# Main script entry point
 if __name__ == "__main__":
-
-    # Command-line arguments parsing
-    parser = argparse.ArgumentParser(description="Generate machine logs and send to Kafka topic.")
-    parser.add_argument('--interval', type=int, required=True, help="Number of seconds between logs.")
-    parser.add_argument('--topic', type=str, required=True, help="Kafka topic to send logs to.")
-    args = parser.parse_args()
-
-    print(f"Generating logs every {args.interval} seconds. Sending to Kafka topic '{args.topic}' using server from environment variable. Press Ctrl+C to stop.")
     try:
-        generate_logs(args.interval, args.topic)
+        generate_logs()
     except KeyboardInterrupt:
         print("Log generation stopped.")
