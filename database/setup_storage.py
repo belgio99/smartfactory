@@ -22,8 +22,11 @@ def run_script(script_path, description):
         ], check=True, capture_output=True, text=True)
         print(f"Output:\n{result.stdout}")
     except subprocess.CalledProcessError as e:
-        print(f"Error during: {description}\n{e.stderr}")
-        exit(1)
+        if "Topic already exists" in e.stderr or "already exists" in e.stdout:
+            print(f"Info during {description}: Topic already exists.")
+        else:
+            print(f"Error during {description}\n{e.stderr}")
+            exit(1)
 
 def main():
     """

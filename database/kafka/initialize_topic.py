@@ -1,5 +1,6 @@
 import subprocess
 import os
+import sys
 from dotenv import load_dotenv
 from pathlib import Path
 from confluent_kafka.admin import AdminClient, NewTopic
@@ -20,6 +21,12 @@ def create_kafka_topic(topic_name, bootstrap_server):
         SystemExit: If the topic creation fails.
     """
     admin_client = AdminClient({"bootstrap.servers": bootstrap_server})
+
+    # Check if the topic already exists
+    existing_topics = admin_client.list_topics(timeout=10).topics
+    if topic_name in existing_topics:
+        print(f"Topic {topic_name} already exists. Skipping creation.")
+        sys.exit(0)
     
     topic_list = [NewTopic(topic_name, num_partitions=1, replication_factor=1)]
     future = admin_client.create_topics(topic_list)
@@ -29,11 +36,13 @@ def create_kafka_topic(topic_name, bootstrap_server):
             f.result()  # Wait for the topic to be created
             print(f"Topic {topic} created successfully.")
         except Exception as e:
+            print(e)
             if "TopicExistsError" in str(e):
                 print(f"Topic {topic} already exists. Skipping creation.")
+                sys.exit(0)
             else:
                 print(f"Failed to create topic {topic}: {e}")
-                exit(1)
+                sys.exit(1)
 
 def main():
     """
