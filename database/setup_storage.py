@@ -44,12 +44,15 @@ def main():
     postgres_script = os.path.join("postgres", "create_db_tables.py")
     druid_script = os.path.join("druid", "upload_timeseries.py")
     kafka_script = os.path.join("kafka", "initialize_topic.py")
+    druid_stream_script = os.path.join("druid", "ingest_timeseries.py")
+
 
     # Execute each script
     run_script(minio_script, "Creating Object Storage in Minio")
     run_script(postgres_script, "Creating Database Tables in PostgreSQL")
     run_script(druid_script, "Uploading Timeseries Data to Druid")
     run_script(kafka_script, "Creating a topic for Kafka")
+    run_script(druid_stream_script, "Ingesting Timeseries stream Data to Druid")
 
 # Entry point
 if __name__ == "__main__":
