@@ -46,10 +46,7 @@ def generate_kpi_values():
     }
 
 # Function to generate logs
-def generate_logs(interval_seconds, kafka_topic):
-    kafka_server = os.getenv('KAFKA_SERVER', 'localhost:9092')
-    kafka_topic = os.getenv('TOPIC', 'machine_logs')
-    interval_seconds = int(os.getenv('INTERVAL', 5))
+def generate_logs(interval_seconds, kafka_topic, kafka_server):
 
     producer = KafkaProducer(
         bootstrap_servers=kafka_server,
@@ -81,6 +78,10 @@ def generate_logs(interval_seconds, kafka_topic):
 # Main script entry point
 if __name__ == "__main__":
     try:
-        generate_logs()
+        kafka_server = os.getenv('KAFKA_SERVER', 'localhost:9092')
+        kafka_topic = os.getenv('TOPIC', 'machine_logs')
+        interval_seconds = int(os.getenv('INTERVAL', 5))
+
+        generate_logs(interval_seconds, kafka_topic, kafka_server)
     except KeyboardInterrupt:
         print("Log generation stopped.")
