@@ -469,3 +469,19 @@ services:
       - database
       - not-db-init
 
+  log-generator:
+    image: log-generator 
+    build:
+      context: ./database/data-generation  
+      dockerfile: Dockerfile
+    container_name: log-generator
+    depends_on:
+      router:
+        condition: service_healthy
+    env_file:
+      - ./database/data-generation/.env 
+    volumes:
+      - ./database/data-generation:/app 
+    profiles:
+      - database
+      - not-db-init
