@@ -1,3 +1,4 @@
+#name: site-1
 volumes:
   metadata_data: {}
   middle_var: {}
@@ -21,6 +22,8 @@ volumes:
   hdfs-datanode: {}
   hdfs-datanode-2: {}
   metadata_data_2: {}
+  hdfs-datanode-3: {}
+  minio_data_target: {}
 
 services:
   postgres_milan_1:
@@ -45,8 +48,8 @@ services:
       - hdfs-datanode
       - hdfs-namenode
 
-  postgres_paris_2:
-    container_name: postgres_paris_2
+  postgres_paris_3:
+    container_name: postgres_paris_3
     image: pgedge/pgedge:latest
     volumes:
       #- metadata_data_2:/data
@@ -55,10 +58,33 @@ services:
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: postgres_paris_2
+      NODE_NAME: postgres_paris_3
       PGDATA: /data/pgdata
     ports:
       - "15433:5432"
+    env_file:
+      - database/environment
+    profiles:
+      - database
+      - not-db-init
+    depends_on:
+      - hdfs-datanode
+      - hdfs-namenode
+
+  postgres_lon_2:
+    container_name: postgres_lon_2
+    image: pgedge/pgedge:latest
+    volumes:
+      #- metadata_data_2:/data
+      - ./database/postgres/db.json:/home/pgedge/db.json
+      #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+#   environment:
+#      POSTGRES_HOST_AUTH_METHOD: trust
+    environment:
+      NODE_NAME: postgres_lon_2
+      PGDATA: /data/pgdata
+    ports:
+      - "15434:5432"
     env_file:
       - database/environment
     profiles:
@@ -227,6 +253,21 @@ services:
     ports:
       - 19000:9000
       - 19001:9001
+    env_file:
+      - database/.env
+    command: minio server /data
+    profiles:
+      - database
+      - not-db-init
+
+  miniotarget:
+    container_name: miniotarget
+    image: quay.io/minio/minio:latest
+    volumes:
+      - minio_data_target:/data
+    ports:
+      - 19002:9000
+      - 19003:9001
     env_file:
       - database/.env
     command: minio server /data
@@ -451,6 +492,22 @@ services:
       - database
     env_file:
       - database/hdfs/hadoop.env
+  hdfs-datanode-3:
+    image: bde2020/hadoop-datanode:latest
+    container_name: hdfs-datanode-3
+    environment:
+      - "SERVICE_PRECONDITION=hdfs-namenode:9870"
+    depends_on:
+      - hdfs-namenode
+    #ports:
+      #- "9864:9864"  # Datanode Web UI
+      #- "50010:50010"  # DataNode Data Transfer
+    volumes:
+      - hdfs-datanode-3:/hadoop/dfs/data
+    profiles:
+      - database
+    env_file:
+      - database/hdfs/hadoop.env
 
   grafana:
     image: grafana/grafana:latest
@@ -475,13 +532,28 @@ services:
       context: ./database/data-generation  
       dockerfile: Dockerfile
     container_name: log-generator
-    depends_on:
-      router:
-        condition: service_healthy
     env_file:
       - ./database/data-generation/.env 
     volumes:
       - ./database/data-generation:/app 
+    profiles:
+      - database
+      - not-db-init
+      - data-generation
+
+  kafka:
+    container_name: kafka
+    image: bitnami/kafka:3.5
+    ports:
+      - "9092:9092"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+    depends_on:
+      - zookeeper
     profiles:
       - database
       - not-db-init
