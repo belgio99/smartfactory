@@ -17,20 +17,56 @@ volumes:
   target_volume: {}
   vault_data: {}
   rag_models: {}
+  hdfs_namenode: {}
+  hdfs-datanode: {}
+  hdfs-datanode-2: {}
+  metadata_data_2: {}
 
 services:
-  postgres:
-    container_name: postgres
-    image: postgres:latest
+  postgres_milan_1:
+    container_name: postgres_milan_1
+    image: pgedge/pgedge:latest
     volumes:
-      - metadata_data:/var/lib/postgresql/data
+      - ./database/postgres/db.json:/home/pgedge/db.json
+      #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
+    environment:
+      NODE_NAME: postgres_milan_1
+      PGDATA: /data/pgdata
+    env_file:
+      - database/environment
+    ports:
+      - "15432:5432"
+    profiles:
+      - database
+      - not-db-init
+    depends_on:
+      - hdfs-datanode
+      - hdfs-namenode
+
+  postgres_paris_2:
+    container_name: postgres_paris_2
+    image: pgedge/pgedge:latest
+    volumes:
+      #- metadata_data_2:/data
+      - ./database/postgres/db.json:/home/pgedge/db.json
+      #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+#   environment:
+#      POSTGRES_HOST_AUTH_METHOD: trust
+    environment:
+      NODE_NAME: postgres_paris_2
+      PGDATA: /data/pgdata
+    ports:
+      - "15433:5432"
     env_file:
       - database/environment
     profiles:
       - database
       - not-db-init
+    depends_on:
+      - hdfs-datanode
+      - hdfs-namenode
 
   zookeeper:
     container_name: zookeeper
@@ -55,7 +91,9 @@ services:
       - ./database/druid/upload:/druid/upload
     depends_on:
       - zookeeper
-      - postgres
+      - postgres_milan_1
+      - hdfs-datanode
+      - hdfs-namenode
     ports:
       - "18081:8081"
     command:
@@ -65,6 +103,7 @@ services:
     profiles:
       - database
       - not-db-init
+      
 
   broker:
     image: apache/druid:31.0.0
@@ -74,10 +113,10 @@ services:
       - broker_var:/opt/druid/var
     depends_on:
       - zookeeper
-      - postgres
+      - postgres_milan_1
       - coordinator
-    ports:
-      - "18082:8082"
+      - hdfs-datanode
+      - hdfs-namenode
     command:
       - broker
     env_file:
@@ -85,6 +124,7 @@ services:
     profiles:
       - database
       - not-db-init
+    
 
   historical:
     image: apache/druid:31.0.0
@@ -95,8 +135,10 @@ services:
       - historical_var:/opt/druid/var
     depends_on:
       - zookeeper
-      - postgres
+      - postgres_milan_1
       - coordinator
+      - hdfs-datanode
+      - hdfs-namenode
     ports:
       - "18083:8083"
     command:
@@ -117,8 +159,10 @@ services:
       - ./database/druid/upload:/druid/upload
     depends_on:
       - zookeeper
-      - postgres
+      - postgres_milan_1
       - coordinator
+      - hdfs-datanode
+      - hdfs-namenode
     ports:
       - "18091:8091"
       - "18100-18105:8100-8105"
@@ -138,8 +182,10 @@ services:
       - router_var:/opt/druid/var
     depends_on:
       - zookeeper
-      - postgres
+      - postgres_milan_1
       - coordinator
+      - hdfs-datanode
+      - hdfs-namenode
     ports:
       - "18888:8888"
     command:
@@ -155,20 +201,23 @@ services:
       timeout: 5s
       retries: 5
 
-  db:
-    container_name: db
-    env_file:
-      - database/.env
-    image: postgres:latest
-    ports:
-      - "15432:5432"
-#    environment:
-   #   POSTGRES_HOST_AUTH_METHOD: trust
-    volumes:
-      - db:/var/lib/postgresql/data
-    profiles:
-      - database
-      - not-db-init
+  #db:
+  #  container_name: db
+  #  env_file:
+  #    - database/.env
+  #  image: pgedge/pgedge:latest
+  #  ports:
+  #    - "15432:5432"
+# #   environment:
+  # #   POSTGRES_HOST_AUTH_METHOD: trust
+  #  environment:
+  #    NODE_NAME: test
+  #  volumes:
+  #    - db:/data
+  #    #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
+  #  profiles:
+  #    - database
+  #    - not-db-init
 
   minio:
     container_name: minio
@@ -352,4 +401,71 @@ services:
       driver: "json-file"
       options:
         max-file: "1"
+
+  hdfs-namenode:
+    image: bde2020/hadoop-namenode:latest
+    container_name: hdfs-namenode
+    environment:
+      - CLUSTER_NAME=smartfactory-cluster
+    ports:
+      - "9870:9870"  # Namenode Web UI
+      - "9000:9000"  # Namenode RPC
+    volumes:
+      - hdfs_namenode:/hadoop/dfs/name
+    profiles:
+      - database
+    env_file:
+      - database/hdfs/hadoop.env
+
+  hdfs-datanode:
+    image: bde2020/hadoop-datanode:latest
+    container_name: hdfs-datanode
+    environment:
+      - "SERVICE_PRECONDITION=hdfs-namenode:9870"
+    depends_on:
+      - hdfs-namenode
+    ports:
+      - "9864:9864"  # Datanode Web UI
+      - "50010:50010"  # DataNode Data Transfer
+    volumes:
+      - hdfs-datanode:/hadoop/dfs/data
+    profiles:
+      - database
+    env_file:
+      - database/hdfs/hadoop.env
+
+
+  hdfs-datanode-2:
+    image: bde2020/hadoop-datanode:latest
+    container_name: hdfs-datanode-2
+    environment:
+      - "SERVICE_PRECONDITION=hdfs-namenode:9870"
+    depends_on:
+      - hdfs-namenode
+    #ports:
+      #- "9864:9864"  # Datanode Web UI
+      #- "50010:50010"  # DataNode Data Transfer
+    volumes:
+      - hdfs-datanode-2:/hadoop/dfs/data
+    profiles:
+      - database
+    env_file:
+      - database/hdfs/hadoop.env
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports:
+      - "13000:3000"
+    volumes:
+      - ./database/grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_DASHBOARDS_MIN_REFRESH_INTERVAL=1s
+      - GF_INSTALL_PLUGINS=marcusolsson-json-datasource
+    profiles:
+      - database
+      - not-db-init
 
