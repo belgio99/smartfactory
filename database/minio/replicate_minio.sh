@@ -37,7 +37,7 @@ for BUCKET in $BUCKETS; do
   # Configurare la replicazione dal source al target
   echo "Configurazione della replicazione dal source al target per $BUCKET..."
   mc replicate add source/$BUCKET \
-    --remote-bucket http://$TARGET_ACCESS_KEY:$TARGET_SECRET_KEY@minio-london:9000/$BUCKET \
+    --remote-bucket http://$TARGET_ACCESS_KEY:$TARGET_SECRET_KEY@minio-paris:9000/$BUCKET \
     --replicate "delete,delete-marker,existing-objects"
 
   # Configurare la replicazione dal target al source

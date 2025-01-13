@@ -20,16 +20,13 @@ volumes:
   rag_models: {}
   hdfs_namenode: {}
   hdfs-datanode: {}
-  hdfs-datanode-2: {}
-  metadata_data_2: {}
-  hdfs-datanode-3: {}
-  minio_data_target: {}
 
 services:
   postgres:
     image: pgedge/pgedge:latest
     volumes:
       - ./database/druid/db.json:/home/pgedge/db.json
+      - metadata_data:/data
       #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
@@ -68,6 +65,7 @@ services:
       - milan_node
     networks:
       - milan_network
+      - shared_network
 
   coordinator:
     image: apache/druid:31.0.0
@@ -93,6 +91,7 @@ services:
       - milan_node
     networks:
       - milan_network
+      - shared_network
       
 
   broker:
@@ -116,6 +115,7 @@ services:
       - milan_node
     networks:
       - milan_network
+      - shared_network
     
 
   historical:
@@ -142,6 +142,7 @@ services:
       - milan_node
     networks:
       - milan_network
+      - shared_network
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -169,6 +170,7 @@ services:
       - milan_node
     networks:
       - milan_network
+      - shared_network
 
   router:
     image: apache/druid:31.0.0
@@ -198,6 +200,7 @@ services:
       retries: 5
     networks:
       - milan_network
+      - shared_network
 
   db:
     container_name: db

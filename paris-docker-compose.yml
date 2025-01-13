@@ -1,4 +1,4 @@
-name: london
+name: paris
 volumes:
   metadata_data: {}
   middle_var: {}
@@ -20,21 +20,18 @@ volumes:
   rag_models: {}
   hdfs_namenode: {}
   hdfs-datanode: {}
-  hdfs-datanode-2: {}
-  metadata_data_2: {}
-  hdfs-datanode-3: {}
-  minio_data_target: {}
 
 services:
   postgres:
     image: pgedge/pgedge:latest
     volumes:
       - ./database/druid/db.json:/home/pgedge/db.json
+      - metadata_data:/data
       #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: pglondon2
+      NODE_NAME: pgparis2
       PGDATA: /data/pgdata
     env_file:
       - database/environment
@@ -43,15 +40,15 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
       - db
     depends_on:
       - hdfs-datanode
     networks:
-      london_network:
+      paris_network:
       shared_network:
         aliases:
-          - postgres-london-2
+          - postgres-paris-2
 
   zookeeper:
     image: zookeeper:3.5.10
@@ -64,9 +61,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      london_network:
+      paris_network:
       shared_network:
 
   coordinator:
@@ -89,9 +86,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      london_network:
+      paris_network:
       shared_network:
       
 
@@ -112,9 +109,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      london_network:
+      paris_network:
       shared_network:
     
 
@@ -138,9 +135,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      london_network:
+      paris_network:
       shared_network:
 
   middlemanager:
@@ -165,9 +162,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      london_network:
+      paris_network:
       shared_network:
 
   router:
@@ -189,14 +186,14 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://router:8888/status/health"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      london_network:
+      paris_network:
       shared_network:
 
   db:
@@ -208,7 +205,7 @@ services:
 #    environment:
    #   POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: london2
+      NODE_NAME: paris2
     volumes:
       - db:/data
       - ./database/postgres/db.json:/home/pgedge/db.json
@@ -216,13 +213,13 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
       - db
     networks:
-      london_network:
+      paris_network:
       shared_network:
         aliases:
-          - london-db-2
+          - paris-db-2
 
   minio:
     image: quay.io/minio/minio:latest
@@ -237,13 +234,13 @@ services:
     profiles:
       - database
       - not-db-init
-      - london_node
+      - paris_node
       - db
     networks:
-      london_network:
+      paris_network:
       shared_network:
         aliases:
-          - minio-london
+          - minio-paris
 
   db-init:
     image: ghcr.io/belgio99/smartfactory/db-init:latest
@@ -260,7 +257,7 @@ services:
       router:
         condition: service_healthy
     networks:
-      - london_network
+      - paris_network
       
   kb:
     build:
@@ -278,7 +275,7 @@ services:
     env_file:
       - database/.env
     networks:
-      - london_network
+      - paris_network
     
   data-processing:
     build:
@@ -297,7 +294,7 @@ services:
       router:
         condition: service_healthy
     networks:
-      - london_network
+      - paris_network
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
@@ -314,9 +311,9 @@ services:
     profiles:
       - api
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      - london_network
+      - paris_network
 
   smtp:
     image: mailhog/mailhog
@@ -331,7 +328,7 @@ services:
       - api
       - not-db-init
     networks:
-      - london_network
+      - paris_network
     
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
@@ -349,7 +346,7 @@ services:
       - rag
       - not-db-init
     networks:
-      - london_network
+      - paris_network
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
@@ -363,9 +360,9 @@ services:
     profiles:
       - gui-panel
       - not-db-init
-      - london_node
+      - paris_node
     networks:
-      - london_network
+      - paris_network
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
@@ -383,7 +380,7 @@ services:
       router:
         condition: service_healthy
     networks:
-      - london_network
+      - paris_network
 
   backrest:
     image: garethgeorge/backrest:latest
@@ -412,7 +409,7 @@ services:
     env_file:
       - database/backrest/.env
     networks:
-      - london_network
+      - paris_network
      
   vault: #it is in dev mode!
     image: hashicorp/vault
@@ -425,13 +422,13 @@ services:
       - "28200:8200"
     profiles:
       - database
-      - london_node
+      - paris_node
     logging:
       driver: "json-file"
       options:
         max-file: "1"
     networks:
-      - london_network
+      - paris_network
 
   hdfs-namenode:
     image: bde2020/hadoop-namenode:latest
@@ -447,10 +444,10 @@ services:
     env_file:
       - database/hdfs/hadoop.env
     networks:
-      london_network:
+      paris_network:
       shared_network:
         aliases:
-          - london_namenode
+          - paris_namenode
 
   hdfs-datanode:
     image: bde2020/hadoop-datanode:latest
@@ -463,18 +460,18 @@ services:
       - hdfs-datanode:/hadoop/dfs/data
     profiles:
       - database
-      - london_node
+      - paris_node
       - db
     env_file:
       - database/hdfs/hadoop.env
     networks:
-      london_network:
+      paris_network:
       shared_network:
         aliases:
-          - london_datanode
+          - paris_datanode
 
 networks:
-  london_network:
-    name: london_network
+  paris_network:
+    name: paris_network
   shared_network:
     name: shared_network

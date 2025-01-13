@@ -9,9 +9,9 @@
        "hostname": "postgres-milan-1"
      },
      {
-         "name": "pglondon2",
-         "region": "lon",
-         "hostname": "postgres-london-2"
+         "name": "pgparis2",
+         "region": "paris",
+         "hostname": "postgres-paris-2"
      }
    ],
    "users": [

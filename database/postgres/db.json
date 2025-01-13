@@ -9,9 +9,9 @@
        "hostname": "milan-db-1"
      },
      {
-         "name": "london2",
-         "region": "lon",
-         "hostname": "london-db-2"
+         "name": "paris2",
+         "region": "paris",
+         "hostname": "paris-db-2"
      }
    ],
    "users": [
