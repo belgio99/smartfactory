@@ -4,14 +4,14 @@
    "options": ["autoddl:enabled"],
    "nodes": [
      {
-       "name": "postgres_milan_1",
+       "name": "pgmilan1",
        "region": "milan",
-       "hostname": "postgres_milan"
+       "hostname": "postgres-milan-1"
      },
      {
-         "name": "postgres_london_2",
+         "name": "pglondon2",
          "region": "lon",
-         "hostname": "postgres_london"
+         "hostname": "postgres-london-2"
      }
    ],
    "users": [

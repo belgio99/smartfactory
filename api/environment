@@ -55,7 +55,7 @@ DRUID_LOG4J=<?xml version="1.0" encoding="UTF-8" ?><Configuration status="WARN">
 
 POSTGRES_PASSWORD=FoolishPassword
 POSTGRES_USER=postgres
-POSTGRES_DB=postgres
+POSTGRES_DB=replicateddb
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
 

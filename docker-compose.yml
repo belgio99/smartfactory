@@ -34,7 +34,7 @@ services:
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: postgres-milan-1
+      NODE_NAME: pgmilan1
       PGDATA: /data/pgdata
     env_file:
       - database/environment
@@ -44,6 +44,7 @@ services:
       - database
       - not-db-init
       - milan_node
+      - db
     depends_on:
       - hdfs-datanode
       - hdfs-namenode
@@ -51,7 +52,7 @@ services:
       milan_network:
       shared_network:
         aliases:
-          - milan_postgres
+          - postgres-milan-1
 
   zookeeper:
     image: zookeeper:3.5.10
@@ -208,7 +209,7 @@ services:
 #    environment:
    #   POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: test
+      NODE_NAME: milan1
     volumes:
       - db:/data
       - ./database/postgres/db.json:/home/pgedge/db.json
@@ -218,11 +219,12 @@ services:
       - database
       - not-db-init
       - milan_node
+      - db
     networks:
       milan_network:
       shared_network:
         aliases:
-          - milan_db
+          - milan-db-1
 
   minio:
     image: quay.io/minio/minio:latest
@@ -238,6 +240,7 @@ services:
       - database
       - not-db-init
       - milan_node
+      - db
     networks:
       - milan_network
 
@@ -442,6 +445,7 @@ services:
     profiles:
       - database
       - milan_node
+      - db
     env_file:
       - database/hdfs/hadoop.env
     networks:
@@ -449,11 +453,12 @@ services:
       shared_network:
         aliases:
           - milan_namenode
+          - hdfs-namenode
 
   hdfs-datanode:
     image: bde2020/hadoop-datanode:latest
     environment:
-      - "SERVICE_PRECONDITION=hdfs-namenode:9870"
+      - "SERVICE_PRECONDITION=milan_namenode:9870"
     depends_on:
       - hdfs-namenode
     ports:
@@ -464,6 +469,7 @@ services:
     profiles:
       - database
       - milan_node
+      - db
     env_file:
       - database/hdfs/hadoop.env
     networks:

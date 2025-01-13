@@ -1,17 +1,17 @@
 {
-   "name": "postgres",
+   "name": "replicateddb",
    "port": 5432,
    "options": ["autoddl:enabled"],
    "nodes": [
      {
-       "name": "db_milan_1",
+       "name": "milan1",
        "region": "milan",
-       "hostname": "milan_db"
+       "hostname": "milan-db-1"
      },
      {
-         "name": "db_london_2",
+         "name": "london2",
          "region": "lon",
-         "hostname": "london_db"
+         "hostname": "london-db-2"
      }
    ],
    "users": [

@@ -29,12 +29,12 @@ services:
   postgres:
     image: pgedge/pgedge:latest
     volumes:
-      - ./database/postgres/db.json:/home/pgedge/db.json
+      - ./database/druid/db.json:/home/pgedge/db.json
       #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: postgres-london-2
+      NODE_NAME: pglondon2
       PGDATA: /data/pgdata
     env_file:
       - database/environment
@@ -44,13 +44,14 @@ services:
       - database
       - not-db-init
       - london_node
+      - db
     depends_on:
       - hdfs-datanode
     networks:
       london_network:
       shared_network:
         aliases:
-          - london_postgres
+          - postgres-london-2
 
   zookeeper:
     image: zookeeper:3.5.10
@@ -65,7 +66,8 @@ services:
       - not-db-init
       - london_node
     networks:
-      - london_network
+      london_network:
+      shared_network:
 
   coordinator:
     image: apache/druid:31.0.0
@@ -89,7 +91,8 @@ services:
       - not-db-init
       - london_node
     networks:
-      - london_network
+      london_network:
+      shared_network:
       
 
   broker:
@@ -111,7 +114,8 @@ services:
       - not-db-init
       - london_node
     networks:
-      - london_network
+      london_network:
+      shared_network:
     
 
   historical:
@@ -136,7 +140,8 @@ services:
       - not-db-init
       - london_node
     networks:
-      - london_network
+      london_network:
+      shared_network:
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -162,7 +167,8 @@ services:
       - not-db-init
       - london_node
     networks:
-      - london_network
+      london_network:
+      shared_network:
 
   router:
     image: apache/druid:31.0.0
@@ -190,7 +196,8 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - london_network
+      london_network:
+      shared_network:
 
   db:
     env_file:
@@ -201,19 +208,21 @@ services:
 #    environment:
    #   POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: test
+      NODE_NAME: london2
     volumes:
       - db:/data
+      - ./database/postgres/db.json:/home/pgedge/db.json
       #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
     profiles:
       - database
       - not-db-init
       - london_node
+      - db
     networks:
       london_network:
       shared_network:
         aliases:
-          - london_db
+          - london-db-2
 
   minio:
     image: quay.io/minio/minio:latest
@@ -229,6 +238,7 @@ services:
       - database
       - not-db-init
       - london_node
+      - db
     networks:
       - london_network
 
@@ -241,7 +251,6 @@ services:
       - database/.env
     profiles:
       - database
-      - london_node
     volumes:
       - ./database/druid/upload:/druid/upload
     depends_on:
@@ -452,6 +461,7 @@ services:
     profiles:
       - database
       - london_node
+      - db
     env_file:
       - database/hdfs/hadoop.env
     networks:
