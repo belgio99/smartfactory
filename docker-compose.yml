@@ -242,7 +242,10 @@ services:
       - milan_node
       - db
     networks:
-      - milan_network
+      milan_network:
+      shared_network:
+        aliases:
+          - minio-milan
 
   db-init:
     image: ghcr.io/belgio99/smartfactory/db-init:latest

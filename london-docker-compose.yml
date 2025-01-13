@@ -240,7 +240,10 @@ services:
       - london_node
       - db
     networks:
-      - london_network
+      london_network:
+      shared_network:
+        aliases:
+          - minio-london
 
   db-init:
     image: ghcr.io/belgio99/smartfactory/db-init:latest
