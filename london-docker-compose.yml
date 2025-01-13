@@ -1,4 +1,4 @@
-name: milan
+name: london
 volumes:
   metadata_data: {}
   middle_var: {}
@@ -29,44 +29,43 @@ services:
   postgres:
     image: pgedge/pgedge:latest
     volumes:
-      - ./database/druid/db.json:/home/pgedge/db.json
+      - ./database/postgres/db.json:/home/pgedge/db.json
       #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
 #   environment:
 #      POSTGRES_HOST_AUTH_METHOD: trust
     environment:
-      NODE_NAME: postgres-milan-1
+      NODE_NAME: postgres-london-2
       PGDATA: /data/pgdata
     env_file:
       - database/environment
     ports:
-      - "15432:5432"
+      - "25432:5432"
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     depends_on:
       - hdfs-datanode
-      - hdfs-namenode
     networks:
-      milan_network:
+      london_network:
       shared_network:
         aliases:
-          - milan_postgres
+          - london_postgres
 
   zookeeper:
     image: zookeeper:3.5.10
     platform: linux/amd64
     ports:
-      - "12181:2181"
+      - "22181:2181"
     environment:
       - ZOO_MY_ID=1
       #- ZOO_SERVERS=server.1=zookeeper:2888:3888 # Set only a single server
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
 
   coordinator:
     image: apache/druid:31.0.0
@@ -79,9 +78,8 @@ services:
       - zookeeper
       - postgres
       - hdfs-datanode
-      - hdfs-namenode
     ports:
-      - "18081:8081"
+      - "28081:8081"
     command:
       - coordinator
     env_file:
@@ -89,9 +87,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
       
 
   broker:
@@ -104,7 +102,6 @@ services:
       - postgres
       - coordinator
       - hdfs-datanode
-      - hdfs-namenode
     command:
       - broker
     env_file:
@@ -112,9 +109,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
     
 
   historical:
@@ -128,9 +125,8 @@ services:
       - postgres
       - coordinator
       - hdfs-datanode
-      - hdfs-namenode
     ports:
-      - "18083:8083"
+      - "28083:8083"
     command:
       - historical
     env_file:
@@ -138,9 +134,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
 
   middlemanager:
     image: apache/druid:31.0.0
@@ -154,10 +150,9 @@ services:
       - postgres
       - coordinator
       - hdfs-datanode
-      - hdfs-namenode
     ports:
-      - "18091:8091"
-      - "18100-18105:8100-8105"
+      - "28091:8091"
+      - "28100-28105:8100-8105"
     command:
       - middleManager
     env_file:
@@ -165,9 +160,9 @@ services:
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
 
   router:
     image: apache/druid:31.0.0
@@ -179,9 +174,8 @@ services:
       - postgres
       - coordinator
       - hdfs-datanode
-      - hdfs-namenode
     ports:
-      - "18888:8888"
+      - "28888:8888"
     command:
       - router
     env_file:
@@ -189,57 +183,54 @@ services:
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://router:8888/status/health"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - milan_network
+      - london_network
 
   db:
-    container_name: db
     env_file:
       - database/.env
     image: pgedge/pgedge:latest
     ports:
-      - "15433:5432"
+      - "25433:5432"
 #    environment:
    #   POSTGRES_HOST_AUTH_METHOD: trust
     environment:
       NODE_NAME: test
     volumes:
       - db:/data
-      - ./database/postgres/db.json:/home/pgedge/db.json
-
       #- ./database/postgres/00_init.sql:/docker-entrypoint-initdb.d/00_init.sql
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      milan_network:
+      london_network:
       shared_network:
         aliases:
-          - milan_db
+          - london_db
 
   minio:
     image: quay.io/minio/minio:latest
     volumes:
       - minio_data:/data
     ports:
-      - 19000:9000
-      - 19001:9001
+      - 29000:9000
+      - 29001:9001
     env_file:
       - database/.env
     command: minio server /data
     profiles:
       - database
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
 
   db-init:
     image: ghcr.io/belgio99/smartfactory/db-init:latest
@@ -250,14 +241,14 @@ services:
       - database/.env
     profiles:
       - database
-      - milan_node
+      - london_node
     volumes:
       - ./database/druid/upload:/druid/upload
     depends_on:
       router:
         condition: service_healthy
     networks:
-      - milan_network
+      - london_network
       
   kb:
     build:
@@ -275,7 +266,7 @@ services:
     env_file:
       - database/.env
     networks:
-      - milan_network
+      - london_network
     
   data-processing:
     build:
@@ -294,7 +285,7 @@ services:
       router:
         condition: service_healthy
     networks:
-      - milan_network
+      - london_network
 
   api:
     image: ghcr.io/belgio99/smartfactory/api:latest
@@ -302,7 +293,7 @@ services:
       context: ./api
       dockerfile: Dockerfile
     ports: 
-      - "10040:8000"
+      - "20040:8000"
     env_file:
       - api/.env
       - api/environment
@@ -311,9 +302,9 @@ services:
     profiles:
       - api
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
 
   smtp:
     image: mailhog/mailhog
@@ -328,7 +319,7 @@ services:
       - api
       - not-db-init
     networks:
-      - milan_network
+      - london_network
     
   rag:
     image: ghcr.io/belgio99/smartfactory/rag:latest
@@ -341,12 +332,12 @@ services:
       - kb:/docs/kb
       - rag_models:/app/models
     ports: 
-      - "10050:8000"
+      - "20050:8000"
     profiles:
       - rag
       - not-db-init
     networks:
-      - milan_network
+      - london_network
 
   gui-panel:
     image: ghcr.io/belgio99/smartfactory/gui-panel:latest
@@ -356,13 +347,13 @@ services:
     env_file:
       - gui-panel/.env
     ports: 
-      - "10060:8080"
+      - "20060:8080"
     profiles:
       - gui-panel
       - not-db-init
-      - milan_node
+      - london_node
     networks:
-      - milan_network
+      - london_network
 
   kpi-engine:
     image: ghcr.io/belgio99/smartfactory/kpi-engine:latest
@@ -380,7 +371,7 @@ services:
       router:
         condition: service_healthy
     networks:
-      - milan_network
+      - london_network
 
   backrest:
     image: garethgeorge/backrest:latest
@@ -409,7 +400,7 @@ services:
     env_file:
       - database/backrest/.env
     networks:
-      - milan_network
+      - london_network
      
   vault: #it is in dev mode!
     image: hashicorp/vault
@@ -419,16 +410,16 @@ services:
       VAULT_ADDR: "http://0.0.0.0:8200"
       VAULT_STORAGE_BACKEND: "file"  
     ports:
-      - "18200:8200"
+      - "28200:8200"
     profiles:
       - database
-      - milan_node
+      - london_node
     logging:
       driver: "json-file"
       options:
         max-file: "1"
     networks:
-      - milan_network
+      - london_network
 
   hdfs-namenode:
     image: bde2020/hadoop-namenode:latest
@@ -441,39 +432,36 @@ services:
       - hdfs_namenode:/hadoop/dfs/name
     profiles:
       - database
-      - milan_node
     env_file:
       - database/hdfs/hadoop.env
     networks:
-      milan_network:
+      london_network:
       shared_network:
         aliases:
-          - milan_namenode
+          - london_namenode
 
   hdfs-datanode:
     image: bde2020/hadoop-datanode:latest
     environment:
-      - "SERVICE_PRECONDITION=hdfs-namenode:9870"
-    depends_on:
-      - hdfs-namenode
+      - "SERVICE_PRECONDITION=milan_namenode:9870"
     ports:
-      - "19864:9864"  # Datanode Web UI
-      - "50010:50010"  # DataNode Data Transfer
+      - "29864:9864"  # Datanode Web UI
+      #- "50010:50010"  # DataNode Data Transfer
     volumes:
       - hdfs-datanode:/hadoop/dfs/data
     profiles:
       - database
-      - milan_node
+      - london_node
     env_file:
       - database/hdfs/hadoop.env
     networks:
-      milan_network:
+      london_network:
       shared_network:
         aliases:
-          - milan_datanode
+          - london_datanode
 
 networks:
-  milan_network:
-    name: milan_network
+  london_network:
+    name: london_network
   shared_network:
     name: shared_network

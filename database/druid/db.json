@@ -1,17 +1,17 @@
 {
-   "name": "postgres",
+   "name": "druid",
    "port": 5432,
    "options": ["autoddl:enabled"],
    "nodes": [
      {
-       "name": "db_milan_1",
+       "name": "postgres_milan_1",
        "region": "milan",
-       "hostname": "milan_db"
+       "hostname": "postgres_milan"
      },
      {
-         "name": "db_london_2",
+         "name": "postgres_london_2",
          "region": "lon",
-         "hostname": "london_db"
+         "hostname": "postgres_london"
      }
    ],
    "users": [
@@ -23,7 +23,7 @@
        "type": "application"
      },
      {
-       "username": "postgres",
+       "username": "druid",
        "password": "FoolishPassword",
        "superuser": true,
        "service": "postgres",
