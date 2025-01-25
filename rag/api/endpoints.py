@@ -165,7 +165,7 @@ async def ask_kpi_engine(json_body):
             If the request is successful, the data will be in the 'data' field.
             Otherwise, it will return an error message.
     """
-    kpi_engine_url = "http://smartfactory-kpi-engine-1:8000/kpi/calculate"
+    kpi_engine_url = "http://kpi-engine:8000/kpi/calculate"
 
     async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
         try:
