@@ -1,6 +1,6 @@
 import axios from 'axios';
-
 import {DashboardFolder, ForecastDataEx, KPI, Machine, Schedule} from './DataStructures';
+
 
 const BASE_URL = '/api'; // API URL
 //const BASE_URL = 'http://0.0.0.0:10040'; // API URL
@@ -58,9 +58,13 @@ export interface HistoricalDataResponse {
 }
 
 export interface ForecastRequest {
-    Machine_Name: string
-    KPI_Name: string
-    Date_prediction: number
+    Machine_Name: string;
+    KPI_Name: string;
+    // This property is optional: the question mark indicates it may be undefined
+    Date_prediction?: number;
+    // For arrays, just use number[] or string[]
+    Time_series?: number[];
+    Time_series_dates?: string[];
 }
 
 /**
@@ -377,6 +381,53 @@ export const getForecastData = async (request: ForecastRequest): Promise<Forecas
         throw new Error(error.response?.data?.message || 'Failed to retrieve forecast data');
     }
 }
+export const getForecastData_extra = async (request: ForecastRequest): Promise<ForecastDataEx> => {
+    try {
+        const toSend = {value: [request]};
+        console.log('Sending to Forecast ', toSend);
+        const response = await axios.post(
+            `${BASE_URL}/smartfactory/predict_extra`,
+            toSend,
+            {
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+            }
+        );
+        if (!response.data || !Array.isArray(response.data.value) || response.data.value.length === 0) {
+            console.log("No forecast data available in the response.");
+            return new ForecastDataEx(request.Machine_Name, request.KPI_Name, [], [], [], [], [], "", [], true);
+        }
+        return ForecastDataEx.decode(response.data.value[0]);
+    } catch (error: any) {
+        console.error('Get Forecast Data API error:', error);
+        throw new Error(error.response?.data?.message || 'Failed to retrieve forecast data');
+    }
+}
+/**
+ * API POST used to train all models
+ */
+export const trainAllModels = async (): Promise<number> => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/smartfactory/train_all_models`,
+        null, // no request body
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": API_KEY,
+          },
+        }
+      );
+      
+      // The Python endpoint just returns 0. Let's return that directly:
+      return response.data;  // should be 0
+    } catch (error: any) {
+      console.error("Train All Models API error:", error);
+      throw new Error(error.response?.data?.message || "Failed to train all models");
+    }
+  };
 
 
 /**

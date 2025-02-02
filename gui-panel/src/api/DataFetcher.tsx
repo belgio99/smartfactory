@@ -182,10 +182,16 @@ export async function fetchData(
     const aggregationMethod = kpiId.substring(kpiId.length - 3);
 
     let data: any;
-
+    console.log("lalala, fetching started!")
+    console.log(aggregationMethod)
     if (!aggregationMethods.includes(aggregationMethod)) {
+        console.log("CRETING TIME SERIES, timeframe:")
+        console.log(timeFrame)
         // if the aggregation method is not found, request calculation
         const request = requestCalculation(isTimeSeries, kpi, timeFrame, filters);
+        console.log("THE DATA RECEIVED UP TO NOW IS:")
+        console.log(request)
+
         const response: KPICalculation[] = await calculateKPIValue(request).catch((error) => {
             console.error("Error executing this request:", request, error);
             return [];
@@ -236,7 +242,7 @@ export async function fetchData(
             // from a series of objects like {Start_Date: '2024-12-02', Machine_Name:machine_1, Value: 20}
 
         if (isTimeSeries) {
-            //console.log("Time series received:", response);
+            console.log("Time series received:", response);
 
             // group by timestamp like below
             // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
@@ -277,6 +283,8 @@ export async function fetchData(
         }
 
     } else {
+        console.log("NOW IM HERE")
+        console.log(timeFrame)
         // if the aggregation method is found, request historical data
         const query = constructQuery(isTimeSeries, kpi, timeFrame, filters);
         // Send the query to the historical data endpoint
@@ -284,6 +292,8 @@ export async function fetchData(
             console.error("Error executing this query:", query, error);
             return [];
         });
+        console.log("QUERY BUILT:")
+        console.log(query)
 
         if (isHist) {
             // here data is formatted like [{timestamp: '2024-12-02', machine1: 20}, {timestamp: '2024-12-02', machine2: 40}]
@@ -328,6 +338,8 @@ export async function fetchData(
             // {timestamp: '2024-12-02', machine1: 20, machine2: 30}
             // from a series of objects like {timestamp: '2024-12-02', machine1: 20}
         if (isTimeSeries) {
+            console.log("entering the other side of the IF")
+            console.log(data)
             const groupedData = data.reduce((acc: Record<string, Record<string, any>>, cur: any) => {
                 const timestamp = cur.timestamp;
                 const machine = cur.name;
@@ -403,6 +415,9 @@ const constructQuery = (
         } else {
             timeGrouping = "P1M"; // For periods longer than a year, group by year
         }
+        if (timeFrame.aggregation == "day") {
+            timeGrouping = "P1D";
+        }
     }
 
     // Construct the query JSON
@@ -445,6 +460,7 @@ function requestCalculation(isTimeSeries: boolean, kpi: KPI, timeFrame: TimeFram
 
         const timePeriods: string[] = [];
         const timeUnit = timeFrame.aggregation || getTimePeriodUnit(timeFrame);
+
         createTimeSegments(timeFrame, timeUnit, timePeriods);
 
         return timePeriods.map((period) => {

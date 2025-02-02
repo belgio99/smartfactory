@@ -325,11 +325,9 @@ class ForecastExplainer:
             mean_pred, lower_bound, upper_bound, confidence_level = self.predict_with_uncertainty(
                 current_input, n_samples=n_samples, confidence=confidence, step=i
             )
-            # Compute raw prediction
-            raw_pred = self.predict(current_input)[0]
 
             # Decide which prediction to use
-            final_pred = mean_pred if use_mean_pred else raw_pred
+            final_pred = mean_pred if use_mean_pred else self.predict(current_input)[0]
 
             explanation = self.explain_prediction(current_input, current_labels, num_features=num_features)
 

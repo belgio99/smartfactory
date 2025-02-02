@@ -548,7 +548,7 @@ async def get_kpi_endpoint(kpi_id: str, api_key: str = Depends(get_verify_api_ke
 
 
 @app.get("/kb/retrieveKPIs")
-async def get_all_kpis_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def get_all_kpis_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent", "data"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get all KPIs, grouped under the main classes of the ontology
 
@@ -561,7 +561,7 @@ async def get_all_kpis_endpoint(api_key: str = Depends(get_verify_api_key(["api-
 
 
 @app.get("/kb/retrieveMachines")
-async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
+async def get_all_machines_endpoint(api_key: str = Depends(get_verify_api_key(["api-layer", "ai-agent", "data"]))): # to add or modify the services allowed to access the API, add or remove them from the list in the get_verify_api_key function e.g. get_verify_api_key(["gui", "service1", "service2"])
     """
     Get all machines, grouped under the main classes of the ontology
 

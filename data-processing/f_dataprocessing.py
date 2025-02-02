@@ -121,7 +121,7 @@ def perform_adfuller(series):
     try:
       result = adfuller(series, regression='ct')
       return 0,result[0], result[1]  # Returns test statistic and p-value
-    except ValueError as e:
+    except (ValueError, TypeError) as e:
       if "x is constant" in str(e):
           print("Input series is constant. ADF test cannot be performed.")
           return -1,None, None  # Or choose other default values
@@ -135,13 +135,18 @@ def data_clean_missing_values(data):
   :param data: the time series to be cleaned
   :return: the cleaned time series
   """
-  # remove null values, furhter studies are needed to evaluate the zeros
-  cleaned_data = data
-  if data['Value'].isna().sum()!=0:
-    # data = data.fillna(data.mean())
-    # data = data.bfill()
-    cleaned_data['Value'] = data.interpolate(method='linear')
-  return cleaned_data
+  try:
+    # remove null values, furhter studies are needed to evaluate the zeros
+    cleaned_data = data
+    if data['Value'].isna().sum()!=0:
+      # data = data.fillna(data.mean())
+      # data = data.bfill()
+      cleaned_data['Value'] = data.interpolate(method='linear')
+    return cleaned_data, 0
+  except (ValueError, TypeError) as e:
+    print("data can not be interpolated.")
+    return data, -1  # Or choose other default values
+ 
 
 # normalize the time series to a common scale
 def data_normalize_params(data):
@@ -422,98 +427,100 @@ def characterize_KPI(machine, kpi):
   a_dict['trends'] = trends
 
   # MISSING VALUE HANDLING
-  data = data_clean_missing_values(timeseries)  # mean/median OR Interpolation OR Forward/backward fill
+  data, ok = data_clean_missing_values(timeseries)  # mean/median OR Interpolation OR Forward/backward fill
                                                           #1- if we have no other data, just decide how to fill the hole
                                                           #2- [NOT IMPLEMENTED YET] if we have other ts look for
                                                           #   correlation of holes with other trends and report them
+  if ok == 0:
+    # STATIONARITY CHECK
+    call_status, orig_statistic, orig_p_value = perform_adfuller(data['Value'])
+    if call_status == 0:
+      stationarity_results = {
+          'Differencing': 0,
+          'Statistic': round(orig_statistic, 3),
+          'P-value': f'{orig_p_value:.2E}',
+          'Stationary': 1 if orig_p_value < 0.05 else 0
+      }
+      if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
+        diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
+        call_status, diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
+        # data['Value'] = data_normalize_params(diff1_series['Value'])
+        if call_status == 0:
+          stationarity_results = {
+            'Differencing': 1,
+            'Statistic': round(diff1_statistic, 3),
+            'P-value': f'{diff1_p_value:.2E}',
+            'Stationary': 1 if diff1_p_value < 0.05 else 0
+          }
+          if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
+              diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
+              call_status, diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
+              # data['Value'] = data_normalize_params(diff2_series['Value'])
+              if call_status == 0:
+                stationarity_results = {
+                  'Differencing': 2,
+                  'Statistic': round(diff2_statistic, 3),
+                  'P-value': f'{diff2_p_value:.2E}',
+                  'Stationary': 1 if diff2_p_value < 0.05 else 0
+                }
+    if call_status == 0:
+      # else:
+      #   data['Value'] = data_normalize_params(data['Value'])
+      a_dict['stationarity'] = stationarity_results
+      ###########################
+      ### 3. Model definition ###
+      ###########################
+      model_selected = 'xgboost'
+      if model_selected == 'ARIMA':
+        # Set up the p and q ranges
+        # p = range(0, 10,1)  # You can adjust the range as needed
+        # q = range(0, 20,1)  # You can adjust the range as needed
+        p = range(2, 4,1)  # You can adjust the range as needed
+        q = range(2, 4,1)  # You can adjust the range as needed
+        order_list = list(itertools.product(p, q))
 
-  # STATIONARITY CHECK
-  call_status, orig_statistic, orig_p_value = perform_adfuller(data['Value'])
-  if call_status == 0:
-    stationarity_results = {
-        'Differencing': 0,
-        'Statistic': round(orig_statistic, 3),
-        'P-value': f'{orig_p_value:.2E}',
-        'Stationary': 1 if orig_p_value < 0.05 else 0
-    }
-    if orig_p_value >= 0.05: # if the data is not stationary we check the first difference
-      diff1_series = pd.DataFrame({'Timestamp':data['Value'].index, 'Value': data['Value'].diff().bfill()})
-      call_status, diff1_statistic, diff1_p_value = perform_adfuller(diff1_series['Value'].values)
-      # data['Value'] = data_normalize_params(diff1_series['Value'])
-      if call_status == 0:
-        stationarity_results = {
-          'Differencing': 1,
-          'Statistic': round(diff1_statistic, 3),
-          'P-value': f'{diff1_p_value:.2E}',
-          'Stationary': 1 if diff1_p_value < 0.05 else 0
+        # Differencing parameter
+        d = 1  # Assumed based on standard practice. Adjust if necessary.
+
+        # Create an empty list to store optimization results
+        best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
+        pq_tuple = best_arima.iloc[0].iloc[0]
+        p = pq_tuple[0]
+        q = pq_tuple[1]
+        print(p,q)
+        a_dict['model'] = {
+            'name': 'ARIMA',
+            'p': p,
+            'q': q
         }
-        if diff1_p_value >= 0.05: # if the first difference is still non stationary we check the second
-            diff2_series = pd.DataFrame({'Timestamp':diff1_series['Value'].index, 'Value': diff1_series['Value'].diff().bfill()})
-            call_status, diff2_statistic, diff2_p_value = perform_adfuller(diff2_series['Value'].values)
-            # data['Value'] = data_normalize_params(diff2_series['Value'])
-            if call_status == 0:
-              stationarity_results = {
-                'Differencing': 2,
-                'Statistic': round(diff2_statistic, 3),
-                'P-value': f'{diff2_p_value:.2E}',
-                'Stationary': 1 if diff2_p_value < 0.05 else 0
-              }
-  if call_status == 0:
-    # else:
-    #   data['Value'] = data_normalize_params(data['Value'])
-    a_dict['stationarity'] = stationarity_results
-    ###########################
-    ### 3. Model definition ###
-    ###########################
-    model_selected = 'xgboost'
-    if model_selected == 'ARIMA':
-      # Set up the p and q ranges
-      # p = range(0, 10,1)  # You can adjust the range as needed
-      # q = range(0, 20,1)  # You can adjust the range as needed
-      p = range(2, 4,1)  # You can adjust the range as needed
-      q = range(2, 4,1)  # You can adjust the range as needed
-      order_list = list(itertools.product(p, q))
+      elif model_selected == 'xgboost':
+        # parameter selection for xgboost
+        X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
 
-      # Differencing parameter
-      d = 1  # Assumed based on standard practice. Adjust if necessary.
+        # model = xgboost_parameter_select(X_train,y_train)
+        # # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
+        # model.fit(X_train, y_train)
 
-      # Create an empty list to store optimization results
-      best_arima = optimize_ARIMA(data['Value'].values, order_list, d)
-      pq_tuple = best_arima.iloc[0].iloc[0]
-      p = pq_tuple[0]
-      q = pq_tuple[1]
-      print(p,q)
-      a_dict['model'] = {
-          'name': 'ARIMA',
-          'p': p,
-          'q': q
-      }
-    elif model_selected == 'xgboost':
-      # parameter selection for xgboost
-      X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
-
-      # model = xgboost_parameter_select(X_train,y_train)
-      # # model = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, random_state=42)
-      # model.fit(X_train, y_train)
-
-      # booster = model.get_booster()
-      booster = xgboost_parameter_select(X_train,y_train)
-      model_bytes = booster.save_raw()
-      encoded_model = base64.b64encode(model_bytes).decode('utf-8')
-      a_dict['model'] = {
-        'name': 'xgboost',
-        'xgb_bytes': encoded_model,
-        'metadata': {
-            'trained_on': str(datetime.today().date())},
-            # 'hyperparameters': model.get_params()},
-      }
-    ############################
-    ### 4. Meta-Data storage ###
-    ############################
-    save_model_data(machine, kpi, a_dict)
-    return 0
+        # booster = model.get_booster()
+        booster = xgboost_parameter_select(X_train,y_train)
+        model_bytes = booster.save_raw()
+        encoded_model = base64.b64encode(model_bytes).decode('utf-8')
+        a_dict['model'] = {
+          'name': 'xgboost',
+          'xgb_bytes': encoded_model,
+          'metadata': {
+              'trained_on': str(datetime.today().date())},
+              # 'hyperparameters': model.get_params()},
+        }
+      ############################
+      ### 4. Meta-Data storage ###
+      ############################
+      save_model_data(machine, kpi, a_dict)
+      return 0
+    else:
+      return call_status
   else:
-    return call_status
+     return -5
 
 
 
@@ -605,7 +612,58 @@ def XAI_PRED(data,Last_date, model, total_points, seq_length = 10, n_predictions
       use_mean_pred=True
   )
   return results
+def predict_from_data(machine, kpi, length, TimeSeries):
+  """
+  """
+  kpi_data_Avg = TimeSeries[0]
+  kpi_data_Time = TimeSeries[1] # load a single time series
+  a_dict = load_model(machine, kpi)
 
+  # EXTRACT DATA TRENDS
+  # conversion of the two arrays in a dataframe
+  timestamps = pd.to_datetime(kpi_data_Time)
+  timeseries = pd.DataFrame({'Timestamp':timestamps, 'Value': kpi_data_Avg})
+  timeseries.set_index('Timestamp', inplace=True)
+  trends = data_extract_trends(timeseries['Value']) # find range, distribution, or any pattern that may be used
+                                                    # to treat missing values or outliers.
+                                                    # maybe also find correlations and mutual information
+  
+  a_dict['trends'] = trends
+
+  # MISSING VALUE HANDLING
+  data, ok = data_clean_missing_values(timeseries)  # mean/median OR Interpolation OR Forward/backward fill
+                                                          #1- if we have no other data, just decide how to fill the hole
+                                                          #2- [NOT IMPLEMENTED YET] if we have other ts look for
+                                                          #   correlation of holes with other trends and report them
+
+  if ok == 0:
+    # parameter selection for xgboost
+    X_train, y_train = custom_tts(data['Value'].values,kpi_data_Time,observation_window)
+    booster = xgboost_parameter_select(X_train,y_train)
+
+    Last_date = kpi_data_Time[-1]
+    avg_values1 = data['Value'].values
+
+    loaded_model = xgb.XGBRegressor()
+    loaded_model._Booster = booster
+
+      # Use the loaded model for predictions
+
+    results = XAI_PRED(avg_values1,Last_date, loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
+      
+    #convert numpy(float) to float
+    x = [r.item() for r in results['Predicted_value']]
+    y = [r.item() for r in results['Lower_bound']]
+    z = [r.item() for r in results['Upper_bound']]
+    # k = [r.item() for r in results['Confidence_score']] this is no longer numpy float
+    results['Predicted_value'] = x
+    results['Lower_bound'] = y
+    results['Upper_bound'] = z
+    # results['Confidence_score'] = k
+      
+    return 0,results
+  else:
+    return -5,[]
 def make_prediction(machine, kpi, length):
   """
   Forecasts KPI values using a trained model (ARIMA or XGBoost).
@@ -624,79 +682,110 @@ def make_prediction(machine, kpi, length):
   timestamps = pd.to_datetime(kpi_data_Time)
   timeseries = pd.DataFrame({'Timestamp':timestamps, 'Value': kpi_data_Avg})
   timeseries.set_index('Timestamp', inplace=True)
-  data = data_clean_missing_values(timeseries)
+  data, ok = data_clean_missing_values(timeseries)
+  if ok == 0:
+    avg_values1 = data['Value'].values
+    if a_dict['model']['name'] == 'ARIMA':
 
-  avg_values1 = data['Value'].values
-  if a_dict['model']['name'] == 'ARIMA':
+      # Split into train and test sets
+      train_len = int(len(avg_values1) * 0.85)
+      train, test = avg_values1[:train_len], avg_values1[train_len:]
 
-    # Split into train and test sets
-    train_len = int(len(avg_values1) * 0.85)
-    train, test = avg_values1[:train_len], avg_values1[train_len:]
+      window = 1
+      horizon = length
 
-    window = 1
-    horizon = length
+      # model = any
+      # training_data: Union[np.ndarray, torch.Tensor]
+      # explainer = ForecastExplainer(model, training_data)
+      # input_data: Union[np.ndarray, torch.Tensor]
+      # n_predictions: int
+      # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD']
+      # Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
+      # Model MUST be able to do prediction = model.predict(input_data) <- predict should return a single value
 
-    # model = any
-    # training_data: Union[np.ndarray, torch.Tensor]
-    # explainer = ForecastExplainer(model, training_data)
-    # input_data: Union[np.ndarray, torch.Tensor]
-    # n_predictions: int
-    # input_labels = ['YYYY-MM-DD', 'YYYY-MM-DD']
-    # Predicted_value, Lower_bound, Upper_bound, Confidence_score, Lime_explaination = explainer.predict_and_explain(input_data, n_predictions, input_labels)
-    # Model MUST be able to do prediction = model.predict(input_data) <- predict should return a single value
+      pred_ARIMA = rolling_forecast(
+          avg_values1,
+          train_len=train_len,
+          horizon=horizon,
+          window=window,
+          p=a_dict['model']['p'],
+          q=a_dict['model']['q'],
+          d=a_dict['stationarity']['Differencing']
+      )
 
-    pred_ARIMA = rolling_forecast(
-        avg_values1,
-        train_len=train_len,
-        horizon=horizon,
-        window=window,
-        p=a_dict['model']['p'],
-        q=a_dict['model']['q'],
-        d=a_dict['stationarity']['Differencing']
-    )
+      # Evaluate predictions
+      if len(test) > 0:
+          test_length = min(len(test), horizon)
+          rmse = np.sqrt(mean_squared_error(test[:test_length], pred_ARIMA[:test_length]))
+          mae = mean_absolute_error(test[:test_length], pred_ARIMA[:test_length])
+          print(f"Evaluation Metrics for {machine} - {kpi}:")
+          print(f"  RMSE: {rmse:.3f}")
+          print(f"  MAE: {mae:.3f}")
+      else:
+          print(f"No test data available for evaluation for {machine} - {kpi}")
 
-    # Evaluate predictions
-    if len(test) > 0:
-        test_length = min(len(test), horizon)
-        rmse = np.sqrt(mean_squared_error(test[:test_length], pred_ARIMA[:test_length]))
-        mae = mean_absolute_error(test[:test_length], pred_ARIMA[:test_length])
-        print(f"Evaluation Metrics for {machine} - {kpi}:")
-        print(f"  RMSE: {rmse:.3f}")
-        print(f"  MAE: {mae:.3f}")
-    else:
-        print(f"No test data available for evaluation for {machine} - {kpi}")
+    elif a_dict['model']['name'] == 'xgboost':
+      # Decode the Base64 string back to raw bytes
+      encoded_model = a_dict['model']['xgb_bytes']
+      raw_model_bytes = bytearray(base64.b64decode(encoded_model))
 
-  elif a_dict['model']['name'] == 'xgboost':
-    # Decode the Base64 string back to raw bytes
-    encoded_model = a_dict['model']['xgb_bytes']
-    raw_model_bytes = bytearray(base64.b64decode(encoded_model))
+      # Load the model from raw bytes
+      booster = xgb.Booster()
+      booster.load_model(raw_model_bytes)
 
-    # Load the model from raw bytes
-    booster = xgb.Booster()
-    booster.load_model(raw_model_bytes)
+      # Optionally, wrap the Booster back into an XGBRegressor for convenience
+      loaded_model = xgb.XGBRegressor()
+      loaded_model._Booster = booster
 
-    # Optionally, wrap the Booster back into an XGBRegressor for convenience
-    loaded_model = xgb.XGBRegressor()
-    loaded_model._Booster = booster
+      # Use the loaded model for predictions
 
-    # Use the loaded model for predictions
+      # explainer = ForecastExplainer(loaded_model, X_train)
+      # formatted_dates = [datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d") for date in kpi_data_Time[-11:-1]]
 
-    # explainer = ForecastExplainer(loaded_model, X_train)
-    # formatted_dates = [datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d") for date in kpi_data_Time[-11:-1]]
-
-    results = XAI_PRED(avg_values1,Last_date, loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
-    
-    #convert numpy(float) to float
-    x = [r.item() for r in results['Predicted_value']]
-    y = [r.item() for r in results['Lower_bound']]
-    z = [r.item() for r in results['Upper_bound']]
-    # k = [r.item() for r in results['Confidence_score']] this is no longer numpy float
-    results['Predicted_value'] = x
-    results['Lower_bound'] = y
-    results['Upper_bound'] = z
-    # results['Confidence_score'] = k
-    
-    return results
+      results = XAI_PRED(avg_values1,Last_date, loaded_model,len(avg_values1),seq_length = observation_window,n_predictions = length)
+      
+      #convert numpy(float) to float
+      x = [r.item() for r in results['Predicted_value']]
+      y = [r.item() for r in results['Lower_bound']]
+      z = [r.item() for r in results['Upper_bound']]
+      # k = [r.item() for r in results['Confidence_score']] this is no longer numpy float
+      results['Predicted_value'] = x
+      results['Lower_bound'] = y
+      results['Upper_bound'] = z
+      # results['Confidence_score'] = k
+      
+      return results
+  else:
+     return -5
+def retrieve_all_Machines_kpis(api_key):
+  """
+    retrieve all the machines and KPIs present in the knowledge base
+    args:
+    api_key: the authentication variable
+    returns
+    machines, kpis: lists of strings
+  """
+  headers = {
+    "x-api-key": api_key
+  }
+  host_port = 8000
+  url_KB = f"http://kb:{host_port}/kb/retrieveKPIs"
+  Kpi_info = requests.get(url_KB, headers=headers).json()
+  url_KB = f"http://kb:{host_port}/kb/retrieveMachines"
+  machine_info = requests.get(url_KB, headers=headers).json()
+  # print(f"KB out: {Kpi_info.json()}")
+  kpis = []
+  print(Kpi_info)
+  for macro in Kpi_info:
+    for kpi in Kpi_info[macro]:
+        kpis.append(kpi)
+  machines = []
+  for macro in machine_info:
+    for machine in machine_info[macro]:
+      machines.append(machine_info[macro][machine]['id'])
+   
+  return(machines,kpis)  
+  
 
 def kpi_exists(machine, KPI, api_key):
   """

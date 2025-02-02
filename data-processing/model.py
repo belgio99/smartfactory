@@ -13,7 +13,9 @@ class Json_in_el(BaseModel):
     Machine_Name: str
     KPI_Name: str
     Date_prediction: Optional[int] = None
-
+    Time_series: Optional[List[float]] = None
+    Time_series_dates: Optional[List[str]] = None
+    
 class Json_in(BaseModel):
     value: List[Json_in_el]
 

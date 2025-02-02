@@ -3,6 +3,59 @@ from .postgres_client import get_postgres_connection
 import io
 import json
 
+def delete_duplicate_models(bucket_name):
+    client = get_minio_client()
+    # Ensure the bucket exists
+    if client.bucket_exists(bucket_name):
+    
+        # Insert or update record into PostgreSQL
+        try:
+            conn = get_postgres_connection()
+            cursor = conn.cursor()
+            select_query = """
+            Select * FROM Models
+            WHERE ctid NOT IN (
+            SELECT MIN(ctid)
+            FROM Models
+            GROUP BY KPI, MachineName, ModelPath
+            );
+            """
+            cursor.execute(select_query)
+            existing_records = cursor.fetchall()
+            print("candidate records: ", existing_records)
+            if(len(existing_records) > 0):
+
+                delete_query = """
+                DELETE FROM Models
+                WHERE ctid NOT IN (
+                    SELECT MIN(ctid)
+                    FROM Models
+                    GROUP BY KPI, MachineName, ModelPath
+                );
+                """
+                cursor.execute(delete_query)
+                conn.commit()
+                print("entry deleted from DB")
+
+                for record in existing_records:
+                    file_name = record[3][7:]
+                    client.remove_object(bucket_name, file_name)
+                    print(f"File '{file_name}' removed from bucket '{bucket_name}'.")
+            else:
+                print("no duplicates found")
+
+
+        except Exception as e:
+            print("Error inserting into PostgreSQL:", e)
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    else:
+        print(f"Bucket '{bucket_name}' not found.")
+    pass
+
 # Insert a JSON model into the bucket
 def insert_model_to_storage(bucket_name, file_name, json_data, kpi, machine_name):
     client = get_minio_client()
@@ -21,20 +74,43 @@ def insert_model_to_storage(bucket_name, file_name, json_data, kpi, machine_name
         )
         print(f"File '{file_name}' uploaded to bucket '{bucket_name}'.")
 
-        # Insert record into PostgreSQL
+        # Insert or update record into PostgreSQL
         try:
             conn = get_postgres_connection()
             cursor = conn.cursor()
             model_path = f"{bucket_name}/{file_name}"
-            insert_query = """
-            INSERT INTO Models (KPI, MachineName, ModelPath)
-            VALUES (%s, %s, %s)
-            RETURNING ID;
+
+            # Check if record already exists in PostgreSQL
+            select_query = """
+            SELECT ID FROM Models
+            WHERE KPI = %s AND MachineName = %s;
             """
-            cursor.execute(insert_query, (kpi, machine_name, model_path))
-            record_id = cursor.fetchone()[0]
-            conn.commit()
-            print(f"Record inserted into PostgreSQL with ID: {record_id}")
+            cursor.execute(select_query, (kpi, machine_name))
+            existing_record = cursor.fetchone()
+
+            if existing_record:
+                # Update the existing record
+                update_query = """
+                UPDATE Models
+                SET ModelPath = %s
+                WHERE KPI = %s AND MachineName = %s;
+                """
+                cursor.execute(update_query, (model_path, kpi, machine_name))
+                conn.commit()
+                print(f"Record for KPI '{kpi}' and Machine '{machine_name}' updated in PostgreSQL.")
+            else:
+                # Insert a new record
+                insert_query = """
+                INSERT INTO Models (KPI, MachineName, ModelPath)
+                VALUES (%s, %s, %s)
+                RETURNING ID;
+                """
+                cursor.execute(insert_query, (kpi, machine_name, model_path))
+                record_id = cursor.fetchone()[0]
+                conn.commit()
+                print(f"Record inserted into PostgreSQL with ID: {record_id}")
+
+
         except Exception as e:
             print("Error inserting into PostgreSQL:", e)
         finally:

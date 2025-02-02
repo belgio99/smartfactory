@@ -1082,6 +1082,65 @@ def get_prediction(pred_request: Json_in, api_key: str = Depends(get_verify_api_
         raise HTTPException(status_code=500, detail=str(e))
     return response.json()
 
+@app.post('/smartfactory/predict_extra', response_model=Json_out)
+def get_prediction_extra(pred_request: Json_in, api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to get a prediction from the ML model.
+    This endpoint receives a set of parameters and retrieves a prediction from the ML model based on those parameters.
+    Args:
+        pred_request (Json_in): The parameters for the prediction request.
+        api_key (str): The API key for authentication.
+    Returns:
+        response: The prediction data retrieved from the ML model.
+    Raises:
+        HTTPException: If the prediction request is malformed or an unexpected error occurs.
+    """
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': os.getenv('API_KEY')
+    }
+    DATA_PROCESSING_HOST = os.getenv("DATA_PROCESSING_HOST", "data-processing")
+    DATA_PROCESSING_PORT = os.getenv("DATA_PROCESSING_PORT", "8000")
+    url = f"http://{DATA_PROCESSING_HOST}:{DATA_PROCESSING_PORT}/data-processing/predict_extra"
+
+    logging.info("sending request to %s: %s", url, pred_request)
+    try:
+        # Send the prediction request to the data processing module and get the response
+        response = requests.post(url, json=jsonable_encoder(pred_request), headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    return response.json()
+
+@app.post('/smartfactory/train_all_models')
+def train_all_models(api_key: str = Depends(get_verify_api_key(["gui"]))):
+    """
+    Endpoint to start the generation of all models
+    Args:
+        api_key (str): The API key for authentication.
+    Returns:
+        0
+    Raises:
+        nope
+    """
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': os.getenv('API_KEY')
+    }
+    DATA_PROCESSING_HOST = os.getenv("DATA_PROCESSING_HOST", "data-processing")
+    DATA_PROCESSING_PORT = os.getenv("DATA_PROCESSING_PORT", "8000")
+    url = f"http://{DATA_PROCESSING_HOST}:{DATA_PROCESSING_PORT}/data-processing/train_all_models"
+
+    logging.info("sending training request to %s", url)
+    try:
+        # Send the prediction request to the data processing module and get the response
+        response = requests.post(url, headers=headers)
+        response.raise_for_status()
+    except Exception as e:
+        logging.error("Exception: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+    return 0
 
 @app.get("/smartfactory/dummy")
 async def dummy_endpoint(api_key: str = Depends(get_verify_api_key(["gui"]))):
